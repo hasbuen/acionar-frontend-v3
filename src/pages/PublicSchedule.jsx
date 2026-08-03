@@ -105,8 +105,9 @@ export function PublicSchedule({ slug: propSlug }) {
     );
   }
 
-  // Dynamic CSS Custom Properties
-  const primaryColor = tenant.cor_primaria || '#0d9488';
+  // Dynamic Colors from Tenant Settings
+  const primaryColor = tenant.cor_primaria || '#2563eb';
+  const accentColor = tenant.cor_destaque || '#f59e0b';
   const bgColor = tenant.cor_fundo || '#0f172a';
 
   return (
@@ -117,33 +118,46 @@ export function PublicSchedule({ slug: propSlug }) {
         <div className="text-center space-y-3 pt-4">
           <div className="relative inline-block">
             {tenant.foto_url ? (
-              <img src={tenant.foto_url} alt={tenant.nome_empresa} className="h-20 w-20 rounded-3xl object-cover mx-auto ring-4 ring-white/10 shadow-2xl" />
+              <img src={tenant.foto_url} alt={tenant.nome_empresa} className="h-24 w-24 rounded-3xl object-cover mx-auto ring-4 ring-white/10 shadow-2xl" />
             ) : (
-              <div className="h-20 w-20 rounded-3xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-white font-black text-3xl mx-auto shadow-2xl">
+              <div
+                className="h-24 w-24 rounded-3xl flex items-center justify-center text-white font-black text-3xl mx-auto shadow-2xl ring-4 ring-white/10"
+                style={{ backgroundColor: primaryColor }}
+              >
                 {tenant.nome_empresa[0]}
               </div>
             )}
           </div>
           <div>
             <h1 className="text-2xl font-black tracking-tight text-white">{tenant.nome_empresa}</h1>
-            <p className="text-xs font-bold text-teal-400 uppercase tracking-widest mt-1">AGENDAMENTO ONLINE</p>
+            <p className="text-xs font-bold uppercase tracking-widest mt-1" style={{ color: accentColor }}>
+              AGENDAMENTO ONLINE
+            </p>
           </div>
         </div>
 
         {/* Step Indicator Bar */}
-        <div className="flex items-center justify-between rounded-2xl bg-slate-900/80 p-3 border border-slate-800 text-xs font-extrabold">
-          {[1, 2, 3, 4].map((s) => (
-            <div key={s} className={`flex items-center gap-1.5 ${step === s ? 'text-teal-400' : step > s ? 'text-emerald-400' : 'text-slate-600'}`}>
-              <span className={`h-6 w-6 rounded-full flex items-center justify-center text-[11px] font-black ${
-                step === s ? 'bg-teal-500 text-slate-950' : step > s ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'
-              }`}>
-                {s}
-              </span>
-              <span className="hidden sm:inline">
-                {s === 1 ? 'Serviço' : s === 2 ? 'Adicionais' : s === 3 ? 'Data & Hora' : 'Seus Dados'}
-              </span>
-            </div>
-          ))}
+        <div className="flex items-center justify-between rounded-2xl bg-slate-900/80 p-3 border border-slate-800 text-xs font-extrabold backdrop-blur-md">
+          {[1, 2, 3, 4].map((s) => {
+            const isActive = step === s;
+            const isDone = step > s;
+            return (
+              <div key={s} className="flex items-center gap-1.5" style={{ color: isActive ? primaryColor : isDone ? accentColor : '#64748b' }}>
+                <span
+                  className="h-6 w-6 rounded-full flex items-center justify-center text-[11px] font-black"
+                  style={{
+                    backgroundColor: isActive ? primaryColor : isDone ? accentColor + '30' : '#1e293b',
+                    color: isActive ? '#ffffff' : isDone ? accentColor : '#64748b'
+                  }}
+                >
+                  {s}
+                </span>
+                <span className="hidden sm:inline">
+                  {s === 1 ? 'Serviço' : s === 2 ? 'Adicionais' : s === 3 ? 'Data & Hora' : 'Seus Dados'}
+                </span>
+              </div>
+            );
+          })}
         </div>
 
         {/* STEP 1: SERVIÇOS */}
@@ -151,34 +165,41 @@ export function PublicSchedule({ slug: propSlug }) {
           <div className="space-y-4 animate-fade-in">
             <h2 className="text-base font-black text-white">1. Selecione o Serviço Desejado</h2>
             <div className="space-y-3">
-              {servicos.map((s) => (
-                <div
-                  key={s.id}
-                  onClick={() => setSelectedServico(s)}
-                  className={`rounded-3xl p-5 border cursor-pointer transition-all ${
-                    selectedServico?.id === s.id
-                      ? 'border-teal-500 bg-teal-500/10 shadow-lg shadow-teal-500/10'
-                      : 'border-slate-800 bg-slate-900/80 hover:border-slate-700'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-base font-black text-white">{s.nome}</h3>
-                      {s.descricao && <p className="text-xs text-slate-400 mt-1">{s.descricao}</p>}
-                      <span className="inline-block mt-2 text-[11px] font-bold text-slate-400">⏱️ {s.duracao_minutos} min</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-lg font-black text-teal-400">R$ {parseFloat(s.preco).toFixed(2)}</span>
+              {servicos.map((s) => {
+                const isSelected = selectedServico?.id === s.id;
+                return (
+                  <div
+                    key={s.id}
+                    onClick={() => setSelectedServico(s)}
+                    className="rounded-3xl p-5 border cursor-pointer transition-all bg-slate-900/80 hover:border-slate-700"
+                    style={{
+                      borderColor: isSelected ? primaryColor : '#1e293b',
+                      backgroundColor: isSelected ? primaryColor + '15' : 'rgba(15, 23, 42, 0.8)',
+                      boxShadow: isSelected ? `0 10px 25px ${primaryColor}20` : 'none'
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-base font-black text-white">{s.nome}</h3>
+                        {s.descricao && <p className="text-xs text-slate-400 mt-1">{s.descricao}</p>}
+                        <span className="inline-block mt-2 text-[11px] font-bold text-slate-400">⏱️ {s.duracao_minutos} min</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-lg font-black" style={{ color: accentColor }}>
+                          R$ {parseFloat(s.preco).toFixed(2)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <button
               disabled={!selectedServico}
               onClick={() => setStep(2)}
-              className="w-full py-4 rounded-2xl bg-teal-500 text-slate-950 font-black text-sm disabled:opacity-40 flex items-center justify-center gap-2 mt-4"
+              className="w-full py-4 rounded-2xl font-black text-sm disabled:opacity-40 flex items-center justify-center gap-2 mt-4 shadow-xl transition btn-animated"
+              style={{ backgroundColor: primaryColor, color: '#ffffff' }}
             >
               Continuar <ChevronRight className="h-4 w-4" />
             </button>
@@ -192,35 +213,50 @@ export function PublicSchedule({ slug: propSlug }) {
 
             <div
               onClick={() => setSelectedSubservico(null)}
-              className={`rounded-3xl p-4 border cursor-pointer transition-all ${
-                selectedSubservico === null ? 'border-teal-500 bg-teal-500/10' : 'border-slate-800 bg-slate-900/80'
-              }`}
+              className="rounded-3xl p-4 border cursor-pointer transition-all bg-slate-900/80"
+              style={{
+                borderColor: selectedSubservico === null ? primaryColor : '#1e293b',
+                backgroundColor: selectedSubservico === null ? primaryColor + '15' : 'rgba(15, 23, 42, 0.8)'
+              }}
             >
               <h3 className="text-sm font-black text-white">Nenhum adicional</h3>
               <p className="text-xs text-slate-400">Apenas o serviço principal selecionado.</p>
             </div>
 
-            {selectedServico?.subservicos?.map((sub) => (
-              <div
-                key={sub.id}
-                onClick={() => setSelectedSubservico(sub)}
-                className={`rounded-3xl p-4 border cursor-pointer transition-all ${
-                  selectedSubservico?.id === sub.id ? 'border-teal-500 bg-teal-500/10' : 'border-slate-800 bg-slate-900/80'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-black text-white">{sub.nome}</h3>
-                    <span className="text-xs text-slate-400">+ {sub.duracao_adicional_minutos || 0} min</span>
+            {selectedServico?.subservicos?.map((sub) => {
+              const isSelected = selectedSubservico?.id === sub.id;
+              return (
+                <div
+                  key={sub.id}
+                  onClick={() => setSelectedSubservico(sub)}
+                  className="rounded-3xl p-4 border cursor-pointer transition-all bg-slate-900/80"
+                  style={{
+                    borderColor: isSelected ? primaryColor : '#1e293b',
+                    backgroundColor: isSelected ? primaryColor + '15' : 'rgba(15, 23, 42, 0.8)'
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-black text-white">{sub.nome}</h3>
+                      <span className="text-xs text-slate-400">+ {sub.duracao_adicional_minutos || 0} min</span>
+                    </div>
+                    <span className="text-sm font-black" style={{ color: accentColor }}>
+                      + R$ {parseFloat(sub.preco_adicional || 0).toFixed(2)}
+                    </span>
                   </div>
-                  <span className="text-sm font-black text-teal-400">+ R$ {parseFloat(sub.preco_adicional || 0).toFixed(2)}</span>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             <div className="flex gap-3 pt-2">
               <button onClick={() => setStep(1)} className="w-1/3 py-3.5 rounded-2xl bg-slate-800 font-bold text-xs">Voltar</button>
-              <button onClick={() => setStep(3)} className="w-2/3 py-3.5 rounded-2xl bg-teal-500 text-slate-950 font-black text-xs">Avançar para Data</button>
+              <button
+                onClick={() => setStep(3)}
+                className="w-2/3 py-3.5 rounded-2xl font-black text-xs shadow-xl btn-animated"
+                style={{ backgroundColor: primaryColor, color: '#ffffff' }}
+              >
+                Avançar para Data
+              </button>
             </div>
           </div>
         )}
@@ -243,24 +279,36 @@ export function PublicSchedule({ slug: propSlug }) {
             <div>
               <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">HORÁRIO DISPONÍVEL</label>
               <div className="grid grid-cols-4 gap-2">
-                {['09:00', '10:30', '14:00', '15:30', '17:00', '18:30'].map((time) => (
-                  <button
-                    key={time}
-                    type="button"
-                    onClick={() => setSelectedTime(time)}
-                    className={`py-3 rounded-2xl text-xs font-black transition-all ${
-                      selectedTime === time ? 'bg-teal-500 text-slate-950 shadow-md' : 'bg-slate-900 text-slate-400 border border-slate-800'
-                    }`}
-                  >
-                    {time}
-                  </button>
-                ))}
+                {['09:00', '10:30', '14:00', '15:30', '17:00', '18:30'].map((time) => {
+                  const isSelected = selectedTime === time;
+                  return (
+                    <button
+                      key={time}
+                      type="button"
+                      onClick={() => setSelectedTime(time)}
+                      className="py-3 rounded-2xl text-xs font-black transition-all border"
+                      style={{
+                        backgroundColor: isSelected ? primaryColor : '#0f172a',
+                        color: isSelected ? '#ffffff' : '#94a3b8',
+                        borderColor: isSelected ? primaryColor : '#1e293b'
+                      }}
+                    >
+                      {time}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             <div className="flex gap-3 pt-2">
               <button onClick={() => setStep(2)} className="w-1/3 py-3.5 rounded-2xl bg-slate-800 font-bold text-xs">Voltar</button>
-              <button onClick={() => setStep(4)} className="w-2/3 py-3.5 rounded-2xl bg-teal-500 text-slate-950 font-black text-xs">Preencher Dados</button>
+              <button
+                onClick={() => setStep(4)}
+                className="w-2/3 py-3.5 rounded-2xl font-black text-xs shadow-xl btn-animated"
+                style={{ backgroundColor: primaryColor, color: '#ffffff' }}
+              >
+                Preencher Dados
+              </button>
             </div>
           </div>
         )}
@@ -321,7 +369,8 @@ export function PublicSchedule({ slug: propSlug }) {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-2/3 py-3.5 rounded-2xl bg-teal-500 text-slate-950 font-black text-xs shadow-lg shadow-teal-500/25"
+                className="w-2/3 py-3.5 rounded-2xl font-black text-xs shadow-xl btn-animated"
+                style={{ backgroundColor: primaryColor, color: '#ffffff' }}
               >
                 {submitting ? 'Solicitando...' : 'Confirmar Agendamento'}
               </button>
@@ -337,7 +386,7 @@ export function PublicSchedule({ slug: propSlug }) {
             </div>
             <h2 className="text-xl font-black text-white">Agendamento Solicitado com Sucesso!</h2>
             <p className="text-xs text-slate-400">
-              Obrigado, <strong className="text-white">{form.cliente_nome}</strong>! Sua solicitação para <strong className="text-teal-400">{selectedServico?.nome}</strong> em <strong className="text-white">{selectedDate} às {selectedTime}</strong> foi registrada no sistema.
+              Obrigado, <strong className="text-white">{form.cliente_nome}</strong>! Sua solicitação para <strong style={{ color: accentColor }}>{selectedServico?.nome}</strong> em <strong className="text-white">{selectedDate} às {selectedTime}</strong> foi registrada no sistema.
             </p>
 
             <button

@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../services/api';
-import { Settings, Users, Bell, Globe, Palette, Copy, Check, Clock, MessageSquare, MapPin, ShieldAlert, Plus, Trash2 } from 'lucide-react';
+import { Settings, Users, Bell, Globe, Palette, Copy, Check, Clock, MessageSquare, MapPin, ShieldAlert, Plus, Trash2, Upload, Image as ImageIcon } from 'lucide-react';
 
 export function Configuracoes() {
   const { tenant, setTenant } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [copied, setCopied] = useState(false);
   const [message, setMessage] = useState('');
+  const fileInputRef = useRef(null);
 
   // Operating Hours (Segunda a Domingo)
   const [horarios, setHorarios] = useState([
@@ -30,7 +32,7 @@ export function Configuracoes() {
   const [whatsappTemplate, setWhatsappTemplate] = useState(
     'Olá {cliente_nome}, confirmamos seu agendamento para {data_hora} ({servico_nome}) no endereço: {endereco}.'
   );
-  const [endereco, setEndereco] = useState('Rua Exemplo, 123 - Centro');
+  const [endereco, setEndereco] = useState('Rua da amizade 515 bairro: 14 de novembro');
 
   // Branding & Public Schedule
   const [form, setForm] = useState({
@@ -41,9 +43,6 @@ export function Configuracoes() {
     cor_fundo: '#0f172a',
     novo_slug: '',
   });
-
-  // Auxiliares
-  const [auxForm, setAuxForm] = useState({ nome: '', email: '', senha: '' });
 
   useEffect(() => {
     if (tenant) {
@@ -64,6 +63,34 @@ export function Configuracoes() {
     navigator.clipboard.writeText(publicLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Intuitive Logo File Upload
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor selecione um arquivo de imagem válido.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = reader.result;
+      setUploadingLogo(true);
+      try {
+        const res = await apiRequest('/config/upload-logo', 'POST', { imageBase64: base64 });
+        setForm(prev => ({ ...prev, foto_url: res.foto_url }));
+        setTenant({ ...tenant, foto_url: res.foto_url });
+        setMessage('Foto do logotipo carregada e atualizada com sucesso!');
+      } catch (err) {
+        alert(err.message || 'Erro ao carregar imagem do logotipo.');
+      } finally {
+        setUploadingLogo(false);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSave = async (e) => {
@@ -114,7 +141,50 @@ export function Configuracoes() {
         </div>
       )}
 
-      {/* Card 1: Alerta Pop-up de Atendimento Próximo (Matching configuracoes.html line 150) */}
+      {/* Card 1: Logotipo / Foto com Upload Intuitivo */}
+      <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-2xl bg-teal-500/10 text-teal-400 flex items-center justify-center font-bold">
+            <ImageIcon className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="text-base font-black text-white">Foto do Logotipo da Empresa</h3>
+            <p className="text-xs text-slate-400">Carregue a imagem da sua marca diretamente do seu dispositivo</p>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center gap-5 pt-2">
+          <div className="h-24 w-24 rounded-3xl bg-slate-950 border-2 border-dashed border-slate-700 flex items-center justify-center overflow-hidden shrink-0">
+            {form.foto_url ? (
+              <img src={form.foto_url} alt="Logotipo" className="h-full w-full object-cover" />
+            ) : (
+              <ImageIcon className="h-8 w-8 text-slate-600" />
+            )}
+          </div>
+
+          <div className="space-y-3 w-full sm:w-auto flex-1">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/*"
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingLogo}
+              className="btn-animated inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-3.5 text-xs font-black text-white shadow-lg shadow-teal-500/25 w-full sm:w-auto"
+            >
+              <Upload className="h-4 w-4" />
+              {uploadingLogo ? 'Enviando imagem...' : 'Clique para Escolher Foto / Logotipo'}
+            </button>
+            <p className="text-[11px] text-slate-500">Formatos aceitos: PNG, JPG, JPEG, WEBP. Armazenamento automático no servidor VPS.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Card 2: Alerta Pop-up de Atendimento Próximo */}
       <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-4">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold">
@@ -141,7 +211,7 @@ export function Configuracoes() {
         </div>
       </div>
 
-      {/* Card 2: Horários de Funcionamento por Dia da Semana (Matching configuracoes.html) */}
+      {/* Card 3: Horários de Funcionamento por Dia da Semana */}
       <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-4">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold">
@@ -202,7 +272,7 @@ export function Configuracoes() {
         </div>
       </div>
 
-      {/* Card 3: Bloqueios de Horários / Folgas / Férias */}
+      {/* Card 4: Bloqueios de Horários / Folgas / Férias */}
       <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-4">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center font-bold">
@@ -258,7 +328,7 @@ export function Configuracoes() {
         </div>
       </div>
 
-      {/* Card 4: Mensagem no WhatsApp & Endereço (Matching configuracoes.html line 288) */}
+      {/* Card 5: Mensagem no WhatsApp & Endereço */}
       <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-4">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold">
@@ -293,7 +363,7 @@ export function Configuracoes() {
         </div>
       </div>
 
-      {/* Card 5: Agenda Pública & Personalização de Cores */}
+      {/* Card 6: Agenda Pública & Personalização de Cores */}
       <form onSubmit={handleSave} className="space-y-6">
         <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-4">
           <div className="flex items-center justify-between">
@@ -339,22 +409,11 @@ export function Configuracoes() {
           </div>
         </div>
 
-        {/* Card 6: Marca e Cores CSS */}
+        {/* Card 7: Marca e Cores CSS */}
         <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-4">
           <h3 className="text-base font-black text-white flex items-center gap-2">
             <Palette className="h-5 w-5 text-blue-400" /> Personalização de Marca & Cores
           </h3>
-
-          <div>
-            <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">URL do Logotipo da Empresa</label>
-            <input
-              type="text"
-              value={form.foto_url}
-              onChange={(e) => setForm({ ...form, foto_url: e.target.value })}
-              placeholder="https://..."
-              className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-blue-500"
-            />
-          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
@@ -391,7 +450,7 @@ export function Configuracoes() {
             disabled={loading}
             className="w-full btn-animated py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-xs font-black text-white shadow-lg shadow-blue-500/25"
           >
-            {loading ? 'Salvando...' : 'Salvar Alterações'}
+            {loading ? 'Salvando...' : 'Salvar Alterações de Cores e Marca'}
           </button>
         </div>
       </form>
