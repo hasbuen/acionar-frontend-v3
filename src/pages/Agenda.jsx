@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { apiRequest } from '../services/api';
 import { PaymentModal } from '../components/PaymentModal';
+import { NewAppointmentModal } from '../components/NewAppointmentModal';
 import {
   AlertCircle, ArrowRightLeft, Banknote, Calendar, CalendarDays, Check, CheckCircle, Clock, CreditCard, DollarSign,
   Edit3, Info, Link, MessageSquare, Phone, Plus, QrCode, Scissors, ShieldCheck, Trash2, User,
@@ -111,7 +112,7 @@ export function Agenda() {
   async function openCreate() {
     try {
       const [clients, services] = await Promise.all([apiRequest('/clientes'), apiRequest('/servicos')]);
-      setClientes(clients.clientes || []); setServicos(services.servicos || []); setModal('create');
+      setClientes(clients.clientes || []); setServicos(services.servicos || []); setModal('create-new');
     } catch (error) { notify(error.message || 'Erro ao carregar dados.'); }
   }
 
@@ -170,6 +171,7 @@ export function Agenda() {
   return (
     <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
       {modal?.type === 'payment-new' && <PaymentModal item={modal.item} payments={payments} draft={paymentDraft} setDraft={setPaymentDraft} onClose={() => setModal(null)} onSubmit={event => recordPayment(event, modal.item)} onOnline={() => notify('Configure o Asaas em Parâmetros para gerar cobranças online.')} />}
+      {modal === 'create-new' && <NewAppointmentModal form={form} setForm={setForm} clients={filteredClients} services={servicos} onClose={() => setModal(null)} onSubmit={createAppointment} />}
       {toast && <div className="fixed right-5 top-5 z-[70] rounded-2xl border border-emerald-500/30 bg-slate-900 px-5 py-3 text-sm font-bold text-emerald-300 shadow-2xl">{toast}</div>}
 
       <div className="flex flex-col items-start justify-between gap-4 rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-xl backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-900/60 md:flex-row md:items-center">
