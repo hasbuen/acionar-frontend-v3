@@ -13,7 +13,12 @@ export function Agenda() {
   const [clientes, setClientes] = useState([]);
   const [servicos, setServicos] = useState([]);
 
+  // Client search within appointment modal
+  const [clientSearch, setClientSearch] = useState('');
+  const [showClientList, setShowClientList] = useState(false);
+
   const [form, setForm] = useState({
+    cliente_id: null,
     cliente_nome: '',
     cliente_whatsapp: '',
     servico_id: '',
@@ -52,8 +57,18 @@ export function Agenda() {
       setServicos(sRes.servicos || []);
       setShowModal(true);
     } catch (err) {
-      alert('Erro ao carregar serviços.');
+      alert('Erro ao carregar dados para o agendamento.');
     }
+  };
+
+  const handleSelectClientFromList = (c) => {
+    setForm(prev => ({
+      ...prev,
+      cliente_id: c.id,
+      cliente_nome: c.nome,
+      cliente_whatsapp: c.whatsapp || '',
+    }));
+    setShowClientList(false);
   };
 
   const handleCreateAppointment = async (e) => {
@@ -61,8 +76,8 @@ export function Agenda() {
     try {
       const serv = servicos.find(s => s.id === parseInt(form.servico_id, 10));
 
-      let clienteId = null;
-      if (form.cliente_nome) {
+      let clienteId = form.cliente_id;
+      if (!clienteId && form.cliente_nome) {
         const cRes = await apiRequest('/clientes', 'POST', {
           nome: form.cliente_nome,
           whatsapp: form.cliente_whatsapp
@@ -119,6 +134,8 @@ export function Agenda() {
     manutencao: { label: 'Manutenções', activeClass: 'bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white border-purple-500 shadow-md shadow-purple-500/25' },
     cancelado: { label: 'Cancelados', activeClass: 'bg-gradient-to-r from-rose-600 to-red-600 text-white border-rose-500 shadow-md shadow-rose-500/25' },
   };
+
+  const filteredClientes = clientes.filter(c => c.nome.toLowerCase().includes(clientSearch.toLowerCase()));
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -351,15 +368,49 @@ export function Agenda() {
 
             <form onSubmit={handleCreateAppointment} className="space-y-4">
               <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">NOME DO CLIENTE</label>
-                <input
-                  type="text"
-                  value={form.cliente_nome}
-                  onChange={(e) => setForm({ ...form, cliente_nome: e.target.value })}
-                  placeholder="Ex: João Silva"
-                  required
-                  className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-blue-500"
-                />
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[11px] font-black uppercase tracking-wider text-slate-400">NOME DO CLIENTE</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowClientList(!showClientList)}
+                    className="text-[11px] font-bold text-blue-400 hover:underline flex items-center gap-1"
+                  >
+                    <Search className="h-3 w-3" /> {showClientList ? 'Digitar Nome' : 'Buscar na Lista'}
+                  </button>
+                </div>
+
+                {showClientList ? (
+                  <div className="space-y-2 border border-slate-800 rounded-2xl p-3 bg-slate-950">
+                    <input
+                      type="text"
+                      value={clientSearch}
+                      onChange={(e) => setClientSearch(e.target.value)}
+                      placeholder="Digitar nome para buscar..."
+                      className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs text-white"
+                    />
+                    <div className="max-h-32 overflow-y-auto space-y-1">
+                      {filteredClientes.map(c => (
+                        <div
+                          key={c.id}
+                          onClick={() => handleSelectClientFromList(c)}
+                          className="p-2 rounded-xl hover:bg-slate-900 text-xs text-white cursor-pointer flex justify-between items-center"
+                        >
+                          <span className="font-bold">{c.nome}</span>
+                          <span className="text-[10px] text-slate-400">{c.whatsapp}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    value={form.cliente_nome}
+                    onChange={(e) => setForm({ ...form, cliente_nome: e.target.value, cliente_id: null })}
+                    placeholder="Ex: João Silva"
+                    required
+                    className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-blue-500"
+                  />
+                )}
               </div>
 
               <div>
