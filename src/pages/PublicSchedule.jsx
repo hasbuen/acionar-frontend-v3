@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react';
 import { Sparkles, Calendar, Clock, User, Phone, CheckCircle2, ChevronRight, ChevronLeft, MapPin, Building2 } from 'lucide-react';
 
-export function PublicSchedule() {
-  const { slug } = useParams();
+export function PublicSchedule({ slug: propSlug }) {
+  const slug = propSlug || window.location.pathname.split('/agendar/')[1]?.split('/')[0];
   const [tenant, setTenant] = useState(null);
   const [servicos, setServicos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,7 +27,9 @@ export function PublicSchedule() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchTenantPublicData();
+    if (slug) {
+      fetchTenantPublicData();
+    }
   }, [slug]);
 
   const fetchTenantPublicData = async () => {
