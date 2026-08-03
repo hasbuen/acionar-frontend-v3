@@ -1,485 +1,197 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { apiRequest } from '../services/api';
-import { Plus, Calendar, Clock, User, CheckCircle, AlertCircle, Phone, DollarSign, Edit, Trash2, Shield, Search, X, Info, MapPin } from 'lucide-react';
+import {
+  AlertCircle, ArrowRightLeft, Calendar, Check, CheckCircle, Clock, DollarSign,
+  Edit3, Info, MessageSquare, Phone, Plus, RefreshCw, Scissors, Trash2, User,
+  Wrench, X
+} from 'lucide-react';
+
+const filters = [
+  ['todos', 'Todos'], ['hoje', 'Hoje'], ['solicitacoes', 'Solicitações'],
+  ['agendado', 'Confirmados'], ['em_atendimento', 'Em Atendimento'],
+  ['concluido', 'Atendidos'], ['manutencao', 'Manutenções'], ['cancelado', 'Cancelados']
+];
+
+const statusLabels = {
+  aguardando_confirmacao: 'Solicitação', solicitado: 'Solicitação', agendado: 'Confirmado',
+  confirmado: 'Confirmado', em_atendimento: 'Em Atendimento', concluido: 'Concluído',
+  atendido: 'Atendido', manutencao: 'Manutenção', cancelado: 'Cancelado', recusado: 'Recusado'
+};
+
+const statusClasses = {
+  aguardando_confirmacao: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
+  solicitado: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
+  agendado: 'bg-blue-500/10 text-blue-300 border-blue-500/30',
+  confirmado: 'bg-blue-500/10 text-blue-300 border-blue-500/30',
+  em_atendimento: 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30',
+  concluido: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
+  atendido: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
+  manutencao: 'bg-purple-500/10 text-purple-300 border-purple-500/30',
+  cancelado: 'bg-rose-500/10 text-rose-300 border-rose-500/30',
+  recusado: 'bg-rose-500/10 text-rose-300 border-rose-500/30'
+};
+
+const buttonStyles = {
+  notes: 'bg-amber-500/10 text-amber-300 border-amber-500/25 hover:bg-amber-500/20',
+  whatsapp: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/25 hover:bg-emerald-500/20',
+  maintenance: 'bg-purple-500/10 text-purple-300 border-purple-500/25 hover:bg-purple-500/20',
+  payment: 'bg-teal-500/10 text-teal-300 border-teal-500/25 hover:bg-teal-500/20',
+  transfer: 'bg-indigo-500/10 text-indigo-300 border-indigo-500/25 hover:bg-indigo-500/20',
+  edit: 'bg-slate-500/10 text-slate-200 border-slate-500/25 hover:bg-slate-500/20',
+  delete: 'bg-rose-500/10 text-rose-300 border-rose-500/25 hover:bg-rose-500/20'
+};
+
+const inputClass = 'w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-blue-500';
+
+function formatDate(value) {
+  return new Date(value).toLocaleDateString('pt-BR');
+}
+
+function formatTime(value) {
+  return new Date(value).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function dateParts(value) {
+  const date = new Date(value);
+  return { month: date.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', ''), day: date.getDate() };
+}
+
+function Modal({ title, subtitle, children, onClose, wide = false }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 p-4 backdrop-blur-sm">
+      <div className={`w-full ${wide ? 'max-w-2xl' : 'max-w-lg'} max-h-[92vh] overflow-y-auto rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl`}>
+        <div className="mb-5 flex items-start justify-between border-b border-slate-800 pb-4">
+          <div><h3 className="text-lg font-black text-white">{title}</h3>{subtitle && <p className="mt-1 text-xs font-semibold text-slate-400">{subtitle}</p>}</div>
+          <button type="button" onClick={onClose} className="text-slate-400 hover:text-white"><X className="h-5 w-5" /></button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function ActionButton({ kind, label, children, onClick }) {
+  return <button type="button" onClick={onClick} title={label} aria-label={label} className={`flex h-10 w-10 items-center justify-center rounded-xl border transition ${buttonStyles[kind]}`}>{children}</button>;
+}
 
 export function Agenda() {
   const [agendamentos, setAgendamentos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('hoje');
-
-  // Modals
-  const [showModal, setShowModal] = useState(false);
-  const [detailsItem, setDetailsItem] = useState(null);
+  const [modal, setModal] = useState(null);
   const [clientes, setClientes] = useState([]);
   const [servicos, setServicos] = useState([]);
-
-  // Client search within appointment modal
+  const [profissionais, setProfissionais] = useState([]);
+  const [payments, setPayments] = useState([]);
+  const [toast, setToast] = useState('');
   const [clientSearch, setClientSearch] = useState('');
-  const [showClientList, setShowClientList] = useState(false);
+  const [form, setForm] = useState({ cliente_id: '', cliente_nome: '', cliente_whatsapp: '', servico_id: '', data_hora: `${new Date().toISOString().slice(0, 10)}T18:40`, observacao: '' });
 
-  const [form, setForm] = useState({
-    cliente_id: null,
-    cliente_nome: '',
-    cliente_whatsapp: '',
-    servico_id: '',
-    data_hora: `${new Date().toISOString().split('T')[0]}T18:40`,
-    observacao: '',
-  });
+  const notify = (message) => { setToast(message); window.setTimeout(() => setToast(''), 3000); };
 
-  useEffect(() => {
-    fetchAgenda();
-  }, [activeFilter]);
-
-  const fetchAgenda = async () => {
+  async function fetchAgenda() {
     setLoading(true);
     try {
       let query = '';
       if (activeFilter === 'hoje') {
-        const today = new Date().toISOString().split('T')[0];
+        const today = new Date().toISOString().slice(0, 10);
         query = `?data_inicio=${today}T00:00:00.000Z&data_fim=${today}T23:59:59.999Z`;
-      } else if (activeFilter !== 'todos') {
-        query = `?status=${activeFilter}`;
-      }
-      const res = await apiRequest(`/agendamentos${query}`);
-      setAgendamentos(res.agendamentos || []);
-    } catch (err) {
-      console.error('[AGENDA ERROR]', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+      } else if (activeFilter === 'solicitacoes') query = '?status=aguardando_confirmacao';
+      else if (activeFilter !== 'todos') query = `?status=${activeFilter}`;
+      const result = await apiRequest(`/agendamentos${query}`);
+      setAgendamentos(result.agendamentos || []);
+    } catch (error) { notify(error.message || 'Não foi possível carregar a agenda.'); }
+    finally { setLoading(false); }
+  }
 
-  const handleOpenModal = async () => {
+  useEffect(() => { fetchAgenda(); }, [activeFilter]);
+
+  async function openCreate() {
     try {
-      const cRes = await apiRequest('/clientes');
-      const sRes = await apiRequest('/servicos');
-      setClientes(cRes.clientes || []);
-      setServicos(sRes.servicos || []);
-      setShowModal(true);
-    } catch (err) {
-      alert('Erro ao carregar dados para o agendamento.');
-    }
-  };
+      const [clients, services] = await Promise.all([apiRequest('/clientes'), apiRequest('/servicos')]);
+      setClientes(clients.clientes || []); setServicos(services.servicos || []); setModal('create');
+    } catch (error) { notify(error.message || 'Erro ao carregar dados.'); }
+  }
 
-  const handleSelectClientFromList = (c) => {
-    setForm(prev => ({
-      ...prev,
-      cliente_id: c.id,
-      cliente_nome: c.nome,
-      cliente_whatsapp: c.whatsapp || '',
-    }));
-    setShowClientList(false);
-  };
+  async function openTransfer(item) {
+    try { const result = await apiRequest('/profissionais'); setProfissionais(result.profissionais || []); setModal({ type: 'transfer', item }); }
+    catch (error) { notify(error.message || 'Erro ao carregar profissionais.'); }
+  }
 
-  const handleCreateAppointment = async (e) => {
-    e.preventDefault();
+  async function openPayment(item) {
+    try { const result = await apiRequest('/caixa'); setPayments((result.movimentacoes || []).filter(m => Number(m.agendamento_id) === Number(item.id))); setModal({ type: 'payment', item }); }
+    catch (error) { notify(error.message || 'Erro ao carregar pagamentos.'); }
+  }
+
+  async function updateAppointment(item, data, message) {
+    try { await apiRequest(`/agendamentos/${item.id}`, 'PUT', data); notify(message); setModal(null); await fetchAgenda(); }
+    catch (error) { notify(error.message || 'Não foi possível atualizar o agendamento.'); }
+  }
+
+  async function createAppointment(event) {
+    event.preventDefault();
     try {
-      const serv = servicos.find(s => s.id === parseInt(form.servico_id, 10));
+      const service = servicos.find(s => Number(s.id) === Number(form.servico_id));
+      let clientId = form.cliente_id;
+      if (!clientId && form.cliente_nome) { const result = await apiRequest('/clientes', 'POST', { nome: form.cliente_nome, whatsapp: form.cliente_whatsapp }); clientId = result.cliente?.id; }
+      await apiRequest('/agendamentos', 'POST', { cliente_id: clientId, servico_id: Number(form.servico_id), data_hora: new Date(form.data_hora).toISOString(), valor_total: service?.preco || 0, observacao: form.observacao, status: 'agendado' });
+      setModal(null); notify('Agendamento criado.'); fetchAgenda();
+    } catch (error) { notify(error.message || 'Erro ao criar agendamento.'); }
+  }
 
-      let clienteId = form.cliente_id;
-      if (!clienteId && form.cliente_nome) {
-        const cRes = await apiRequest('/clientes', 'POST', {
-          nome: form.cliente_nome,
-          whatsapp: form.cliente_whatsapp
-        }).catch(() => null);
-        if (cRes?.cliente) clienteId = cRes.cliente.id;
-      }
-
-      await apiRequest('/agendamentos', 'POST', {
-        cliente_id: clienteId,
-        servico_id: parseInt(form.servico_id, 10),
-        data_hora: new Date(form.data_hora).toISOString(),
-        valor_total: serv ? serv.preco : 0,
-        observacao: form.observacao,
-        status: 'agendado',
-      });
-      setShowModal(false);
-      fetchAgenda();
-    } catch (err) {
-      alert(err.message || 'Erro ao criar agendamento.');
-    }
-  };
-
-  const handleStatusChange = async (id, status) => {
+  async function recordPayment(event, item) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
     try {
-      await apiRequest(`/agendamentos/${id}`, 'PUT', { status });
-      if (detailsItem?.id === id) {
-        setDetailsItem({ ...detailsItem, status });
-      }
-      fetchAgenda();
-    } catch (err) {
-      alert('Erro ao atualizar status.');
-    }
-  };
+      await apiRequest('/caixa', 'POST', { agendamento_id: item.id, tipo: 'entrada', descricao: `Pagamento — ${item.cliente_nome || 'cliente'}`, valor: Number(data.get('valor')), status: 'pago', forma_pagamento: data.get('forma_pagamento') });
+      notify('Pagamento registrado.'); await openPayment(item);
+    } catch (error) { notify(error.message || 'Erro ao registrar pagamento.'); }
+  }
 
-  const handleDelete = async (id) => {
-    if (!confirm('Deseja cancelar/excluir este agendamento?')) return;
-    try {
-      await apiRequest(`/agendamentos/${id}`, 'DELETE');
-      if (detailsItem?.id === id) setDetailsItem(null);
-      fetchAgenda();
-    } catch (err) {
-      alert('Erro ao excluir agendamento.');
-    }
-  };
+  async function removeAppointment(item) {
+    if (!window.confirm('Deseja excluir este agendamento?')) return;
+    try { await apiRequest(`/agendamentos/${item.id}`, 'DELETE'); notify('Agendamento excluído.'); fetchAgenda(); }
+    catch (error) { notify(error.message || 'Erro ao excluir agendamento.'); }
+  }
 
-  // Exact Production Filter Pills Styling
-  const filterStyles = {
-    todos: { label: 'Todos', activeClass: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-blue-500 shadow-md shadow-blue-500/25' },
-    hoje: { label: 'Hoje', activeClass: 'bg-gradient-to-r from-slate-700 to-slate-900 text-white border-slate-600 shadow-md shadow-slate-500/20' },
-    solicitacoes: { label: 'Solicitações', activeClass: 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-amber-400 shadow-md shadow-amber-500/25' },
-    agendado: { label: 'Confirmados', activeClass: 'bg-gradient-to-r from-blue-600 to-sky-600 text-white border-blue-500 shadow-md shadow-blue-500/25' },
-    em_atendimento: { label: 'Em Atendimento', activeClass: 'bg-gradient-to-r from-sky-500 to-cyan-500 text-white border-sky-400 shadow-md shadow-sky-500/25' },
-    concluido: { label: 'Atendidos', activeClass: 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-500 shadow-md shadow-emerald-500/25' },
-    manutencao: { label: 'Manutenções', activeClass: 'bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white border-purple-500 shadow-md shadow-purple-500/25' },
-    cancelado: { label: 'Cancelados', activeClass: 'bg-gradient-to-r from-rose-600 to-red-600 text-white border-rose-500 shadow-md shadow-rose-500/25' },
-  };
-
-  const filteredClientes = clientes.filter(c => c.nome.toLowerCase().includes(clientSearch.toLowerCase()));
+  const filteredClients = useMemo(() => clientes.filter(c => (c.nome || '').toLowerCase().includes(clientSearch.toLowerCase())), [clientes, clientSearch]);
+  const selectedStatus = modal?.item?.status;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      {/* Top Banner Card */}
-      <div className="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-xl backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-900/60 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-blue-600 dark:text-blue-400">
-            GESTÃO INTELIGENTE
-          </span>
-          <h1 className="mt-2 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-            Próximos Compromissos
-          </h1>
-          <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-            Aceite agendamentos recebidos e gerencie cada atendimento.
-          </p>
-        </div>
+    <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
+      {toast && <div className="fixed right-5 top-5 z-[70] rounded-2xl border border-emerald-500/30 bg-slate-900 px-5 py-3 text-sm font-bold text-emerald-300 shadow-2xl">{toast}</div>}
 
-        <button
-          onClick={handleOpenModal}
-          className="btn-animated inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 px-5 py-3 text-xs font-black text-white shadow-lg shadow-blue-500/25"
-        >
-          <Plus className="h-4 w-4" /> Novo Agendamento
-        </button>
+      <div className="flex flex-col items-start justify-between gap-4 rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-xl backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-900/60 md:flex-row md:items-center">
+        <div><span className="inline-flex rounded-full bg-blue-500/10 px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-blue-500">Gestão inteligente</span><h1 className="mt-2 text-2xl font-black text-slate-900 dark:text-white sm:text-3xl">Próximos Compromissos</h1><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Aceite agendamentos recebidos e gerencie cada atendimento.</p></div>
+        <button onClick={openCreate} className="btn-animated inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-500/25"><Plus className="h-5 w-5" /> Novo Agendamento</button>
       </div>
 
-      {/* Notification Banner */}
-      <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4 flex items-center justify-between gap-3 text-xs font-semibold text-blue-700 dark:text-blue-300">
-        <div className="flex items-center gap-3">
-          <Shield className="h-5 w-5 text-blue-500 shrink-0" />
-          <div>
-            <strong className="block font-bold">Notificações com Navegador Fechado (Android & iPhone)</strong>
-            <span>No Android e no iPhone, instale como PWA e ative as notificações em Parâmetros.</span>
-          </div>
-        </div>
-      </div>
+      <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">{filters.map(([key, label]) => <button key={key} onClick={() => setActiveFilter(key)} className={`whitespace-nowrap rounded-2xl border px-4 py-2 text-xs font-extrabold transition ${activeFilter === key ? 'border-blue-500 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20' : 'border-slate-200 bg-white/80 text-slate-500 hover:bg-white dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-400'}`}>{label}</button>)}</div>
 
-      {/* Exact Production Filter Pills Bar */}
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
-        {Object.keys(filterStyles).map((filterKey) => {
-          const cfg = filterStyles[filterKey];
-          const isActive = activeFilter === filterKey;
-          return (
-            <button
-              key={filterKey}
-              onClick={() => setActiveFilter(filterKey)}
-              className={`filter-btn border whitespace-nowrap rounded-2xl px-4 py-2 text-xs font-extrabold transition-all ${
-                isActive
-                  ? cfg.activeClass
-                  : 'bg-white/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-800'
-              }`}
-            >
-              {cfg.label}
-            </button>
-          );
-        })}
-      </div>
+      {loading ? <div className="py-16 text-center text-sm font-semibold text-slate-400">Carregando compromissos...</div> : agendamentos.length === 0 ? <div className="rounded-3xl border border-slate-800 bg-slate-900/40 p-12 text-center text-slate-400"><Calendar className="mx-auto mb-3 h-12 w-12 opacity-30" /><p className="text-sm font-semibold">Nenhum compromisso encontrado neste filtro.</p></div> : <div className="space-y-4">{agendamentos.map(item => {
+        const parts = dateParts(item.data_hora);
+        const isRequest = ['aguardando_confirmacao', 'solicitado'].includes(item.status);
+        return <div key={item.id} className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white/80 p-5 shadow-lg backdrop-blur-xl transition hover:border-blue-500/40 dark:border-slate-800/80 dark:bg-slate-900/60 sm:flex-row sm:items-center sm:justify-between" onClick={() => setModal({ type: 'details', item })}>
+          <div className="flex min-w-0 items-start gap-4"><div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-2xl bg-blue-500/10 text-center text-blue-400"><span className="text-[9px] font-black uppercase">{parts.month}</span><span className="text-base font-black leading-none">{parts.day}</span></div><div className="min-w-0"><div className="mb-1 flex flex-wrap items-center gap-2"><span className="text-base font-black text-slate-900 dark:text-white">{item.cliente_nome || 'Cliente sem nome'}</span><span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${statusClasses[item.status] || statusClasses.agendado}`}>{statusLabels[item.status] || item.status}</span><span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-extrabold text-slate-300">{item.profissional_nome || 'Profissional'}</span></div><div className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300"><Scissors className="h-3.5 w-3.5 text-blue-400" />{item.servico_nome || 'Atendimento'} <span className="font-semibold text-slate-400">({item.duracao_total_minutos || 60} min)</span></div><div className="mt-1 flex items-center gap-3 text-[11px] font-semibold text-slate-400"><span><Clock className="mr-1 inline h-3 w-3" />{formatTime(item.data_hora)}</span><span><Calendar className="mr-1 inline h-3 w-3" />{formatDate(item.data_hora)}</span></div></div></div>
+          <div className="flex flex-wrap items-center justify-end gap-1.5" onClick={event => event.stopPropagation()}>{isRequest ? <><button onClick={() => updateAppointment(item, { status: 'agendado' }, 'Solicitação aceita.')} className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-black text-white">Aceitar</button><button onClick={() => updateAppointment(item, { status: 'recusado' }, 'Solicitação recusada.')} className="rounded-xl bg-rose-500/15 px-3 py-2 text-xs font-black text-rose-300">Recusar</button></> : <><ActionButton kind="notes" label="Registrar observação" onClick={() => setModal({ type: 'notes', item })}><MessageSquare className="h-4 w-4" /></ActionButton>{item.cliente_whatsapp && <a href={`https://wa.me/55${item.cliente_whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Olá ${item.cliente_nome || ''}, confirmamos seu agendamento para ${formatDate(item.data_hora)} às ${formatTime(item.data_hora)}.`)}`} target="_blank" rel="noreferrer" className={`flex h-10 w-10 items-center justify-center rounded-xl border ${buttonStyles.whatsapp}`} title="Enviar WhatsApp"><Phone className="h-4 w-4" /></a>}<ActionButton kind="maintenance" label="Agendar manutenção" onClick={() => setModal({ type: 'maintenance', item })}><Wrench className="h-4 w-4" /></ActionButton><ActionButton kind="payment" label="Registrar / ver pagamentos" onClick={() => openPayment(item)}><DollarSign className="h-4 w-4" /></ActionButton><ActionButton kind="transfer" label="Transferir agendamento" onClick={() => openTransfer(item)}><ArrowRightLeft className="h-4 w-4" /></ActionButton><ActionButton kind="edit" label="Editar agendamento" onClick={() => setModal({ type: 'edit', item })}><Edit3 className="h-4 w-4" /></ActionButton><ActionButton kind="delete" label="Excluir agendamento" onClick={() => removeAppointment(item)}><Trash2 className="h-4 w-4" /></ActionButton></>}</div>
+        </div>;
+      })}</div>}
 
-      {/* Appointments List */}
-      {loading ? (
-        <div className="text-center py-12 text-slate-400">Carregando compromissos...</div>
-      ) : agendamentos.length === 0 ? (
-        <div className="rounded-3xl border border-slate-200 bg-white/70 p-12 text-center text-slate-400 dark:border-slate-800 dark:bg-slate-900/40">
-          <Calendar className="mx-auto h-12 w-12 opacity-30 mb-3" />
-          <p className="font-semibold text-sm">Nenhum compromisso encontrado neste filtro.</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {agendamentos.map((item) => (
-            <div
-              key={item.id}
-              className="rounded-3xl border border-slate-200 bg-white/80 p-5 shadow-lg backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-900/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in hover:border-blue-500/40 transition cursor-pointer"
-              onClick={() => setDetailsItem(item)}
-            >
-              <div className="flex items-start gap-4">
-                <div className="h-12 w-12 rounded-2xl bg-blue-500/10 text-blue-500 flex flex-col items-center justify-center text-center shrink-0">
-                  <span className="text-[9px] font-black uppercase tracking-widest">
-                    {new Date(item.data_hora).toLocaleString('default', { month: 'short' })}
-                  </span>
-                  <span className="text-base font-black leading-none">
-                    {new Date(item.data_hora).getDate()}
-                  </span>
-                </div>
+      {modal?.type === 'details' && <Modal title="Detalhes do agendamento" subtitle={modal.item.cliente_nome || 'Cliente'} onClose={() => setModal(null)}><div className="space-y-3 text-sm text-slate-300"><div className="flex justify-between border-b border-slate-800 pb-2"><span>Serviço</span><strong className="text-white">{modal.item.servico_nome || 'Atendimento'}</strong></div><div className="flex justify-between border-b border-slate-800 pb-2"><span>Data e horário</span><strong className="text-white">{formatDate(modal.item.data_hora)} às {formatTime(modal.item.data_hora)}</strong></div><div className="flex justify-between border-b border-slate-800 pb-2"><span>Valor total</span><strong className="text-emerald-300">R$ {Number(modal.item.valor_total || 0).toFixed(2)}</strong></div><div className="flex justify-between border-b border-slate-800 pb-2"><span>Status</span><strong className="text-blue-300">{statusLabels[modal.item.status] || modal.item.status}</strong></div>{modal.item.observacao && <div className="rounded-2xl bg-slate-950 p-3 italic">“{modal.item.observacao}”</div>}</div><div className="mt-5 flex gap-2"><button onClick={() => setModal({ type: 'status', item: modal.item })} className="flex-1 rounded-2xl bg-blue-600 py-3 text-xs font-black text-white">Alterar status</button><button onClick={() => setModal({ type: 'edit', item: modal.item })} className="rounded-2xl bg-slate-800 px-4 py-3 text-xs font-black text-white">Editar</button></div></Modal>}
 
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className="text-base font-black text-slate-900 dark:text-white">
-                      {item.cliente_nome || 'Cliente sem nome'}
-                    </span>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                      item.status === 'concluido' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                      item.status === 'aguardando_confirmacao' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
-                      'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                    }`}>
-                      {item.status === 'aguardando_confirmacao' ? 'Solicitação' : item.status}
-                    </span>
-                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
-                      {item.profissional_nome || 'Patricia'}
-                    </span>
-                  </div>
+      {modal?.type === 'status' && <Modal title="Alterar status" subtitle={modal.item.cliente_nome} onClose={() => setModal(null)}><div className="grid gap-2">{[['agendado', 'Confirmado'], ['em_atendimento', 'Em Atendimento'], ['concluido', 'Já Atendido / Concluído'], ['manutencao', 'Agendar Manutenção Periódica'], ['cancelado', 'Cancelado / Recusado']].map(([value, label]) => <button key={value} onClick={() => updateAppointment(modal.item, { status: value }, `Status alterado para ${label}.`)} className={`rounded-2xl border p-4 text-left text-sm font-black ${selectedStatus === value ? 'border-blue-500 bg-blue-500/10 text-blue-300' : 'border-slate-800 text-slate-300 hover:bg-slate-800'}`}>{label}{selectedStatus === value && <Check className="float-right h-4 w-4" />}</button>)}</div></Modal>}
 
-                  <div className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                    ✂️ {item.servico_nome || 'Atendimento'} ({item.duracao_total_minutos || 60} min)
-                  </div>
+      {modal?.type === 'notes' && <Modal title="Observações do agendamento" subtitle={modal.item.cliente_nome} onClose={() => setModal(null)}><form onSubmit={event => { event.preventDefault(); updateAppointment(modal.item, { observacao: event.currentTarget.observacao.value.slice(0, 1000) }, 'Observação salva.'); }} className="space-y-4"><textarea name="observacao" defaultValue={modal.item.observacao || ''} maxLength="1000" rows="6" className={inputClass} placeholder="Registre uma observação para este atendimento..." /><div className="flex justify-end gap-2"><button type="button" onClick={() => setModal(null)} className="rounded-2xl px-4 py-3 text-xs font-bold text-slate-400">Cancelar</button><button className="rounded-2xl bg-amber-500 px-5 py-3 text-xs font-black text-slate-950">Salvar observação</button></div></form></Modal>}
 
-                  <div className="mt-1 text-[11px] font-semibold text-slate-400 flex items-center gap-3">
-                    <span>🕒 {new Date(item.data_hora).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                    <span>📅 {new Date(item.data_hora).toLocaleDateString()}</span>
-                  </div>
-                </div>
-              </div>
+      {modal?.type === 'maintenance' && <Modal title="Manutenção Periódica" subtitle={`${modal.item.cliente_nome || 'Cliente'} — ${modal.item.servico_nome || 'Atendimento'}`} onClose={() => setModal(null)}><form onSubmit={event => { event.preventDefault(); const data = new FormData(event.currentTarget); const date = `${data.get('date')}T${data.get('time')}`; apiRequest('/agendamentos', 'POST', { cliente_id: modal.item.cliente_id, profissional_id: modal.item.profissional_id, servico_id: modal.item.servico_id, data_hora: new Date(date).toISOString(), valor_total: modal.item.valor_total || 0, observacao: data.get('observacao'), status: 'agendado' }).then(() => { notify('Manutenção agendada.'); setModal(null); fetchAgenda(); }).catch(error => notify(error.message || 'Erro ao agendar manutenção.')); }} className="space-y-4"><div className="grid grid-cols-3 gap-2">{[15, 30, 45, 60, 90].map(days => <button type="button" key={days} onClick={event => { const date = new Date(modal.item.data_hora); date.setDate(date.getDate() + days); event.currentTarget.form.date.value = date.toISOString().slice(0, 10); }} className="rounded-xl border border-slate-700 px-2 py-3 text-xs font-black text-slate-300 hover:border-purple-500">{days} dias</button>)}</div><label className="block text-xs font-black uppercase text-slate-400">Data de retorno<input name="date" type="date" defaultValue={new Date(new Date(modal.item.data_hora).getTime() + 30 * 86400000).toISOString().slice(0, 10)} className={`${inputClass} mt-1`} required /></label><label className="block text-xs font-black uppercase text-slate-400">Horário<input name="time" type="time" defaultValue={formatTime(modal.item.data_hora)} className={`${inputClass} mt-1`} required /></label><textarea name="observacao" rows="3" className={inputClass} placeholder="Observações (opcional)" /><div className="flex justify-end gap-2"><button type="button" onClick={() => setModal(null)} className="rounded-2xl px-4 py-3 text-xs font-bold text-slate-400">Não agendar</button><button className="rounded-2xl bg-purple-600 px-5 py-3 text-xs font-black text-white">Confirmar e agendar</button></div></form></Modal>}
 
-              {/* Action Toolbar Buttons */}
-              <div className="flex items-center gap-1.5 self-end sm:self-center" onClick={(e) => e.stopPropagation()}>
-                {item.cliente_whatsapp && (
-                  <a
-                    href={`https://wa.me/55${item.cliente_whatsapp.replace(/\D/g, '')}?text=Olá%20${encodeURIComponent(item.cliente_nome || '')},%20confirmamos%20seu%20agendamento%20para%20${encodeURIComponent(new Date(item.data_hora).toLocaleDateString())}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="h-9 w-9 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center hover:bg-emerald-500/20 transition"
-                    title="Enviar WhatsApp"
-                  >
-                    <Phone className="h-4 w-4" />
-                  </a>
-                )}
+      {modal?.type === 'payment' && <Modal title="Pagamentos do agendamento" subtitle={modal.item.cliente_nome} onClose={() => setModal(null)}><div className="mb-4 rounded-2xl bg-slate-950 p-4"><div className="flex justify-between text-sm"><span className="text-slate-400">Valor do atendimento</span><strong className="text-white">R$ {Number(modal.item.valor_total || 0).toFixed(2)}</strong></div><div className="mt-2 flex justify-between text-sm"><span className="text-slate-400">Total registrado</span><strong className="text-emerald-300">R$ {payments.reduce((sum, payment) => sum + Number(payment.valor || 0), 0).toFixed(2)}</strong></div></div><div className="mb-5 space-y-2">{payments.length ? payments.map(payment => <div key={payment.id} className="flex justify-between rounded-xl border border-slate-800 p-3 text-xs"><span className="text-slate-300">{payment.forma_pagamento || 'Pagamento'}</span><strong className="text-emerald-300">R$ {Number(payment.valor).toFixed(2)}</strong></div>) : <p className="text-center text-xs text-slate-500">Nenhum pagamento registrado.</p>}</div><form onSubmit={event => recordPayment(event, modal.item)} className="space-y-3"><label className="block text-xs font-black uppercase text-slate-400">Valor<input name="valor" type="number" step="0.01" min="0" defaultValue={modal.item.valor_total || 0} className={`${inputClass} mt-1`} required /></label><label className="block text-xs font-black uppercase text-slate-400">Forma de pagamento<select name="forma_pagamento" className={`${inputClass} mt-1`}><option value="pix">Pix</option><option value="cartao">Cartão</option><option value="dinheiro">Dinheiro</option><option value="transferencia">Transferência</option></select></label><button className="w-full rounded-2xl bg-emerald-600 py-3 text-xs font-black text-white">Registrar pagamento</button></form></Modal>}
 
-                <button
-                  onClick={() => handleStatusChange(item.id, 'concluido')}
-                  className="h-9 w-9 rounded-xl bg-blue-500/10 text-blue-500 border border-blue-500/20 flex items-center justify-center hover:bg-blue-500/20 transition"
-                  title="Concluir no Caixa"
-                >
-                  <DollarSign className="h-4 w-4" />
-                </button>
+      {modal?.type === 'transfer' && <Modal title="Transferir agendamento" subtitle={modal.item.cliente_nome} onClose={() => setModal(null)}><div className="space-y-2">{profissionais.map(professional => <button key={professional.id} onClick={() => updateAppointment(modal.item, { profissional_id: professional.id }, `Agendamento transferido para ${professional.nome}.`)} className="flex w-full items-center gap-3 rounded-2xl border border-slate-800 p-4 text-left text-sm font-black text-slate-200 hover:border-indigo-500"><User className="h-5 w-5 text-indigo-300" />{professional.nome}</button>)}{!profissionais.length && <p className="text-center text-sm text-slate-500">Nenhum profissional disponível.</p>}</div></Modal>}
 
-                <button
-                  onClick={() => setDetailsItem(item)}
-                  className="h-9 w-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-700 flex items-center justify-center hover:text-white transition"
-                  title="Ver Detalhes"
-                >
-                  <Info className="h-4 w-4" />
-                </button>
+      {modal?.type === 'edit' && <Modal title="Editar agendamento" subtitle={modal.item.cliente_nome} onClose={() => setModal(null)}><form onSubmit={event => { event.preventDefault(); const data = new FormData(event.currentTarget); updateAppointment(modal.item, { data_hora: new Date(data.get('data_hora')).toISOString(), observacao: data.get('observacao'), valor_total: Number(data.get('valor_total')), status: data.get('status') }, 'Agendamento atualizado.'); }} className="space-y-4"><label className="block text-xs font-black uppercase text-slate-400">Data e horário<input name="data_hora" type="datetime-local" defaultValue={new Date(modal.item.data_hora).toISOString().slice(0, 16)} className={`${inputClass} mt-1`} required /></label><label className="block text-xs font-black uppercase text-slate-400">Valor<input name="valor_total" type="number" step="0.01" defaultValue={modal.item.valor_total || 0} className={`${inputClass} mt-1`} /></label><label className="block text-xs font-black uppercase text-slate-400">Status<select name="status" defaultValue={modal.item.status} className={`${inputClass} mt-1`}>{Object.entries(statusLabels).filter(([key]) => !['aguardando_confirmacao', 'solicitado', 'confirmado', 'atendido', 'recusado'].includes(key)).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label><textarea name="observacao" rows="3" defaultValue={modal.item.observacao || ''} className={inputClass} placeholder="Observações" /><button className="w-full rounded-2xl bg-blue-600 py-3 text-xs font-black text-white">Salvar alterações</button></form></Modal>}
 
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  className="h-9 w-9 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 flex items-center justify-center hover:bg-rose-500/20 transition"
-                  title="Excluir"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Modal Detalhes do Agendamento */}
-      {detailsItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4 animate-scale-in">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div>
-                <span className="text-[10px] font-black uppercase text-blue-400">DETALHES DO AGENDAMENTO</span>
-                <h3 className="text-lg font-black text-white">{detailsItem.cliente_nome || 'Cliente'}</h3>
-              </div>
-              <button onClick={() => setDetailsItem(null)} className="text-slate-400 hover:text-white">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs text-slate-300">
-              <div className="flex justify-between border-b border-slate-800/60 pb-2">
-                <span className="text-slate-400">Serviço:</span>
-                <strong className="text-white">{detailsItem.servico_nome || 'Atendimento'}</strong>
-              </div>
-              <div className="flex justify-between border-b border-slate-800/60 pb-2">
-                <span className="text-slate-400">Data e Horário:</span>
-                <strong className="text-white">{new Date(detailsItem.data_hora).toLocaleString()}</strong>
-              </div>
-              <div className="flex justify-between border-b border-slate-800/60 pb-2">
-                <span className="text-slate-400">Valor Total:</span>
-                <strong className="text-emerald-400">R$ {parseFloat(detailsItem.valor_total || 0).toFixed(2)}</strong>
-              </div>
-              <div className="flex justify-between border-b border-slate-800/60 pb-2">
-                <span className="text-slate-400">Status Atual:</span>
-                <span className="font-extrabold uppercase text-blue-400">{detailsItem.status}</span>
-              </div>
-              {detailsItem.observacao && (
-                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800">
-                  <span className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Observações:</span>
-                  <p className="text-slate-300 italic">"{detailsItem.observacao}"</p>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between gap-2 pt-2">
-              <button
-                onClick={() => handleStatusChange(detailsItem.id, 'concluido')}
-                className="flex-1 py-3 rounded-2xl bg-emerald-600 text-xs font-black text-white hover:bg-emerald-500"
-              >
-                Concluir Atendimento
-              </button>
-              <button
-                onClick={() => handleStatusChange(detailsItem.id, 'cancelado')}
-                className="py-3 px-4 rounded-2xl bg-rose-500/20 text-rose-400 text-xs font-extrabold hover:bg-rose-500/30"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Criar Agendamento */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-5 animate-scale-in">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-2xl bg-blue-600/20 text-blue-400 flex items-center justify-center font-bold">
-                  <Calendar className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-black text-white">Novo Agendamento</h3>
-                  <p className="text-[11px] font-semibold text-slate-400">Horários validados pelo expediente</p>
-                </div>
-              </div>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-white">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateAppointment} className="space-y-4">
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-[11px] font-black uppercase tracking-wider text-slate-400">NOME DO CLIENTE</label>
-                  <button
-                    type="button"
-                    onClick={() => setShowClientList(!showClientList)}
-                    className="text-[11px] font-bold text-blue-400 hover:underline flex items-center gap-1"
-                  >
-                    <Search className="h-3 w-3" /> {showClientList ? 'Digitar Nome' : 'Buscar na Lista'}
-                  </button>
-                </div>
-
-                {showClientList ? (
-                  <div className="space-y-2 border border-slate-800 rounded-2xl p-3 bg-slate-950">
-                    <input
-                      type="text"
-                      value={clientSearch}
-                      onChange={(e) => setClientSearch(e.target.value)}
-                      placeholder="Digitar nome para buscar..."
-                      className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs text-white"
-                    />
-                    <div className="max-h-32 overflow-y-auto space-y-1">
-                      {filteredClientes.map(c => (
-                        <div
-                          key={c.id}
-                          onClick={() => handleSelectClientFromList(c)}
-                          className="p-2 rounded-xl hover:bg-slate-900 text-xs text-white cursor-pointer flex justify-between items-center"
-                        >
-                          <span className="font-bold">{c.nome}</span>
-                          <span className="text-[10px] text-slate-400">{c.whatsapp}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <input
-                    type="text"
-                    value={form.cliente_nome}
-                    onChange={(e) => setForm({ ...form, cliente_nome: e.target.value, cliente_id: null })}
-                    placeholder="Ex: João Silva"
-                    required
-                    className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-blue-500"
-                  />
-                )}
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">WHATSAPP DO CLIENTE</label>
-                <input
-                  type="text"
-                  value={form.cliente_whatsapp}
-                  onChange={(e) => setForm({ ...form, cliente_whatsapp: e.target.value })}
-                  placeholder="(11) 99999-9999"
-                  className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">SERVIÇO DESEJADO</label>
-                <select
-                  value={form.servico_id}
-                  onChange={(e) => setForm({ ...form, servico_id: e.target.value })}
-                  required
-                  className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-blue-500"
-                >
-                  <option value="">Selecione um serviço...</option>
-                  {servicos.map((s) => (
-                    <option key={s.id} value={s.id}>{s.nome} — R$ {parseFloat(s.preco).toFixed(2)}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">DATA DO ATENDIMENTO</label>
-                <input
-                  type="datetime-local"
-                  value={form.data_hora}
-                  onChange={(e) => setForm({ ...form, data_hora: e.target.value })}
-                  required
-                  className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">OBSERVAÇÕES (OPCIONAL)</label>
-                <textarea
-                  rows="2"
-                  value={form.observacao}
-                  onChange={(e) => setForm({ ...form, observacao: e.target.value })}
-                  placeholder="Ex: Cliente prefere confirmação por mensagem..."
-                  className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-blue-500 resize-none"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-5 py-3 rounded-2xl text-xs font-bold text-slate-400 hover:bg-slate-800"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="btn-animated px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-xs font-black text-white shadow-lg shadow-blue-500/25"
-                >
-                  Confirmar Agendamento
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {modal === 'create' && <Modal title="Novo Agendamento" subtitle="Preencha os dados do atendimento" onClose={() => setModal(null)}><form onSubmit={createAppointment} className="space-y-4"><label className="block text-xs font-black uppercase text-slate-400">Cliente<input value={form.cliente_nome} onChange={event => setForm({ ...form, cliente_nome: event.target.value, cliente_id: '' })} className={`${inputClass} mt-1`} placeholder="Nome do cliente" required /></label>{form.cliente_nome && filteredClients.length > 0 && <div className="max-h-28 overflow-y-auto rounded-xl border border-slate-800 bg-slate-950">{filteredClients.slice(0, 5).map(client => <button type="button" key={client.id} onClick={() => setForm({ ...form, cliente_id: client.id, cliente_nome: client.nome, cliente_whatsapp: client.whatsapp || '' })} className="block w-full px-3 py-2 text-left text-xs font-bold text-slate-300 hover:bg-slate-800">{client.nome}</button>)}</div>}<label className="block text-xs font-black uppercase text-slate-400">WhatsApp<input value={form.cliente_whatsapp} onChange={event => setForm({ ...form, cliente_whatsapp: event.target.value })} className={`${inputClass} mt-1`} placeholder="(11) 99999-9999" /></label><label className="block text-xs font-black uppercase text-slate-400">Serviço<select value={form.servico_id} onChange={event => setForm({ ...form, servico_id: event.target.value })} className={`${inputClass} mt-1`} required><option value="">Selecione um serviço</option>{servicos.map(service => <option key={service.id} value={service.id}>{service.nome} — R$ {Number(service.preco || 0).toFixed(2)}</option>)}</select></label><label className="block text-xs font-black uppercase text-slate-400">Data e horário<input value={form.data_hora} onChange={event => setForm({ ...form, data_hora: event.target.value })} type="datetime-local" className={`${inputClass} mt-1`} required /></label><textarea value={form.observacao} onChange={event => setForm({ ...form, observacao: event.target.value })} rows="3" className={inputClass} placeholder="Observações (opcional)" /><button className="w-full rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 py-3 text-xs font-black text-white">Confirmar agendamento</button></form></Modal>}
     </div>
   );
 }

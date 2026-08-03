@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../services/api';
-import { Settings, Users, Bell, Globe, Palette, Copy, Check, Clock, MessageSquare, MapPin, ShieldAlert, Plus, Trash2, Upload, Image as ImageIcon } from 'lucide-react';
+import { Settings, Users, Bell, Globe, Palette, Copy, Check, Clock, MessageSquare, MapPin, ShieldAlert, Plus, Trash2, Upload, Image as ImageIcon, CreditCard } from 'lucide-react';
 
 export function Configuracoes() {
   const { tenant, setTenant } = useAuth();
@@ -9,6 +9,8 @@ export function Configuracoes() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [copied, setCopied] = useState(false);
   const [message, setMessage] = useState('');
+  const [savingPayments, setSavingPayments] = useState(false);
+  const [payments, setPayments] = useState({ asaas_enabled: false, asaas_environment: 'sandbox', pix_key: '', pix_key_type: 'aleatoria', asaas_api_key: '', asaas_api_key_configured: false });
   const fileInputRef = useRef(null);
 
   // Operating Hours (Segunda a Domingo)
@@ -56,6 +58,10 @@ export function Configuracoes() {
       });
     }
   }, [tenant]);
+
+  useEffect(() => {
+    apiRequest('/config/payments').then(res => setPayments(prev => ({ ...prev, ...res.settings }))).catch(() => {});
+  }, []);
 
   const publicLink = `${window.location.origin}/agendar/${form.novo_slug || tenant?.slug || ''}`;
 
@@ -108,6 +114,20 @@ export function Configuracoes() {
       alert(err.message || 'Erro ao salvar configurações.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSavePayments = async (e) => {
+    e.preventDefault();
+    setSavingPayments(true);
+    try {
+      const res = await apiRequest('/config/payments', 'PUT', payments);
+      setPayments(prev => ({ ...prev, ...res.settings, asaas_api_key: '' }));
+      setMessage('Configuração Pix e Asaas salva com sucesso!');
+    } catch (err) {
+      alert(err.message || 'Erro ao salvar configuração de pagamentos.');
+    } finally {
+      setSavingPayments(false);
     }
   };
 
@@ -183,6 +203,21 @@ export function Configuracoes() {
           </div>
         </div>
       </div>
+
+      <form onSubmit={handleSavePayments} className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-5">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center"><CreditCard className="h-5 w-5" /></div>
+          <div><h3 className="text-base font-black text-white">Pix e Asaas</h3><p className="text-xs text-slate-400">Configure a chave Pix e a integração de pagamentos online.</p></div>
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label className="text-[11px] font-black uppercase tracking-wider text-slate-400">Ambiente<select value={payments.asaas_environment} onChange={e => setPayments({ ...payments, asaas_environment: e.target.value })} className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white"><option value="sandbox">Sandbox</option><option value="production">Produção</option></select></label>
+          <label className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs font-bold text-white"><input type="checkbox" checked={payments.asaas_enabled} onChange={e => setPayments({ ...payments, asaas_enabled: e.target.checked })} className="h-4 w-4 accent-emerald-500" /> Ativar cobrança pelo Asaas</label>
+          <label className="text-[11px] font-black uppercase tracking-wider text-slate-400">Tipo da chave Pix<select value={payments.pix_key_type} onChange={e => setPayments({ ...payments, pix_key_type: e.target.value })} className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white"><option value="cpf">CPF</option><option value="cnpj">CNPJ</option><option value="email">E-mail</option><option value="telefone">Telefone</option><option value="aleatoria">Chave aleatória</option></select></label>
+          <label className="text-[11px] font-black uppercase tracking-wider text-slate-400">Chave Pix<input value={payments.pix_key} onChange={e => setPayments({ ...payments, pix_key: e.target.value })} className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white" placeholder="Informe a chave Pix" /></label>
+        </div>
+        <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400">Token privado Asaas {payments.asaas_api_key_configured && <span className="normal-case text-emerald-400">(já configurado; deixe vazio para manter)</span>}<input type="password" value={payments.asaas_api_key} onChange={e => setPayments({ ...payments, asaas_api_key: e.target.value })} className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white" placeholder="$aact_..." autoComplete="new-password" /></label>
+        <button type="submit" disabled={savingPayments} className="w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 py-3.5 text-xs font-black text-white shadow-lg shadow-emerald-500/20">{savingPayments ? 'Salvando...' : 'Salvar Pix e Asaas'}</button>
+      </form>
 
       {/* Card 2: Alerta Pop-up de Atendimento Próximo */}
       <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-4">
