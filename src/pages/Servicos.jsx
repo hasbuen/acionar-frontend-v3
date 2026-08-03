@@ -22,6 +22,9 @@ export function Servicos({ setActiveTab }) {
     preco_adicional: '',
     duracao_adicional_minutos: 15,
   });
+  const [produtosDisponiveis, setProdutosDisponiveis] = useState([]);
+  const [materialModal, setMaterialModal] = useState(null);
+  const [materialForm, setMaterialForm] = useState({ produto_id: '', quantidade_usada: 1 });
 
   useEffect(() => {
     fetchServicos();
@@ -30,8 +33,12 @@ export function Servicos({ setActiveTab }) {
   const fetchServicos = async () => {
     setLoading(true);
     try {
-      const res = await apiRequest('/servicos');
+      const [res, produtosRes] = await Promise.all([
+        apiRequest('/servicos'),
+        apiRequest('/estoque/produtos').catch(() => ({ produtos: [] })),
+      ]);
       setServicos(res.servicos || []);
+      setProdutosDisponiveis(produtosRes.produtos || []);
     } catch (err) {
       console.error('[SERVICOS ERROR]', err);
     } finally {
@@ -106,6 +113,45 @@ export function Servicos({ setActiveTab }) {
       fetchServicos();
     } catch (err) {
       alert(err.message || 'Erro ao adicionar subserviço.');
+    }
+  };
+
+  const handleOpenMaterialModal = (servico, subservico = null) => {
+    setMaterialModal({ servico, subservico });
+    setMaterialForm({ produto_id: '', quantidade_usada: 1 });
+  };
+
+  const handleSaveMaterial = async (e) => {
+    e.preventDefault();
+    if (!materialModal?.servico || !materialForm.produto_id) return;
+
+    try {
+      const endpoint = materialModal.subservico
+        ? `/servicos/${materialModal.servico.id}/subservicos/${materialModal.subservico.id}/produtos`
+        : `/servicos/${materialModal.servico.id}/produtos`;
+
+      await apiRequest(endpoint, 'POST', {
+        produto_id: Number(materialForm.produto_id),
+        quantidade_usada: Number(materialForm.quantidade_usada || 1),
+      });
+
+      setMaterialModal(null);
+      fetchServicos();
+    } catch (err) {
+      alert(err.message || 'Erro ao vincular material.');
+    }
+  };
+
+  const handleRemoveMaterial = async (servicoId, produtoId, subservicoId = null) => {
+    try {
+      const endpoint = subservicoId
+        ? `/servicos/${servicoId}/subservicos/${subservicoId}/produtos/${produtoId}`
+        : `/servicos/${servicoId}/produtos/${produtoId}`;
+
+      await apiRequest(endpoint, 'DELETE');
+      fetchServicos();
+    } catch (err) {
+      alert(err.message || 'Erro ao remover material.');
     }
   };
 
@@ -187,14 +233,48 @@ export function Servicos({ setActiveTab }) {
                 {s.subservicos && s.subservicos.length > 0 ? (
                   <div className="space-y-1.5">
                     {s.subservicos.map((sub) => (
-                      <div key={sub.id} className="rounded-xl bg-slate-100 dark:bg-slate-950 p-2 text-xs flex justify-between items-center">
-                        <span className="font-semibold text-slate-300">{sub.nome}</span>
-                        <span className="font-bold text-teal-400">+ R$ {parseFloat(sub.preco_adicional || 0).toFixed(2)}</span>
+                      <div key={sub.id} className="rounded-xl bg-slate-100 dark:bg-slate-950 p-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-slate-300">{sub.nome}</span>
+                          <span className="font-bold text-teal-400">+ R$ {parseFloat(sub.preco_adicional || 0).toFixed(2)}</span>
+                        </div>
+                        {sub.produtos && sub.produtos.length > 0 ? (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {sub.produtos.map((item) => (
+                              <span key={`${sub.id}-${item.produto_id}`} className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-300">
+                                {item.produto_nome} ×{item.quantidade_usada}
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
                       </div>
                     ))}
                   </div>
                 ) : (
                   <p className="text-[11px] italic text-slate-500">Nenhum adicional cadastrado.</p>
+                )}
+              </div>
+
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-950/50">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">MATERIAIS</span>
+                  <button
+                    onClick={() => handleOpenMaterialModal(s)}
+                    className="text-[10px] font-bold text-blue-400 hover:underline"
+                  >
+                    + vincular
+                  </button>
+                </div>
+                {s.produtos && s.produtos.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {s.produtos.map((item) => (
+                      <span key={`${s.id}-${item.produto_id}`} className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-semibold text-blue-400">
+                        {item.produto_nome} ×{item.quantidade_usada}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[11px] italic text-slate-500">Vincule os insumos usados nesse serviço.</p>
                 )}
               </div>
 
@@ -283,6 +363,85 @@ export function Servicos({ setActiveTab }) {
                 <button type="button" onClick={() => setShowModalServico(false)} className="px-4 py-2 text-xs font-bold text-slate-400">Cancelar</button>
                 <button type="submit" className="px-6 py-3 rounded-2xl bg-blue-600 text-xs font-black text-white shadow-lg shadow-blue-500/25">
                   Salvar Serviço
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {materialModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <h3 className="text-lg font-black text-white">Vincular material</h3>
+                <p className="text-xs text-slate-400">
+                  {materialModal.subservico
+                    ? `Adicional: ${materialModal.subservico.nome}`
+                    : `Serviço: ${materialModal.servico.nome}`}
+                </p>
+              </div>
+              <button onClick={() => setMaterialModal(null)} className="text-slate-400 hover:text-white">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveMaterial} className="space-y-4">
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                <p className="mb-2 text-[11px] font-black uppercase tracking-wider text-slate-400">Materiais já vinculados</p>
+                {(materialModal.subservico ? (materialModal.subservico.produtos || []) : (materialModal.servico.produtos || [])).length > 0 ? (
+                  <div className="space-y-2">
+                    {(materialModal.subservico ? (materialModal.subservico.produtos || []) : (materialModal.servico.produtos || [])).map((item) => (
+                      <div key={`${materialModal.servico.id}-${item.produto_id}`} className="flex items-center justify-between rounded-xl border border-slate-800 px-3 py-2 text-sm text-slate-300">
+                        <span>{item.produto_nome}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-teal-400">×{item.quantidade_usada}</span>
+                          <button type="button" onClick={() => handleRemoveMaterial(materialModal.servico.id, item.produto_id, materialModal.subservico?.id)} className="text-xs font-bold text-rose-400">
+                            remover
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500">Ainda não há materiais vinculados.</p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-[1.6fr_0.8fr] gap-3">
+                <div>
+                  <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">PRODUTO</label>
+                  <select
+                    value={materialForm.produto_id}
+                    onChange={(e) => setMaterialForm({ ...materialForm, produto_id: e.target.value })}
+                    required
+                    className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-blue-500"
+                  >
+                    <option value="">Selecione um insumo</option>
+                    {produtosDisponiveis.map((produto) => (
+                      <option key={produto.id} value={produto.id}>
+                        {produto.nome} — {produto.quantidade} em estoque
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">QTD.</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={materialForm.quantidade_usada}
+                    onChange={(e) => setMaterialForm({ ...materialForm, quantidade_usada: e.target.value })}
+                    className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setMaterialModal(null)} className="px-4 py-2 text-xs font-bold text-slate-400">Cancelar</button>
+                <button type="submit" className="px-6 py-3 rounded-2xl bg-blue-600 text-xs font-black text-white shadow-lg shadow-blue-500/25">
+                  Salvar material
                 </button>
               </div>
             </form>

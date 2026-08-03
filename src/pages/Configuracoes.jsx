@@ -161,6 +161,33 @@ export function Configuracoes() {
         </div>
       )}
 
+      <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold">
+            <Globe className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="text-base font-black text-white">Resumo rápido da operação</h3>
+            <p className="text-xs text-slate-400">Mantenha a agenda pública, o branding e os pagamentos sempre prontos para o dia a dia.</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+            <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Empresa</p>
+            <h4 className="mt-1 text-sm font-black text-white">{tenant?.nome_empresa || 'Sua empresa'}</h4>
+          </div>
+          <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+            <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Agenda pública</p>
+            <h4 className="mt-1 text-sm font-black text-white">{form.agenda_publica_ativa ? 'Ativa' : 'Desativada'}</h4>
+          </div>
+          <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+            <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Link de agendamento</p>
+            <h4 className="mt-1 truncate text-sm font-black text-emerald-400">{publicLink}</h4>
+          </div>
+        </div>
+      </div>
+
       {/* Card 1: Logotipo / Foto com Upload Intuitivo */}
       <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-4">
         <div className="flex items-center gap-3">
