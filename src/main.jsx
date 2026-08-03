@@ -5,6 +5,7 @@ import { Navbar } from './components/Navbar';
 import { Login } from './pages/Login';
 import { Agenda } from './pages/Agenda';
 import { Clientes } from './pages/Clientes';
+import { Servicos } from './pages/Servicos';
 import { Caixa } from './pages/Caixa';
 import { Estoque } from './pages/Estoque';
 import { Configuracoes } from './pages/Configuracoes';
@@ -39,7 +40,7 @@ function MainApp() {
   // 2. Loading state
   if (loading) {
     return (
-      <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+      <div className="min-h-screen bg-[#020617] text-white flex items-center justify-center text-xs font-bold">
         Carregando Acionar v3...
       </div>
     );
@@ -52,13 +53,14 @@ function MainApp() {
 
   // 4. Authenticated Management App
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <div className="flex flex-col min-h-screen bg-[#dde6f1] dark:bg-[#020617] text-slate-900 dark:text-slate-100 transition-colors duration-300">
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
-      <main style={{ flex: 1, paddingBottom: 40 }}>
+      <main className="flex-1 pb-28 md:pb-10">
         {activeTab === 'agenda' && <Agenda />}
         {activeTab === 'clientes' && <Clientes />}
-        {activeTab === 'caixa' && <Caixa />}
+        {activeTab === 'servicos' && <Servicos setActiveTab={setActiveTab} />}
         {activeTab === 'estoque' && <Estoque />}
+        {activeTab === 'caixa' && <Caixa />}
         {activeTab === 'configuracoes' && <Configuracoes />}
       </main>
     </div>

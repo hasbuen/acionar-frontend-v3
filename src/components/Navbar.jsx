@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Calendar, Users, Scissors, DollarSign, Clock, Bell, HelpCircle, Sun, LogOut, Globe } from 'lucide-react';
+import { Calendar, Users, Scissors, Boxes, DollarSign, Clock, Bell, LogOut, Globe } from 'lucide-react';
 
 export function Navbar({ activeTab, setActiveTab }) {
   const { user, tenant, logout } = useAuth();
@@ -30,10 +30,10 @@ export function Navbar({ activeTab, setActiveTab }) {
           </div>
 
           {/* Desktop Tabs */}
-          <nav className="hidden md:flex items-center gap-1.5 rounded-2xl bg-slate-200/60 p-1.5 dark:bg-slate-900/80 border border-slate-300/50 dark:border-slate-800/80">
+          <nav className="hidden md:flex items-center gap-1 bg-slate-200/60 p-1.5 dark:bg-slate-900/80 rounded-2xl border border-slate-300/50 dark:border-slate-800/80">
             <button
               onClick={() => setActiveTab('agenda')}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black transition-all ${
+              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-black transition-all ${
                 activeTab === 'agenda'
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
@@ -43,7 +43,7 @@ export function Navbar({ activeTab, setActiveTab }) {
             </button>
             <button
               onClick={() => setActiveTab('clientes')}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black transition-all ${
+              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-black transition-all ${
                 activeTab === 'clientes'
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
@@ -53,7 +53,7 @@ export function Navbar({ activeTab, setActiveTab }) {
             </button>
             <button
               onClick={() => setActiveTab('servicos')}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black transition-all ${
+              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-black transition-all ${
                 activeTab === 'servicos'
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
@@ -62,8 +62,18 @@ export function Navbar({ activeTab, setActiveTab }) {
               <Scissors className="h-4 w-4" /> Serviços
             </button>
             <button
+              onClick={() => setActiveTab('estoque')}
+              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-black transition-all ${
+                activeTab === 'estoque'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+              }`}
+            >
+              <Boxes className="h-4 w-4" /> Estoque
+            </button>
+            <button
               onClick={() => setActiveTab('caixa')}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black transition-all ${
+              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-black transition-all ${
                 activeTab === 'caixa'
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
@@ -73,13 +83,13 @@ export function Navbar({ activeTab, setActiveTab }) {
             </button>
             <button
               onClick={() => setActiveTab('configuracoes')}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black transition-all ${
+              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-black transition-all ${
                 activeTab === 'configuracoes'
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
-              <Clock className="h-4 w-4" /> Horários & Agenda
+              <Clock className="h-4 w-4" /> Horários
             </button>
           </nav>
 
@@ -108,55 +118,65 @@ export function Navbar({ activeTab, setActiveTab }) {
 
       {/* Bottom Navigation Bar (Mobile / Fixed) */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#020617]/95 border-t border-slate-800 backdrop-blur-xl px-2 py-2 pb-safe-bottom">
-        <div className="grid grid-cols-5 gap-1">
+        <div className="grid grid-cols-6 gap-1">
           <button
             onClick={() => setActiveTab('agenda')}
-            className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all ${
+            className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all ${
               activeTab === 'agenda' ? 'bg-blue-600/20 text-blue-400 font-extrabold' : 'text-slate-400 font-medium'
             }`}
           >
-            <Calendar className="h-5 w-5 mb-0.5" />
-            <span className="text-[10px]">Agenda</span>
+            <Calendar className="h-4 w-4 mb-0.5" />
+            <span className="text-[9px]">Agenda</span>
           </button>
 
           <button
             onClick={() => setActiveTab('clientes')}
-            className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all ${
+            className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all ${
               activeTab === 'clientes' ? 'bg-blue-600/20 text-blue-400 font-extrabold' : 'text-slate-400 font-medium'
             }`}
           >
-            <Users className="h-5 w-5 mb-0.5" />
-            <span className="text-[10px]">Clientes</span>
+            <Users className="h-4 w-4 mb-0.5" />
+            <span className="text-[9px]">Clientes</span>
           </button>
 
           <button
             onClick={() => setActiveTab('servicos')}
-            className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all ${
+            className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all ${
               activeTab === 'servicos' ? 'bg-blue-600/20 text-blue-400 font-extrabold' : 'text-slate-400 font-medium'
             }`}
           >
-            <Scissors className="h-5 w-5 mb-0.5" />
-            <span className="text-[10px]">Serviços</span>
+            <Scissors className="h-4 w-4 mb-0.5" />
+            <span className="text-[9px]">Serviços</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('estoque')}
+            className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all ${
+              activeTab === 'estoque' ? 'bg-blue-600/20 text-blue-400 font-extrabold' : 'text-slate-400 font-medium'
+            }`}
+          >
+            <Boxes className="h-4 w-4 mb-0.5" />
+            <span className="text-[9px]">Estoque</span>
           </button>
 
           <button
             onClick={() => setActiveTab('caixa')}
-            className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all ${
+            className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all ${
               activeTab === 'caixa' ? 'bg-blue-600/20 text-blue-400 font-extrabold' : 'text-slate-400 font-medium'
             }`}
           >
-            <DollarSign className="h-5 w-5 mb-0.5" />
-            <span className="text-[10px]">Caixa</span>
+            <DollarSign className="h-4 w-4 mb-0.5" />
+            <span className="text-[9px]">Caixa</span>
           </button>
 
           <button
             onClick={() => setActiveTab('configuracoes')}
-            className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all ${
+            className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all ${
               activeTab === 'configuracoes' ? 'bg-blue-600/20 text-blue-400 font-extrabold' : 'text-slate-400 font-medium'
             }`}
           >
-            <Clock className="h-5 w-5 mb-0.5" />
-            <span className="text-[10px]">Horários</span>
+            <Clock className="h-4 w-4 mb-0.5" />
+            <span className="text-[9px]">Horários</span>
           </button>
         </div>
       </div>
