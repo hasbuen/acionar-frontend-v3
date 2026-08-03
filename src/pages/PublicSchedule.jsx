@@ -1,260 +1,349 @@
 import React, { useState, useEffect } from 'react';
-import { apiRequest } from '../services/api';
-import { Calendar, Clock, User, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react';
+import { useParams } from 'react';
+import { Sparkles, Calendar, Clock, User, Phone, CheckCircle2, ChevronRight, ChevronLeft, MapPin, Building2 } from 'lucide-react';
 
-export function PublicSchedule({ slug }) {
+export function PublicSchedule() {
+  const { slug } = useParams();
   const [tenant, setTenant] = useState(null);
   const [servicos, setServicos] = useState([]);
-  const [profissionais, setProfissionais] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Flow State
+  // Step state
   const [step, setStep] = useState(1);
   const [selectedServico, setSelectedServico] = useState(null);
   const [selectedSubservico, setSelectedSubservico] = useState(null);
-  const [selectedProfissional, setSelectedProfissional] = useState(null);
-  const [dataHora, setDataHora] = useState(`${new Date().toISOString().split('T')[0]}T14:00`);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedTime, setSelectedTime] = useState('14:00');
 
-  // Customer Form
-  const [clienteNome, setClienteNome] = useState('');
-  const [clienteWhatsapp, setClienteWhatsapp] = useState('');
-  const [clienteEmail, setClienteEmail] = useState('');
-  const [observacao, setObservacao] = useState('');
+  // Form
+  const [form, setForm] = useState({
+    cliente_nome: '',
+    cliente_whatsapp: '',
+    cliente_email: '',
+    observacao: '',
+  });
 
-  const [confirmedBooking, setConfirmedBooking] = useState(null);
+  const [bookingResult, setBookingResult] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchPublicData();
+    fetchTenantPublicData();
   }, [slug]);
 
-  const fetchPublicData = async () => {
+  const fetchTenantPublicData = async () => {
     setLoading(true);
     setError('');
     try {
-      const tRes = await apiRequest(`/public/tenant/${slug}`);
-      setTenant(tRes.tenant);
+      const resT = await fetch(`/api/public/tenant/${slug}`);
+      if (!resT.ok) throw new Error('Estabelecimento não encontrado ou fora do ar.');
+      const dataT = await resT.json();
+      setTenant(dataT.tenant);
 
-      if (tRes.tenant.agenda_publica_ativa) {
-        const sRes = await apiRequest(`/public/tenant/${slug}/servicos`);
-        const pRes = await apiRequest(`/public/tenant/${slug}/profissionais`);
-        setServicos(sRes.servicos || []);
-        setProfissionais(pRes.profissionais || []);
-      }
+      const resS = await fetch(`/api/public/tenant/${slug}/servicos`);
+      const dataS = await resS.json();
+      setServicos(dataS.servicos || []);
     } catch (err) {
-      setError(err.message || 'Não foi possível carregar as informações do agendamento.');
+      setError(err.message || 'Erro ao carregar dados do agendamento.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleBookingSubmit = async (e) => {
+  const handleConfirmBooking = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setSubmitting(true);
     try {
-      const res = await apiRequest(`/public/tenant/${slug}/agendamentos`, 'POST', {
-        cliente_nome: clienteNome,
-        cliente_whatsapp: clienteWhatsapp,
-        cliente_email: clienteEmail,
-        servico_id: selectedServico.id,
-        subservico_id: selectedSubservico ? selectedSubservico.id : null,
-        profissional_id: selectedProfissional ? selectedProfissional.id : null,
-        data_hora: new Date(dataHora).toISOString(),
-        observacao,
+      const dataHoraIso = new Date(`${selectedDate}T${selectedTime}:00`).toISOString();
+
+      const res = await fetch(`/api/public/tenant/${slug}/agendamentos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...form,
+          servico_id: selectedServico.id,
+          subservico_id: selectedSubservico?.id || null,
+          data_hora: dataHoraIso,
+        }),
       });
-      setConfirmedBooking(res.agendamento);
-      setStep(4); // Success step
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Erro ao realizar agendamento.');
+
+      setBookingResult(data.agendamento);
+      setStep(5);
     } catch (err) {
-      alert(err.message || 'Erro ao realizar agendamento.');
+      alert(err.message || 'Erro ao finalizar agendamento.');
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  if (loading && !tenant) {
+  if (loading) {
     return (
-      <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-        Carregando informações da agenda...
-      </div>
-    );
-  }
-
-  if (error || !tenant) {
-    return (
-      <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-        <div className="card" style={{ textAlign: 'center', maxWidth: 400 }}>
-          <AlertCircle size={48} color="var(--danger)" style={{ marginBottom: 12 }} />
-          <h2 style={{ fontSize: 20, marginBottom: 8 }}>Agenda não encontrada</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>{error || 'Estabelecimento não cadastrado.'}</p>
+      <div className="min-h-screen bg-[#0f172a] text-white flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <div className="h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-xs font-bold text-slate-400">Carregando agendamento online...</p>
         </div>
       </div>
     );
   }
 
+  if (error || !tenant?.agenda_publica_ativa) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] text-white flex items-center justify-center p-4">
+        <div className="max-w-md w-full rounded-3xl bg-slate-900 border border-slate-800 p-8 text-center space-y-4">
+          <div className="h-12 w-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto">
+            <Sparkles className="h-6 w-6" />
+          </div>
+          <h2 className="text-xl font-black">Agenda Indisponível</h2>
+          <p className="text-xs text-slate-400">{error || 'A agenda pública deste estabelecimento está fechada no momento.'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Dynamic CSS Custom Properties
   const primaryColor = tenant.cor_primaria || '#0d9488';
-  const accentColor = tenant.cor_destaque || '#f59e0b';
   const bgColor = tenant.cor_fundo || '#0f172a';
 
-  if (!tenant.agenda_publica_ativa) {
-    return (
-      <div style={{ backgroundColor: bgColor, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-        <div className="card" style={{ textAlign: 'center', maxWidth: 450 }}>
-          {tenant.foto_url && (
-            <img src={tenant.foto_url} alt={tenant.nome_empresa} style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', margin: '0 auto 16px' }} />
-          )}
-          <h1 style={{ fontSize: 22, color: '#fff', marginBottom: 8 }}>{tenant.nome_empresa}</h1>
-          <div className="badge badge-warning" style={{ marginBottom: 16 }}>Agenda Online Fechada</div>
-          <p style={{ color: '#94a3b8', fontSize: 14, lineHeight: 1.5 }}>
-            No momento nosso agendamento online está suspenso. Por favor, entre em contato diretamente pelo WhatsApp para verificar disponibilidade de horários.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div style={{ backgroundColor: bgColor, minHeight: '100vh', color: '#f8fafc', padding: 16 }}>
-      <div style={{ maxWidth: 600, margin: '0 auto' }}>
-        {/* Header */}
-        <div className="card" style={{ textAlign: 'center', borderColor: 'rgba(255,255,255,0.1)' }}>
-          {tenant.foto_url ? (
-            <img src={tenant.foto_url} alt={tenant.nome_empresa} style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', margin: '0 auto 12px' }} />
-          ) : (
-            <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: primaryColor, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 24, fontWeight: 'bold', marginBottom: 12 }}>
-              {tenant.nome_empresa[0]}
-            </div>
-          )}
-          <h1 style={{ fontSize: 22, fontWeight: 700 }}>{tenant.nome_empresa}</h1>
-          <p style={{ color: '#94a3b8', fontSize: 13, marginTop: 4 }}>Agendamento de Serviços Online</p>
+    <div className="min-h-screen text-slate-100 p-4 sm:p-6" style={{ backgroundColor: bgColor }}>
+      <div className="max-w-xl mx-auto space-y-6">
+
+        {/* Header Branding */}
+        <div className="text-center space-y-3 pt-4">
+          <div className="relative inline-block">
+            {tenant.foto_url ? (
+              <img src={tenant.foto_url} alt={tenant.nome_empresa} className="h-20 w-20 rounded-3xl object-cover mx-auto ring-4 ring-white/10 shadow-2xl" />
+            ) : (
+              <div className="h-20 w-20 rounded-3xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-white font-black text-3xl mx-auto shadow-2xl">
+                {tenant.nome_empresa[0]}
+              </div>
+            )}
+          </div>
+          <div>
+            <h1 className="text-2xl font-black tracking-tight text-white">{tenant.nome_empresa}</h1>
+            <p className="text-xs font-bold text-teal-400 uppercase tracking-widest mt-1">AGENDAMENTO ONLINE</p>
+          </div>
         </div>
 
-        {/* Step 1: Escolha do Serviço */}
-        {step === 1 && (
-          <div>
-            <h2 style={{ fontSize: 18, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              1. Selecione o Serviço
-            </h2>
+        {/* Step Indicator Bar */}
+        <div className="flex items-center justify-between rounded-2xl bg-slate-900/80 p-3 border border-slate-800 text-xs font-extrabold">
+          {[1, 2, 3, 4].map((s) => (
+            <div key={s} className={`flex items-center gap-1.5 ${step === s ? 'text-teal-400' : step > s ? 'text-emerald-400' : 'text-slate-600'}`}>
+              <span className={`h-6 w-6 rounded-full flex items-center justify-center text-[11px] font-black ${
+                step === s ? 'bg-teal-500 text-slate-950' : step > s ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'
+              }`}>
+                {s}
+              </span>
+              <span className="hidden sm:inline">
+                {s === 1 ? 'Serviço' : s === 2 ? 'Adicionais' : s === 3 ? 'Data & Hora' : 'Seus Dados'}
+              </span>
+            </div>
+          ))}
+        </div>
 
-            <div style={{ display: 'grid', gap: 12 }}>
+        {/* STEP 1: SERVIÇOS */}
+        {step === 1 && (
+          <div className="space-y-4 animate-fade-in">
+            <h2 className="text-base font-black text-white">1. Selecione o Serviço Desejado</h2>
+            <div className="space-y-3">
               {servicos.map((s) => (
                 <div
                   key={s.id}
-                  className="card"
-                  onClick={() => { setSelectedServico(s); setStep(2); }}
-                  style={{
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    borderLeft: selectedServico?.id === s.id ? `4px solid ${primaryColor}` : '1px solid var(--card-border)'
-                  }}
+                  onClick={() => setSelectedServico(s)}
+                  className={`rounded-3xl p-5 border cursor-pointer transition-all ${
+                    selectedServico?.id === s.id
+                      ? 'border-teal-500 bg-teal-500/10 shadow-lg shadow-teal-500/10'
+                      : 'border-slate-800 bg-slate-900/80 hover:border-slate-700'
+                  }`}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div className="flex items-center justify-between">
                     <div>
-                      <h3 style={{ fontSize: 16, fontWeight: 600 }}>{s.nome}</h3>
-                      {s.descricao && <p style={{ fontSize: 13, color: '#94a3b8', marginTop: 4 }}>{s.descricao}</p>}
-                      <div style={{ fontSize: 12, color: accentColor, marginTop: 6 }}>
-                        <Clock size={12} style={{ display: 'inline', marginRight: 4 }} /> {s.duracao_minutos} minutos
-                      </div>
+                      <h3 className="text-base font-black text-white">{s.nome}</h3>
+                      {s.descricao && <p className="text-xs text-slate-400 mt-1">{s.descricao}</p>}
+                      <span className="inline-block mt-2 text-[11px] font-bold text-slate-400">⏱️ {s.duracao_minutos} min</span>
                     </div>
-                    <div style={{ fontSize: 18, fontWeight: 700, color: primaryColor }}>
-                      R$ {parseFloat(s.preco).toFixed(2)}
+                    <div className="text-right">
+                      <span className="text-lg font-black text-teal-400">R$ {parseFloat(s.preco).toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
+
+            <button
+              disabled={!selectedServico}
+              onClick={() => setStep(2)}
+              className="w-full py-4 rounded-2xl bg-teal-500 text-slate-950 font-black text-sm disabled:opacity-40 flex items-center justify-center gap-2 mt-4"
+            >
+              Continuar <ChevronRight className="h-4 w-4" />
+            </button>
           </div>
         )}
 
-        {/* Step 2: Profissional e Horário */}
+        {/* STEP 2: ADICIONAIS / SUBSERVIÇOS */}
         {step === 2 && (
-          <div>
-            <button className="btn btn-secondary" style={{ marginBottom: 16, padding: '6px 12px' }} onClick={() => setStep(1)}>
-              <ArrowLeft size={14} /> Voltar para Serviços
-            </button>
+          <div className="space-y-4 animate-fade-in">
+            <h2 className="text-base font-black text-white">2. Algum Adicional / Subserviço?</h2>
 
-            <h2 style={{ fontSize: 18, marginBottom: 16 }}>2. Profissional, Data e Horário</h2>
+            <div
+              onClick={() => setSelectedSubservico(null)}
+              className={`rounded-3xl p-4 border cursor-pointer transition-all ${
+                selectedSubservico === null ? 'border-teal-500 bg-teal-500/10' : 'border-slate-800 bg-slate-900/80'
+              }`}
+            >
+              <h3 className="text-sm font-black text-white">Nenhum adicional</h3>
+              <p className="text-xs text-slate-400">Apenas o serviço principal selecionado.</p>
+            </div>
 
-            <div className="card">
-              <div className="form-group">
-                <label>Profissional de Preferência (Opcional)</label>
-                <select className="form-input" value={selectedProfissional?.id || ''} onChange={(e) => setSelectedProfissional(profissionais.find(p => p.id === parseInt(e.target.value, 10)) || null)}>
-                  <option value="">Qualquer profissional disponível</option>
-                  {profissionais.map((p) => (
-                    <option key={p.id} value={p.id}>{p.nome}</option>
-                  ))}
-                </select>
+            {selectedServico?.subservicos?.map((sub) => (
+              <div
+                key={sub.id}
+                onClick={() => setSelectedSubservico(sub)}
+                className={`rounded-3xl p-4 border cursor-pointer transition-all ${
+                  selectedSubservico?.id === sub.id ? 'border-teal-500 bg-teal-500/10' : 'border-slate-800 bg-slate-900/80'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-black text-white">{sub.nome}</h3>
+                    <span className="text-xs text-slate-400">+ {sub.duracao_adicional_minutos || 0} min</span>
+                  </div>
+                  <span className="text-sm font-black text-teal-400">+ R$ {parseFloat(sub.preco_adicional || 0).toFixed(2)}</span>
+                </div>
               </div>
+            ))}
 
-              <div className="form-group">
-                <label>Data e Horário do Atendimento</label>
-                <input type="datetime-local" className="form-input" value={dataHora} onChange={(e) => setDataHora(e.target.value)} required />
-              </div>
-
-              <button className="btn btn-primary" style={{ width: '100%', marginTop: 12, backgroundColor: primaryColor }} onClick={() => setStep(3)}>
-                Avançar para Seus Dados &rarr;
-              </button>
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => setStep(1)} className="w-1/3 py-3.5 rounded-2xl bg-slate-800 font-bold text-xs">Voltar</button>
+              <button onClick={() => setStep(3)} className="w-2/3 py-3.5 rounded-2xl bg-teal-500 text-slate-950 font-black text-xs">Avançar para Data</button>
             </div>
           </div>
         )}
 
-        {/* Step 3: Dados do Cliente e Confirmação */}
+        {/* STEP 3: DATA & HORÁRIO */}
         {step === 3 && (
-          <div>
-            <button className="btn btn-secondary" style={{ marginBottom: 16, padding: '6px 12px' }} onClick={() => setStep(2)}>
-              <ArrowLeft size={14} /> Voltar
-            </button>
+          <div className="space-y-4 animate-fade-in">
+            <h2 className="text-base font-black text-white">3. Escolha a Data e Horário</h2>
 
-            <h2 style={{ fontSize: 18, marginBottom: 16 }}>3. Seus Dados de Contato</h2>
+            <div>
+              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">DATA DO ATENDIMENTO</label>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-full rounded-2xl border border-slate-800 bg-slate-900 p-3.5 text-sm font-bold text-white"
+              />
+            </div>
 
-            <form onSubmit={handleBookingSubmit} className="card">
-              <div className="form-group">
-                <label>Seu Nome Completo *</label>
-                <input className="form-input" value={clienteNome} onChange={(e) => setClienteNome(e.target.value)} placeholder="ex: Maria Silva" required />
+            <div>
+              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">HORÁRIO DISPONÍVEL</label>
+              <div className="grid grid-cols-4 gap-2">
+                {['09:00', '10:30', '14:00', '15:30', '17:00', '18:30'].map((time) => (
+                  <button
+                    key={time}
+                    type="button"
+                    onClick={() => setSelectedTime(time)}
+                    className={`py-3 rounded-2xl text-xs font-black transition-all ${
+                      selectedTime === time ? 'bg-teal-500 text-slate-950 shadow-md' : 'bg-slate-900 text-slate-400 border border-slate-800'
+                    }`}
+                  >
+                    {time}
+                  </button>
+                ))}
               </div>
+            </div>
 
-              <div className="form-group">
-                <label>Seu WhatsApp com DDD *</label>
-                <input className="form-input" value={clienteWhatsapp} onChange={(e) => setClienteWhatsapp(e.target.value)} placeholder="(11) 99999-8888" required />
-              </div>
-
-              <div className="form-group">
-                <label>E-mail (Opcional)</label>
-                <input type="email" className="form-input" value={clienteEmail} onChange={(e) => setClienteEmail(e.target.value)} placeholder="seu@email.com" />
-              </div>
-
-              <div className="form-group">
-                <label>Observação (Opcional)</label>
-                <textarea className="form-input" rows="2" value={observacao} onChange={(e) => setObservacao(e.target.value)} placeholder="Alguma recomendação ou detalhe especial..." />
-              </div>
-
-              {/* Resumo */}
-              <div style={{ backgroundColor: '#0f172a', padding: 12, borderRadius: 8, marginBottom: 16 }}>
-                <div style={{ fontSize: 13, color: '#94a3b8' }}>RESUMO DO AGENDAMENTO</div>
-                <div style={{ fontWeight: 600, marginTop: 4 }}>{selectedServico?.nome}</div>
-                <div style={{ fontSize: 13, color: primaryColor, marginTop: 2 }}>
-                  R$ {parseFloat(selectedServico?.preco || 0).toFixed(2)} • {new Date(dataHora).toLocaleString()}
-                </div>
-              </div>
-
-              <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: 14, backgroundColor: primaryColor }} disabled={loading}>
-                {loading ? 'Confirmando...' : 'Finalizar Solicitação de Agendamento'}
-              </button>
-            </form>
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => setStep(2)} className="w-1/3 py-3.5 rounded-2xl bg-slate-800 font-bold text-xs">Voltar</button>
+              <button onClick={() => setStep(4)} className="w-2/3 py-3.5 rounded-2xl bg-teal-500 text-slate-950 font-black text-xs">Preencher Dados</button>
+            </div>
           </div>
         )}
 
-        {/* Step 4: Confirmação Concluída */}
+        {/* STEP 4: SEUS DADOS */}
         {step === 4 && (
-          <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-            <CheckCircle2 size={56} color={primaryColor} style={{ marginBottom: 16 }} />
-            <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Solicitação Enviada!</h2>
-            <p style={{ color: '#94a3b8', fontSize: 14, lineHeight: 1.5, marginBottom: 20 }}>
-              Sua solicitação de agendamento para <strong>{selectedServico?.nome}</strong> em{' '}
-              <strong>{new Date(dataHora).toLocaleString()}</strong> foi recebida com sucesso.
+          <form onSubmit={handleConfirmBooking} className="space-y-4 animate-fade-in">
+            <h2 className="text-base font-black text-white">4. Seus Dados de Contato</h2>
+
+            <div>
+              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">SEU NOME COMPLETO</label>
+              <input
+                type="text"
+                value={form.cliente_nome}
+                onChange={(e) => setForm({ ...form, cliente_nome: e.target.value })}
+                placeholder="Ex: Fernanda Oliveira"
+                required
+                className="w-full rounded-2xl border border-slate-800 bg-slate-900 p-3.5 text-sm font-bold text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">SEU WHATSAPP</label>
+              <input
+                type="text"
+                value={form.cliente_whatsapp}
+                onChange={(e) => setForm({ ...form, cliente_whatsapp: e.target.value })}
+                placeholder="(11) 98765-4321"
+                required
+                className="w-full rounded-2xl border border-slate-800 bg-slate-900 p-3.5 text-sm font-bold text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">SEU E-MAIL (OPCIONAL)</label>
+              <input
+                type="email"
+                value={form.cliente_email}
+                onChange={(e) => setForm({ ...form, cliente_email: e.target.value })}
+                placeholder="fernanda@gmail.com"
+                className="w-full rounded-2xl border border-slate-800 bg-slate-900 p-3.5 text-sm font-bold text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">OBSERVAÇÕES PARA O ATENDIMENTO</label>
+              <textarea
+                rows="2"
+                value={form.observacao}
+                onChange={(e) => setForm({ ...form, observacao: e.target.value })}
+                placeholder="Ex: Primeira vez no local..."
+                className="w-full rounded-2xl border border-slate-800 bg-slate-900 p-3.5 text-sm font-bold text-white resize-none"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button type="button" onClick={() => setStep(3)} className="w-1/3 py-3.5 rounded-2xl bg-slate-800 font-bold text-xs">Voltar</button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-2/3 py-3.5 rounded-2xl bg-teal-500 text-slate-950 font-black text-xs shadow-lg shadow-teal-500/25"
+              >
+                {submitting ? 'Solicitando...' : 'Confirmar Agendamento'}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* STEP 5: SUCESSO */}
+        {step === 5 && (
+          <div className="rounded-3xl border border-emerald-500/30 bg-slate-900 p-8 text-center space-y-4 animate-scale-in">
+            <div className="h-16 w-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
+              <CheckCircle2 className="h-8 w-8" />
+            </div>
+            <h2 className="text-xl font-black text-white">Agendamento Solicitado com Sucesso!</h2>
+            <p className="text-xs text-slate-400">
+              Obrigado, <strong className="text-white">{form.cliente_nome}</strong>! Sua solicitação para <strong className="text-teal-400">{selectedServico?.nome}</strong> em <strong className="text-white">{selectedDate} às {selectedTime}</strong> foi registrada no sistema.
             </p>
 
-            <button className="btn btn-primary" style={{ backgroundColor: primaryColor }} onClick={() => { setStep(1); setConfirmedBooking(null); }}>
-              Realizar Novo Agendamento
+            <button
+              onClick={() => { setStep(1); setBookingResult(null); }}
+              className="px-6 py-3 rounded-2xl bg-slate-800 text-xs font-black text-white hover:bg-slate-700"
+            >
+              Fazer Outro Agendamento
             </button>
           </div>
         )}
