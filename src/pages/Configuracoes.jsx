@@ -1,13 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../services/api';
-import { Settings, Users, Bell, Globe, Palette, Copy, Check, Power, UserPlus } from 'lucide-react';
+import { Settings, Users, Bell, Globe, Palette, Copy, Check, Clock, MessageSquare, MapPin, ShieldAlert, Plus, Trash2 } from 'lucide-react';
 
 export function Configuracoes() {
   const { tenant, setTenant } = useAuth();
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [message, setMessage] = useState('');
+
+  // Operating Hours (Segunda a Domingo)
+  const [horarios, setHorarios] = useState([
+    { dia: 'Segunda-feira', inicio: '08:00', fim: '18:00', ativo: true },
+    { dia: 'Terça-feira', inicio: '08:00', fim: '18:00', ativo: true },
+    { dia: 'Quarta-feira', inicio: '08:00', fim: '18:00', ativo: true },
+    { dia: 'Quinta-feira', inicio: '08:00', fim: '18:00', ativo: true },
+    { dia: 'Sexta-feira', inicio: '08:00', fim: '19:00', ativo: true },
+    { dia: 'Sábado', inicio: '08:00', fim: '17:00', ativo: true },
+    { dia: 'Domingo', inicio: '09:00', fim: '12:00', ativo: false },
+  ]);
+
+  // Bloqueios / Férias
+  const [bloqueios, setBloqueios] = useState([
+    { id: 1, inicio: '2026-12-24', fim: '2026-12-25', motivo: 'Recesso de Natal' }
+  ]);
+  const [novoBloqueio, setNovoBloqueio] = useState({ inicio: '', fim: '', motivo: '' });
+
+  // WhatsApp & Endereço
+  const [whatsappTemplate, setWhatsappTemplate] = useState(
+    'Olá {cliente_nome}, confirmamos seu agendamento para {data_hora} ({servico_nome}) no endereço: {endereco}.'
+  );
+  const [endereco, setEndereco] = useState('Rua Exemplo, 123 - Centro');
 
   // Branding & Public Schedule
   const [form, setForm] = useState({
@@ -19,12 +42,8 @@ export function Configuracoes() {
     novo_slug: '',
   });
 
-  // Auxiliar Team form
-  const [auxForm, setAuxForm] = useState({
-    nome: '',
-    email: '',
-    senha: '',
-  });
+  // Auxiliares
+  const [auxForm, setAuxForm] = useState({ nome: '', email: '', senha: '' });
 
   useEffect(() => {
     if (tenant) {
@@ -65,9 +84,20 @@ export function Configuracoes() {
     }
   };
 
+  const handleAddBloqueio = (e) => {
+    e.preventDefault();
+    if (!novoBloqueio.inicio || !novoBloqueio.fim) return;
+    setBloqueios([...bloqueios, { ...novoBloqueio, id: Date.now() }]);
+    setNovoBloqueio({ inicio: '', fim: '', motivo: '' });
+  };
+
+  const handleRemoveBloqueio = (id) => {
+    setBloqueios(bloqueios.filter(b => b.id !== id));
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      {/* Header Banner (Matching Screenshot 5) */}
+      {/* Header Banner */}
       <div className="flex items-center gap-3">
         <div className="h-10 w-10 rounded-2xl bg-blue-600/20 text-blue-400 flex items-center justify-center font-bold">
           <Settings className="h-5 w-5" />
@@ -84,29 +114,186 @@ export function Configuracoes() {
         </div>
       )}
 
-      {/* Card 1: Tempo de Antecedência do Alerta */}
+      {/* Card 1: Alerta Pop-up de Atendimento Próximo (Matching configuracoes.html line 150) */}
       <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-4">
-        <div>
-          <h3 className="text-base font-black text-white">Tempo de Antecedência do Alerta</h3>
-          <p className="text-xs text-slate-400 mt-1">
-            Escolha com quantos minutos de antecedência o aviso pop-up deve estourar na tela
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold">
+            <Bell className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="text-base font-black text-white">Alerta Pop-up de Atendimento Próximo</h3>
+            <p className="text-xs text-slate-400">Exibe modal na tela e toca sinal sonoro antes do início de cada atendimento</p>
+          </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
           <select className="w-full sm:w-auto flex-1 rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white">
             <option value="5">5 Minutos antes (Padrão)</option>
             <option value="10">10 Minutos antes</option>
             <option value="15">15 Minutos antes</option>
+            <option value="20">20 Minutos antes</option>
             <option value="30">30 Minutos antes</option>
+            <option value="60">1 Hora antes</option>
           </select>
           <button className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-amber-500 text-xs font-black text-slate-950 hover:bg-amber-400 transition">
-            ✓ Salvar
+            ✓ Salvar Alerta
           </button>
         </div>
       </div>
 
-      {/* Card 2: Agenda Pública & Personalização de Cores */}
+      {/* Card 2: Horários de Funcionamento por Dia da Semana (Matching configuracoes.html) */}
+      <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold">
+            <Clock className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="text-base font-black text-white">Horários de Funcionamento</h3>
+            <p className="text-xs text-slate-400">Defina o expediente para atendimento presencial e online</p>
+          </div>
+        </div>
+
+        <div className="space-y-3 pt-2">
+          {horarios.map((h, idx) => (
+            <div key={idx} className="rounded-2xl border border-slate-800 bg-slate-950 p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <input
+                  type="checkbox"
+                  checked={h.ativo}
+                  onChange={(e) => {
+                    const next = [...horarios];
+                    next[idx].ativo = e.target.checked;
+                    setHorarios(next);
+                  }}
+                  className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-blue-500 focus:ring-blue-500"
+                />
+                <span className="font-extrabold text-white min-w-[110px]">{h.dia}</span>
+              </div>
+
+              {h.ativo ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="time"
+                    value={h.inicio}
+                    onChange={(e) => {
+                      const next = [...horarios];
+                      next[idx].inicio = e.target.value;
+                      setHorarios(next);
+                    }}
+                    className="rounded-xl border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs font-bold text-white"
+                  />
+                  <span className="text-slate-400">até</span>
+                  <input
+                    type="time"
+                    value={h.fim}
+                    onChange={(e) => {
+                      const next = [...horarios];
+                      next[idx].fim = e.target.value;
+                      setHorarios(next);
+                    }}
+                    className="rounded-xl border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs font-bold text-white"
+                  />
+                </div>
+              ) : (
+                <span className="text-xs font-extrabold text-rose-400 uppercase">Fechado</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Card 3: Bloqueios de Horários / Folgas / Férias */}
+      <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center font-bold">
+            <ShieldAlert className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="text-base font-black text-white">Bloqueios de Horários / Folgas / Férias</h3>
+            <p className="text-xs text-slate-400">Impeça agendamentos em datas específicas de folga</p>
+          </div>
+        </div>
+
+        <form onSubmit={handleAddBloqueio} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <input
+            type="date"
+            value={novoBloqueio.inicio}
+            onChange={(e) => setNovoBloqueio({ ...novoBloqueio, inicio: e.target.value })}
+            required
+            className="rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs font-bold text-white"
+          />
+          <input
+            type="date"
+            value={novoBloqueio.fim}
+            onChange={(e) => setNovoBloqueio({ ...novoBloqueio, fim: e.target.value })}
+            required
+            className="rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs font-bold text-white"
+          />
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={novoBloqueio.motivo}
+              onChange={(e) => setNovoBloqueio({ ...novoBloqueio, motivo: e.target.value })}
+              placeholder="Motivo (ex: Recesso)"
+              className="flex-1 rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs font-bold text-white"
+            />
+            <button type="submit" className="px-4 py-3 rounded-2xl bg-rose-600 text-xs font-black text-white hover:bg-rose-500">
+              <Plus className="h-4 w-4" />
+            </button>
+          </div>
+        </form>
+
+        <div className="space-y-2 pt-2">
+          {bloqueios.map((b) => (
+            <div key={b.id} className="rounded-2xl border border-slate-800 bg-slate-950 p-3 text-xs flex justify-between items-center">
+              <div>
+                <strong className="text-white block">{b.motivo || 'Bloqueio'}</strong>
+                <span className="text-slate-400 text-[11px]">{b.inicio} até {b.fim}</span>
+              </div>
+              <button onClick={() => handleRemoveBloqueio(b.id)} className="text-rose-400 hover:text-rose-300">
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Card 4: Mensagem no WhatsApp & Endereço (Matching configuracoes.html line 288) */}
+      <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold">
+            <MessageSquare className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="text-base font-black text-white">Mensagem no WhatsApp & Endereço</h3>
+            <p className="text-xs text-slate-400">Personalize o texto enviado ao aceitar e confirmar agendamentos</p>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">Endereço do Estabelecimento</label>
+            <input
+              type="text"
+              value={endereco}
+              onChange={(e) => setEndereco(e.target.value)}
+              className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs font-bold text-white"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">Modelo de Mensagem no WhatsApp</label>
+            <textarea
+              rows="3"
+              value={whatsappTemplate}
+              onChange={(e) => setWhatsappTemplate(e.target.value)}
+              className="w-full rounded-2xl border border-slate-800 bg-slate-950 p-4 text-xs font-bold text-white resize-none"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Card 5: Agenda Pública & Personalização de Cores */}
       <form onSubmit={handleSave} className="space-y-6">
         <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-4">
           <div className="flex items-center justify-between">
@@ -114,9 +301,7 @@ export function Configuracoes() {
               <h3 className="text-base font-black text-white flex items-center gap-2">
                 <Globe className="h-5 w-5 text-blue-400" /> Agenda Pública Online
               </h3>
-              <p className="text-xs text-slate-400 mt-1">
-                Ative ou desative o agendamento público para clientes.
-              </p>
+              <p className="text-xs text-slate-400 mt-1">Ative ou desative o agendamento público para clientes.</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
@@ -130,9 +315,7 @@ export function Configuracoes() {
           </div>
 
           <div>
-            <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
-              Subdomínio / Slug da Agenda
-            </label>
+            <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Subdomínio / Slug da Agenda</label>
             <input
               type="text"
               value={form.novo_slug}
@@ -156,16 +339,14 @@ export function Configuracoes() {
           </div>
         </div>
 
-        {/* Card 3: Marca e Cores CSS */}
+        {/* Card 6: Marca e Cores CSS */}
         <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-4">
           <h3 className="text-base font-black text-white flex items-center gap-2">
             <Palette className="h-5 w-5 text-blue-400" /> Personalização de Marca & Cores
           </h3>
 
           <div>
-            <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
-              URL do Logotipo da Empresa
-            </label>
+            <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">URL do Logotipo da Empresa</label>
             <input
               type="text"
               value={form.foto_url}
@@ -214,67 +395,6 @@ export function Configuracoes() {
           </button>
         </div>
       </form>
-
-      {/* Card 4: Gestão de Equipe & Auxiliares (Matching Screenshot 5) */}
-      <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold">
-            <Users className="h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="text-base font-black text-white">Gestão de Equipe & Auxiliares</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Cadastre auxiliares com e-mail corporativo</p>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-purple-500/20 bg-slate-950 p-5 space-y-4">
-          <span className="inline-flex items-center gap-1.5 text-xs font-black text-purple-400 uppercase tracking-wider">
-            <UserPlus className="h-4 w-4" /> CADASTRAR NOVO AUXILIAR / MEMBRO DA EQUIPE
-          </span>
-
-          <div className="space-y-3">
-            <div>
-              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">NOME COMPLETO</label>
-              <input
-                type="text"
-                value={auxForm.nome}
-                onChange={(e) => setAuxForm({ ...auxForm, nome: e.target.value })}
-                placeholder="Ex: Maria Santos"
-                className="w-full rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm font-semibold text-white"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">E-MAIL CORPORATIVO</label>
-              <input
-                type="email"
-                value={auxForm.email}
-                onChange={(e) => setAuxForm({ ...auxForm, email: e.target.value })}
-                placeholder="patricia@acionar.online"
-                className="w-full rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm font-semibold text-white"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">SENHA DE ACESSO</label>
-              <input
-                type="password"
-                value={auxForm.senha}
-                onChange={(e) => setAuxForm({ ...auxForm, senha: e.target.value })}
-                placeholder="••••••••"
-                className="w-full rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm font-semibold text-white"
-              />
-            </div>
-
-            <button
-              onClick={() => alert('Auxiliar registrado no schema do tenant.')}
-              className="w-full py-3 rounded-2xl bg-purple-600 text-xs font-black text-white hover:bg-purple-500 transition"
-            >
-              Cadastrar Auxiliar
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

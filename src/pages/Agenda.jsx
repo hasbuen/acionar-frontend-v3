@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../services/api';
-import { Plus, Calendar, Clock, User, CheckCircle, AlertCircle, Phone, DollarSign, Edit, Trash2, Shield, Search, X } from 'lucide-react';
+import { Plus, Calendar, Clock, User, CheckCircle, AlertCircle, Phone, DollarSign, Edit, Trash2, Shield, Search, X, Info, MapPin } from 'lucide-react';
 
 export function Agenda() {
   const [agendamentos, setAgendamentos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('hoje');
 
-  // Modal
+  // Modals
   const [showModal, setShowModal] = useState(false);
+  const [detailsItem, setDetailsItem] = useState(null);
   const [clientes, setClientes] = useState([]);
   const [servicos, setServicos] = useState([]);
+
   const [form, setForm] = useState({
     cliente_nome: '',
     cliente_whatsapp: '',
@@ -59,7 +61,6 @@ export function Agenda() {
     try {
       const serv = servicos.find(s => s.id === parseInt(form.servico_id, 10));
 
-      // Find or create customer
       let clienteId = null;
       if (form.cliente_nome) {
         const cRes = await apiRequest('/clientes', 'POST', {
@@ -87,6 +88,9 @@ export function Agenda() {
   const handleStatusChange = async (id, status) => {
     try {
       await apiRequest(`/agendamentos/${id}`, 'PUT', { status });
+      if (detailsItem?.id === id) {
+        setDetailsItem({ ...detailsItem, status });
+      }
       fetchAgenda();
     } catch (err) {
       alert('Erro ao atualizar status.');
@@ -97,10 +101,23 @@ export function Agenda() {
     if (!confirm('Deseja cancelar/excluir este agendamento?')) return;
     try {
       await apiRequest(`/agendamentos/${id}`, 'DELETE');
+      if (detailsItem?.id === id) setDetailsItem(null);
       fetchAgenda();
     } catch (err) {
       alert('Erro ao excluir agendamento.');
     }
+  };
+
+  // Exact Production Filter Pills Styling
+  const filterStyles = {
+    todos: { label: 'Todos', activeClass: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-blue-500 shadow-md shadow-blue-500/25' },
+    hoje: { label: 'Hoje', activeClass: 'bg-gradient-to-r from-slate-700 to-slate-900 text-white border-slate-600 shadow-md shadow-slate-500/20' },
+    solicitacoes: { label: 'Solicitações', activeClass: 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-amber-400 shadow-md shadow-amber-500/25' },
+    agendado: { label: 'Confirmados', activeClass: 'bg-gradient-to-r from-blue-600 to-sky-600 text-white border-blue-500 shadow-md shadow-blue-500/25' },
+    em_atendimento: { label: 'Em Atendimento', activeClass: 'bg-gradient-to-r from-sky-500 to-cyan-500 text-white border-sky-400 shadow-md shadow-sky-500/25' },
+    concluido: { label: 'Atendidos', activeClass: 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-500 shadow-md shadow-emerald-500/25' },
+    manutencao: { label: 'Manutenções', activeClass: 'bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white border-purple-500 shadow-md shadow-purple-500/25' },
+    cancelado: { label: 'Cancelados', activeClass: 'bg-gradient-to-r from-rose-600 to-red-600 text-white border-rose-500 shadow-md shadow-rose-500/25' },
   };
 
   return (
@@ -138,30 +155,22 @@ export function Agenda() {
         </div>
       </div>
 
-      {/* Filter Pills Bar */}
+      {/* Exact Production Filter Pills Bar */}
       <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
-        {['todos', 'hoje', 'aguardando_confirmacao', 'agendado', 'em_atendimento', 'concluido', 'cancelado'].map((filterKey) => {
-          const labels = {
-            todos: 'Todos',
-            hoje: 'Hoje',
-            aguardando_confirmacao: 'Solicitações',
-            agendado: 'Confirmados',
-            em_atendimento: 'Em Atendimento',
-            concluido: 'Atendidos',
-            cancelado: 'Cancelados'
-          };
+        {Object.keys(filterStyles).map((filterKey) => {
+          const cfg = filterStyles[filterKey];
           const isActive = activeFilter === filterKey;
           return (
             <button
               key={filterKey}
               onClick={() => setActiveFilter(filterKey)}
-              className={`filter-btn whitespace-nowrap rounded-2xl px-4 py-2 text-xs font-extrabold transition-all ${
+              className={`filter-btn border whitespace-nowrap rounded-2xl px-4 py-2 text-xs font-extrabold transition-all ${
                 isActive
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                  : 'bg-slate-200/70 text-slate-600 hover:bg-slate-300 dark:bg-slate-900/80 dark:text-slate-400 dark:hover:bg-slate-800'
+                  ? cfg.activeClass
+                  : 'bg-white/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-800'
               }`}
             >
-              {labels[filterKey]}
+              {cfg.label}
             </button>
           );
         })}
@@ -180,7 +189,8 @@ export function Agenda() {
           {agendamentos.map((item) => (
             <div
               key={item.id}
-              className="rounded-3xl border border-slate-200 bg-white/80 p-5 shadow-lg backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-900/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in"
+              className="rounded-3xl border border-slate-200 bg-white/80 p-5 shadow-lg backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-900/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in hover:border-blue-500/40 transition cursor-pointer"
+              onClick={() => setDetailsItem(item)}
             >
               <div className="flex items-start gap-4">
                 <div className="h-12 w-12 rounded-2xl bg-blue-500/10 text-blue-500 flex flex-col items-center justify-center text-center shrink-0">
@@ -221,10 +231,10 @@ export function Agenda() {
               </div>
 
               {/* Action Toolbar Buttons */}
-              <div className="flex items-center gap-1.5 self-end sm:self-center">
+              <div className="flex items-center gap-1.5 self-end sm:self-center" onClick={(e) => e.stopPropagation()}>
                 {item.cliente_whatsapp && (
                   <a
-                    href={`https://wa.me/55${item.cliente_whatsapp.replace(/\D/g, '')}`}
+                    href={`https://wa.me/55${item.cliente_whatsapp.replace(/\D/g, '')}?text=Olá%20${encodeURIComponent(item.cliente_nome || '')},%20confirmamos%20seu%20agendamento%20para%20${encodeURIComponent(new Date(item.data_hora).toLocaleDateString())}`}
                     target="_blank"
                     rel="noreferrer"
                     className="h-9 w-9 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center hover:bg-emerald-500/20 transition"
@@ -237,9 +247,17 @@ export function Agenda() {
                 <button
                   onClick={() => handleStatusChange(item.id, 'concluido')}
                   className="h-9 w-9 rounded-xl bg-blue-500/10 text-blue-500 border border-blue-500/20 flex items-center justify-center hover:bg-blue-500/20 transition"
-                  title="Concluir Atendimento"
+                  title="Concluir no Caixa"
                 >
                   <DollarSign className="h-4 w-4" />
+                </button>
+
+                <button
+                  onClick={() => setDetailsItem(item)}
+                  className="h-9 w-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-700 flex items-center justify-center hover:text-white transition"
+                  title="Ver Detalhes"
+                >
+                  <Info className="h-4 w-4" />
                 </button>
 
                 <button
@@ -255,7 +273,64 @@ export function Agenda() {
         </div>
       )}
 
-      {/* Modal Criar Agendamento (Idêntico ao Screenshot 3) */}
+      {/* Modal Detalhes do Agendamento */}
+      {detailsItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4 animate-scale-in">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <span className="text-[10px] font-black uppercase text-blue-400">DETALHES DO AGENDAMENTO</span>
+                <h3 className="text-lg font-black text-white">{detailsItem.cliente_nome || 'Cliente'}</h3>
+              </div>
+              <button onClick={() => setDetailsItem(null)} className="text-slate-400 hover:text-white">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs text-slate-300">
+              <div className="flex justify-between border-b border-slate-800/60 pb-2">
+                <span className="text-slate-400">Serviço:</span>
+                <strong className="text-white">{detailsItem.servico_nome || 'Atendimento'}</strong>
+              </div>
+              <div className="flex justify-between border-b border-slate-800/60 pb-2">
+                <span className="text-slate-400">Data e Horário:</span>
+                <strong className="text-white">{new Date(detailsItem.data_hora).toLocaleString()}</strong>
+              </div>
+              <div className="flex justify-between border-b border-slate-800/60 pb-2">
+                <span className="text-slate-400">Valor Total:</span>
+                <strong className="text-emerald-400">R$ {parseFloat(detailsItem.valor_total || 0).toFixed(2)}</strong>
+              </div>
+              <div className="flex justify-between border-b border-slate-800/60 pb-2">
+                <span className="text-slate-400">Status Atual:</span>
+                <span className="font-extrabold uppercase text-blue-400">{detailsItem.status}</span>
+              </div>
+              {detailsItem.observacao && (
+                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800">
+                  <span className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Observações:</span>
+                  <p className="text-slate-300 italic">"{detailsItem.observacao}"</p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between gap-2 pt-2">
+              <button
+                onClick={() => handleStatusChange(detailsItem.id, 'concluido')}
+                className="flex-1 py-3 rounded-2xl bg-emerald-600 text-xs font-black text-white hover:bg-emerald-500"
+              >
+                Concluir Atendimento
+              </button>
+              <button
+                onClick={() => handleStatusChange(detailsItem.id, 'cancelado')}
+                className="py-3 px-4 rounded-2xl bg-rose-500/20 text-rose-400 text-xs font-extrabold hover:bg-rose-500/30"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Criar Agendamento */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-fade-in">
           <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-5 animate-scale-in">
@@ -276,9 +351,7 @@ export function Agenda() {
 
             <form onSubmit={handleCreateAppointment} className="space-y-4">
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-[11px] font-black uppercase tracking-wider text-slate-400">NOME DO CLIENTE</label>
-                </div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">NOME DO CLIENTE</label>
                 <input
                   type="text"
                   value={form.cliente_nome}

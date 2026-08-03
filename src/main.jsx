@@ -55,7 +55,7 @@ function MainApp() {
   return (
     <div className="flex flex-col min-h-screen bg-[#dde6f1] dark:bg-[#020617] text-slate-900 dark:text-slate-100 transition-colors duration-300">
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
-      <main className="flex-1 pb-28 md:pb-10">
+      <main className="flex-1 pb-28 md:pb-12">
         {activeTab === 'agenda' && <Agenda />}
         {activeTab === 'clientes' && <Clientes />}
         {activeTab === 'servicos' && <Servicos setActiveTab={setActiveTab} />}
@@ -63,6 +63,11 @@ function MainApp() {
         {activeTab === 'caixa' && <Caixa />}
         {activeTab === 'configuracoes' && <Configuracoes />}
       </main>
+
+      {/* Footer Idêntico à Produção */}
+      <footer className="w-full border-t border-slate-300/60 dark:border-slate-800/80 bg-[#eef3f8]/80 dark:bg-[#020617]/80 py-4 text-center text-[11px] font-semibold text-slate-500 dark:text-slate-400 backdrop-blur-md hidden md:block">
+        © 2026 Acionar - Sistema de Agendamentos Inteligente.
+      </footer>
     </div>
   );
 }

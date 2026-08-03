@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Calendar, Users, Scissors, Boxes, DollarSign, Clock, Bell, LogOut, Globe } from 'lucide-react';
+import { Calendar, Users, Scissors, Boxes, DollarSign, Clock, Bell, LogOut, Globe, HelpCircle } from 'lucide-react';
+import { HelpCenterModal } from './HelpCenterModal';
 
 export function Navbar({ activeTab, setActiveTab }) {
   const { user, tenant, logout } = useAuth();
+  const [showHelpModal, setShowHelpModal] = useState(false);
 
   const publicUrl = `/agendar/${tenant?.slug || ''}`;
 
@@ -93,7 +95,7 @@ export function Navbar({ activeTab, setActiveTab }) {
             </button>
           </nav>
 
-          {/* Right Action Icons */}
+          {/* Right Action Icons (Matching Production Header) */}
           <div className="flex items-center gap-2">
             <a
               href={publicUrl}
@@ -106,15 +108,31 @@ export function Navbar({ activeTab, setActiveTab }) {
             <span className="hidden xl:block text-xs font-semibold text-slate-400 max-w-[140px] truncate">
               {user?.email || tenant?.email_proprietario}
             </span>
-            <button className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 shadow-sm">
-              <Bell className="h-4 w-4" />
+
+            {/* Help Button (Ajuda) */}
+            <button
+              onClick={() => setShowHelpModal(true)}
+              title="Central de Ajuda"
+              className="btn-animated flex h-10 w-10 items-center justify-center rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 shadow-sm"
+            >
+              <HelpCircle className="h-5 w-5" />
             </button>
-            <button onClick={logout} title="Sair" className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-rose-500 shadow-sm">
-              <LogOut className="h-4 w-4" />
+
+            {/* Notification Bell */}
+            <button className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 shadow-sm">
+              <Bell className="h-5 w-5" />
+            </button>
+
+            {/* Logout */}
+            <button onClick={logout} title="Sair" className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-rose-500 shadow-sm">
+              <LogOut className="h-5 w-5" />
             </button>
           </div>
         </div>
       </header>
+
+      {/* Help Modal */}
+      <HelpCenterModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />
 
       {/* Bottom Navigation Bar (Mobile / Fixed) */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#020617]/95 border-t border-slate-800 backdrop-blur-xl px-2 py-2 pb-safe-bottom">
