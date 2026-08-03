@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { apiRequest } from '../services/api';
+import { PaymentModal } from '../components/PaymentModal';
 import {
-  AlertCircle, ArrowRightLeft, Calendar, Check, CheckCircle, Clock, DollarSign,
-  Edit3, Info, MessageSquare, Phone, Plus, RefreshCw, Scissors, Trash2, User,
-  Wrench, X
+  AlertCircle, ArrowRightLeft, Banknote, Calendar, CalendarDays, Check, CheckCircle, Clock, CreditCard, DollarSign,
+  Edit3, Info, Link, MessageSquare, Phone, Plus, QrCode, Scissors, ShieldCheck, Trash2, User,
+  WalletCards, Wrench, X, Zap
 } from 'lucide-react';
 
 const filters = [
@@ -83,6 +84,7 @@ export function Agenda() {
   const [servicos, setServicos] = useState([]);
   const [profissionais, setProfissionais] = useState([]);
   const [payments, setPayments] = useState([]);
+  const [paymentDraft, setPaymentDraft] = useState({ gross: '', discount: '0.00', condition: 'a_vista', method: 'pix', status: 'pago', notes: '' });
   const [toast, setToast] = useState('');
   const [clientSearch, setClientSearch] = useState('');
   const [form, setForm] = useState({ cliente_id: '', cliente_nome: '', cliente_whatsapp: '', servico_id: '', data_hora: `${new Date().toISOString().slice(0, 10)}T18:40`, observacao: '' });
@@ -119,7 +121,14 @@ export function Agenda() {
   }
 
   async function openPayment(item) {
-    try { const result = await apiRequest('/caixa'); setPayments((result.movimentacoes || []).filter(m => Number(m.agendamento_id) === Number(item.id))); setModal({ type: 'payment', item }); }
+    try {
+      const result = await apiRequest('/caixa');
+      const itemPayments = (result.movimentacoes || []).filter(m => Number(m.agendamento_id) === Number(item.id));
+      const current = itemPayments[0];
+      setPayments(itemPayments);
+      setPaymentDraft({ gross: String(current?.valor ?? item.valor_total ?? 0), discount: String(current?.desconto ?? '0.00'), condition: current?.condicao_pagamento || 'a_vista', method: current?.forma_pagamento || 'pix', status: current?.status_pagamento || current?.status || 'pago', notes: current?.observacoes || '' });
+      setModal({ type: 'payment-new', item });
+    }
     catch (error) { notify(error.message || 'Erro ao carregar pagamentos.'); }
   }
 
@@ -141,9 +150,10 @@ export function Agenda() {
 
   async function recordPayment(event, item) {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
     try {
-      await apiRequest('/caixa', 'POST', { agendamento_id: item.id, tipo: 'entrada', descricao: `Pagamento — ${item.cliente_nome || 'cliente'}`, valor: Number(data.get('valor')), status: 'pago', forma_pagamento: data.get('forma_pagamento') });
+      const gross = Number(paymentDraft.gross || 0);
+      const discount = Number(paymentDraft.discount || 0);
+      await apiRequest('/caixa', 'POST', { agendamento_id: item.id, tipo: 'entrada', descricao: paymentDraft.notes || `Pagamento — ${item.cliente_nome || 'cliente'}`, valor: Math.max(0, gross - discount), status: paymentDraft.status === 'pago' ? 'pago' : 'a_receber', forma_pagamento: paymentDraft.method });
       notify('Pagamento registrado.'); await openPayment(item);
     } catch (error) { notify(error.message || 'Erro ao registrar pagamento.'); }
   }
@@ -159,6 +169,7 @@ export function Agenda() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
+      {modal?.type === 'payment-new' && <PaymentModal item={modal.item} payments={payments} draft={paymentDraft} setDraft={setPaymentDraft} onClose={() => setModal(null)} onSubmit={event => recordPayment(event, modal.item)} onOnline={() => notify('Configure o Asaas em Parâmetros para gerar cobranças online.')} />}
       {toast && <div className="fixed right-5 top-5 z-[70] rounded-2xl border border-emerald-500/30 bg-slate-900 px-5 py-3 text-sm font-bold text-emerald-300 shadow-2xl">{toast}</div>}
 
       <div className="flex flex-col items-start justify-between gap-4 rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-xl backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-900/60 md:flex-row md:items-center">
