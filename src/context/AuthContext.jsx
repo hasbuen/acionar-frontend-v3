@@ -27,7 +27,13 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = async (slug, email, senha) => {
-    const res = await apiRequest('/auth/login', 'POST', { slug, email, senha });
+    const cleanSlug = (slug || '').trim().toLowerCase();
+    if (!cleanSlug) throw new Error('Informe o código da empresa.');
+    localStorage.removeItem('acionar_v3_token');
+    localStorage.removeItem('acionar_v3_slug');
+    setUser(null);
+    setTenant(null);
+    const res = await apiRequest('/auth/login', 'POST', { slug: cleanSlug, email, senha });
     localStorage.setItem('acionar_v3_token', res.token);
     localStorage.setItem('acionar_v3_slug', res.tenant.slug);
     setUser(res.user);

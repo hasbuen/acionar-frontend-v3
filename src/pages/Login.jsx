@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { ArrowRight, CalendarCheck2, Eye, EyeOff, Lock, LockKeyhole, Mail, Moon, ShieldCheck, Sparkles, Sun, WalletCards } from 'lucide-react';
+import { ArrowRight, Building2, CalendarCheck2, Eye, EyeOff, Lock, LockKeyhole, Mail, Moon, ShieldCheck, Sparkles, Sun, WalletCards } from 'lucide-react';
 
 export function Login() {
   const { login } = useAuth();
+  const [tenantSlug, setTenantSlug] = useState(() => localStorage.getItem('acionar_v3_slug') || '');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -16,8 +17,7 @@ export function Login() {
     setError('');
     setLoading(true);
     try {
-      const slug = localStorage.getItem('acionar_v3_slug') || 'patriciabeato';
-      await login(slug, email.trim().toLowerCase(), senha);
+      await login(tenantSlug.trim().toLowerCase(), email.trim().toLowerCase(), senha);
     } catch (err) {
       setError(err.message || 'Falha na autenticação.');
     } finally {
@@ -81,6 +81,14 @@ export function Login() {
                 {error && <div className="flex items-start gap-2 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-600 dark:text-rose-300"><span>{error}</span></div>}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Código da empresa</label>
+                    <div className="relative">
+                      <Building2 className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                      <input type="text" value={tenantSlug} onChange={(event) => setTenantSlug(event.target.value)} required placeholder="ex.: patriciabeato" autoCapitalize="none" autoCorrect="off" className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 py-3.5 pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-100" />
+                    </div>
+                    <p className="text-[10px] font-medium text-slate-400">Use o identificador fornecido na implantação da sua empresa.</p>
+                  </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">E-mail</label>
                     <div className="relative">
