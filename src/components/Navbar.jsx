@@ -1,13 +1,21 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Calendar, Users, Scissors, Boxes, DollarSign, Clock, Bell, LogOut, Globe, HelpCircle } from 'lucide-react';
+import { Calendar, Users, Scissors, DollarSign, Clock, Bell, LogOut, HelpCircle, Moon, Sun, Globe } from 'lucide-react';
 import { HelpCenterModal } from './HelpCenterModal';
 
 export function Navbar({ activeTab, setActiveTab }) {
   const { user, tenant, logout } = useAuth();
   const [showHelpModal, setShowHelpModal] = useState(false);
 
+  const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'));
   const publicUrl = `/agendar/${tenant?.slug || ''}`;
+
+  const toggleTheme = () => {
+    const next = !dark;
+    setDark(next);
+    document.documentElement.classList.toggle('dark', next);
+    localStorage.setItem('color-theme', next ? 'dark' : 'light');
+  };
 
   return (
     <>
@@ -20,7 +28,7 @@ export function Navbar({ activeTab, setActiveTab }) {
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
-                <span className="text-[0.65rem] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Acionar v3</span>
+                <span className="text-[0.65rem] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Acionar Online</span>
                 <span className="inline-flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span> AO VIVO
                 </span>
@@ -64,16 +72,6 @@ export function Navbar({ activeTab, setActiveTab }) {
               <Scissors className="h-4 w-4" /> Serviços
             </button>
             <button
-              onClick={() => setActiveTab('estoque')}
-              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-black transition-all ${
-                activeTab === 'estoque'
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-              }`}
-            >
-              <Boxes className="h-4 w-4" /> Estoque
-            </button>
-            <button
               onClick={() => setActiveTab('caixa')}
               className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-black transition-all ${
                 activeTab === 'caixa'
@@ -101,7 +99,7 @@ export function Navbar({ activeTab, setActiveTab }) {
               href={publicUrl}
               target="_blank"
               rel="noreferrer"
-              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20"
+              className="hidden"
             >
               <Globe className="h-3.5 w-3.5" /> Agenda Pública
             </a>
@@ -119,8 +117,12 @@ export function Navbar({ activeTab, setActiveTab }) {
             </button>
 
             {/* Notification Bell */}
-            <button className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 shadow-sm">
+            <button aria-label="Notificações" className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 shadow-sm">
               <Bell className="h-5 w-5" />
+            </button>
+
+            <button aria-label="Alternar Tema" onClick={toggleTheme} className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 shadow-sm transition-transform active:scale-95">
+              {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
 
             {/* Logout */}
@@ -136,7 +138,7 @@ export function Navbar({ activeTab, setActiveTab }) {
 
       {/* Bottom Navigation Bar (Mobile / Fixed) */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#020617]/95 border-t border-slate-800 backdrop-blur-xl px-2 py-2 pb-safe-bottom">
-        <div className="grid grid-cols-6 gap-1">
+        <div className="flex h-16 items-center justify-around px-2">
           <button
             onClick={() => setActiveTab('agenda')}
             className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all ${
@@ -165,16 +167,6 @@ export function Navbar({ activeTab, setActiveTab }) {
           >
             <Scissors className="h-4 w-4 mb-0.5" />
             <span className="text-[9px]">Serviços</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('estoque')}
-            className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all ${
-              activeTab === 'estoque' ? 'bg-blue-600/20 text-blue-400 font-extrabold' : 'text-slate-400 font-medium'
-            }`}
-          >
-            <Boxes className="h-4 w-4 mb-0.5" />
-            <span className="text-[9px]">Estoque</span>
           </button>
 
           <button

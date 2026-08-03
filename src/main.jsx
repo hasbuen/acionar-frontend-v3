@@ -41,7 +41,7 @@ function MainApp() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#020617] text-white flex items-center justify-center text-xs font-bold">
-        Carregando Acionar v3...
+        Carregando Acionar...
       </div>
     );
   }
