@@ -1,37 +1,65 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../services/api';
-import { Plus, Package, ArrowUpRight, ArrowDownRight, AlertTriangle } from 'lucide-react';
+import { Plus, Package, ArrowDown, ArrowUp, ArrowRightLeft, ClipboardCheck, History, AlertTriangle, Search, X, Check, DollarSign } from 'lucide-react';
 
 export function Estoque() {
   const [produtos, setProdutos] = useState([]);
+  const [profissionais, setProfissionais] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [filterBaixo, setFilterBaixo] = useState(false);
 
-  // Wizard Modal
+  // Modals
   const [showWizard, setShowWizard] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
+
+  const [showMovimento, setShowMovimento] = useState(false);
+  const [showInventario, setShowInventario] = useState(false);
+  const [showTransferencia, setShowTransferencia] = useState(false);
+  const [showRazao, setShowRazao] = useState(false);
+
+  const [selectedProduto, setSelectedProduto] = useState(null);
+
+  // Form Wizard
   const [form, setForm] = useState({
     nome: '',
     tipo: 'consumo',
+    codigo: '',
+    categoria: 'Geral',
     quantidade: 10,
     estoque_minimo: 3,
     custo_unitario: 15.0,
     imagem_url: '',
+    localizacao: '',
   });
 
-  // Movement Modal
-  const [showMovement, setShowMovement] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [movForm, setMovForm] = useState({ tipo: 'entrada', quantidade: 1, motivo: '' });
+  // Form Movimento
+  const [movForm, setMovForm] = useState({
+    tipo: 'entrada',
+    quantidade: 1,
+    motivo: '',
+  });
+
+  // Form Transferencia
+  const [transfForm, setTransfForm] = useState({
+    profissional_id: '',
+    quantidade: 1,
+  });
+
+  // Form Inventario Guiado
+  const [inventarioData, setInventarioData] = useState({});
 
   useEffect(() => {
-    fetchProdutos();
+    fetchData();
   }, []);
 
-  const fetchProdutos = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await apiRequest('/estoque/produtos');
-      setProdutos(res.produtos || []);
+      const pRes = await apiRequest('/estoque/produtos');
+      setProdutos(pRes.produtos || []);
+      const profRes = await apiRequest('/profissionais').catch(() => ({ profissionais: [] }));
+      setProfissionais(profRes.profissionais || []);
     } catch (err) {
       console.error('[ESTOQUE ERROR]', err);
     } finally {
@@ -39,10 +67,9 @@ export function Estoque() {
     }
   };
 
-  const handleOpenWizard = () => {
-    setWizardStep(1);
-    setForm({ nome: '', tipo: 'consumo', quantidade: 10, estoque_minimo: 3, custo_unitario: 15.0, imagem_url: '' });
-    setShowWizard(true);
+  const handleGerarSku = () => {
+    const random = Math.floor(1000 + Math.random() * 9000);
+    setForm(prev => ({ ...prev, codigo: `SKU-${random}` }));
   };
 
   const handleCreateProduct = async (e) => {
@@ -55,79 +82,239 @@ export function Estoque() {
         custo_unitario: parseFloat(form.custo_unitario),
       });
       setShowWizard(false);
-      fetchProdutos();
+      fetchData();
     } catch (err) {
       alert(err.message || 'Erro ao cadastrar produto.');
     }
   };
 
-  const handleMovement = async (e) => {
+  const handleRegistrarMovimento = async (e) => {
     e.preventDefault();
+    if (!selectedProduto) return;
     try {
       await apiRequest('/estoque/movimentacoes', 'POST', {
-        produto_id: selectedProduct.id,
+        produto_id: selectedProduto.id,
         tipo: movForm.tipo,
         quantidade: parseInt(movForm.quantidade, 10),
         motivo: movForm.motivo,
       });
-      setShowMovement(false);
-      fetchProdutos();
+      setShowMovimento(false);
+      fetchData();
     } catch (err) {
       alert(err.message || 'Erro ao registrar movimentação.');
     }
   };
 
+  const handleOpenInventario = () => {
+    const initial = {};
+    produtos.forEach(p => { initial[p.id] = p.quantidade; });
+    setInventarioData(initial);
+    setShowInventario(true);
+  };
+
+  const handleSalvarInventario = async () => {
+    try {
+      for (const p of produtos) {
+        const novaQtd = parseInt(inventarioData[p.id], 10);
+        if (!isNaN(novaQtd) && novaQtd !== p.quantidade) {
+          const diff = novaQtd - p.quantidade;
+          await apiRequest('/estoque/movimentacoes', 'POST', {
+            produto_id: p.id,
+            tipo: diff > 0 ? 'entrada' : 'saida',
+            quantidade: Math.abs(diff),
+            motivo: 'Ajuste de Inventário Guiado',
+          });
+        }
+      }
+      setShowInventario(false);
+      fetchData();
+    } catch (err) {
+      alert('Erro ao salvar inventário.');
+    }
+  };
+
+  // KPIs
+  const totalItens = produtos.length;
+  const valorTotalCusto = produtos.reduce((acc, p) => acc + (parseFloat(p.custo_unitario || 0) * (p.quantidade || 0)), 0);
+  const alertasBaixo = produtos.filter(p => p.quantidade <= (p.estoque_minimo || 1)).length;
+
+  const filteredProdutos = produtos.filter(p => {
+    const matchesSearch = p.nome.toLowerCase().includes(search.toLowerCase()) || (p.codigo && p.codigo.toLowerCase().includes(search.toLowerCase()));
+    const matchesBaixo = filterBaixo ? p.quantidade <= (p.estoque_minimo || 1) : true;
+    return matchesSearch && matchesBaixo;
+  });
+
   return (
-    <div className="container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      {/* Banner de Boas-vindas (Identical to estoque.html) */}
+      <div className="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-xl backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-900/60 flex flex-col lg:flex-row lg:items-end justify-between gap-5">
         <div>
-          <h2 style={{ fontSize: 22, fontWeight: 700 }}>Controle de Estoque</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Inventário de produtos, insumos e movimentações</p>
+          <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400">
+            MATERIAIS DO PROFISSIONAL
+          </span>
+          <h2 className="mt-1 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+            Seu estoque, sem bagunça
+          </h2>
+          <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+            Cadastre consumos e ferramentas. O produto só entra em um serviço quando você decidir vinculá-lo.
+          </p>
         </div>
-        <button className="btn btn-primary" onClick={handleOpenWizard}>
-          <Plus size={16} /> Wizard de Novo Produto
+
+        <div className="grid grid-cols-2 sm:flex gap-2">
+          <button
+            onClick={handleOpenInventario}
+            className="btn-animated px-4 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1.5"
+          >
+            <ClipboardCheck className="h-4 w-4 text-purple-500" /> Inventário
+          </button>
+          <button
+            onClick={() => setShowTransferencia(true)}
+            className="btn-animated px-4 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1.5"
+          >
+            <ArrowRightLeft className="h-4 w-4 text-sky-500" /> Enviar
+          </button>
+          <button
+            onClick={() => { setSelectedProduto(produtos[0] || null); setMovForm({ tipo: 'entrada', quantidade: 1, motivo: '' }); setShowMovimento(true); }}
+            className="btn-animated px-4 py-3 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-extrabold flex items-center justify-center gap-1.5 border border-emerald-500/20"
+          >
+            <ArrowDown className="h-4 w-4" /> Entrada
+          </button>
+          <button
+            onClick={() => { setWizardStep(1); setForm({ nome: '', tipo: 'consumo', codigo: '', categoria: 'Geral', quantidade: 10, estoque_minimo: 3, custo_unitario: 15.0, imagem_url: '', localizacao: '' }); handleGerarSku(); setShowWizard(true); }}
+            className="btn-animated px-4 py-3 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white text-xs font-black shadow-lg shadow-blue-500/25 flex items-center justify-center gap-1.5"
+          >
+            <Plus className="h-4 w-4" /> Novo produto
+          </button>
+        </div>
+      </div>
+
+      {/* KPI Metric Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="rounded-3xl bg-white/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-4 shadow-sm backdrop-blur-md">
+          <div className="h-10 w-10 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center text-lg mb-2">
+            <Package className="h-5 w-5" />
+          </div>
+          <span className="text-[10px] font-black uppercase text-slate-500">TOTAL DE PRODUTOS</span>
+          <h3 className="text-xl font-black text-slate-900 dark:text-white mt-0.5">{totalItens}</h3>
+        </div>
+
+        <div className="rounded-3xl bg-white/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-4 shadow-sm backdrop-blur-md">
+          <div className="h-10 w-10 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-lg mb-2">
+            <DollarSign className="h-5 w-5" />
+          </div>
+          <span className="text-[10px] font-black uppercase text-slate-500">VALOR EM ESTOQUE</span>
+          <h3 className="text-xl font-black text-emerald-500 mt-0.5">R$ {valorTotalCusto.toFixed(2)}</h3>
+        </div>
+
+        <div className="rounded-3xl bg-white/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-4 shadow-sm backdrop-blur-md">
+          <div className={`h-10 w-10 rounded-2xl flex items-center justify-center text-lg mb-2 ${alertasBaixo > 0 ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-800 text-slate-500'}`}>
+            <AlertTriangle className="h-5 w-5" />
+          </div>
+          <span className="text-[10px] font-black uppercase text-slate-500">ALERTAS DE ESTOQUE</span>
+          <h3 className={`text-xl font-black mt-0.5 ${alertasBaixo > 0 ? 'text-amber-400' : 'text-slate-900 dark:text-white'}`}>
+            {alertasBaixo} {alertasBaixo === 1 ? 'produto' : 'produtos'}
+          </h3>
+        </div>
+
+        <div className="rounded-3xl bg-white/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-4 shadow-sm backdrop-blur-md">
+          <div className="h-10 w-10 rounded-2xl bg-purple-500/10 text-purple-500 flex items-center justify-center text-lg mb-2">
+            <History className="h-5 w-5" />
+          </div>
+          <span className="text-[10px] font-black uppercase text-slate-500">ESTADO DO ESTOQUE</span>
+          <h3 className="text-sm font-black text-slate-900 dark:text-white mt-1">100% Atualizado</h3>
+        </div>
+      </div>
+
+      {/* Search Bar & Alert Filter */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="relative w-full sm:w-96">
+          <Search className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por nome ou SKU..."
+            className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 pl-11 pr-4 py-3 text-xs font-semibold outline-none focus:border-blue-500"
+          />
+        </div>
+
+        <button
+          onClick={() => setFilterBaixo(!filterBaixo)}
+          className={`px-4 py-3 rounded-2xl border text-xs font-extrabold transition ${
+            filterBaixo
+              ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+              : 'bg-white/80 dark:bg-slate-900/80 border-slate-200 dark:border-slate-800 text-slate-400'
+          }`}
+        >
+          ⚠️ Mostrar Apenas Estoque Baixo
         </button>
       </div>
 
+      {/* Product Grid */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>Carregando estoque...</div>
-      ) : produtos.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
-          <Package size={48} style={{ opacity: 0.3, marginBottom: 12 }} />
-          <p>Nenhum produto cadastrado no estoque.</p>
+        <div className="text-center py-12 text-slate-400">Carregando produtos...</div>
+      ) : filteredProdutos.length === 0 ? (
+        <div className="rounded-3xl border border-slate-200 bg-white/70 p-12 text-center text-slate-400 dark:border-slate-800 dark:bg-slate-900/40">
+          <Package className="mx-auto h-12 w-12 opacity-30 mb-3" />
+          <p className="font-semibold text-sm">Nenhum produto encontrado no estoque.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-          {produtos.map((p) => {
-            const isLow = p.quantidade <= p.estoque_minimo && p.estoque_minimo > 0;
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredProdutos.map((p) => {
+            const isBaixo = p.quantidade <= (p.estoque_minimo || 1);
             return (
-              <div key={p.id} className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div
+                key={p.id}
+                className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/60 p-5 shadow-lg backdrop-blur-xl flex flex-col justify-between gap-4"
+              >
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                    <h3 style={{ fontSize: 16, fontWeight: 600 }}>{p.nome}</h3>
-                    <span className="badge badge-warning" style={{ textTransform: 'capitalize' }}>{p.tipo}</span>
-                  </div>
-
-                  {isLow && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--accent-color)', fontSize: 13, marginBottom: 8 }}>
-                      <AlertTriangle size={14} /> Reposição Necessária
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div>
+                      <span className="text-[10px] font-black uppercase text-blue-400 tracking-wider">
+                        {p.tipo || 'CONSUMO'}
+                      </span>
+                      <h3 className="text-lg font-black text-slate-900 dark:text-white leading-tight">{p.nome}</h3>
+                      {p.codigo && <span className="text-[11px] font-mono text-slate-500">{p.codigo}</span>}
                     </div>
-                  )}
 
-                  <div style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 4 }}>
-                    Saldo em Estoque: <strong style={{ color: isLow ? 'var(--accent-color)' : 'var(--text-main)' }}>{p.quantidade} un</strong>
+                    <span className={`px-3 py-1 rounded-full text-xs font-black ${
+                      isBaixo ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-emerald-500/10 text-emerald-400'
+                    }`}>
+                      {p.quantidade} un
+                    </span>
                   </div>
-                  <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                    Mínimo: {p.estoque_minimo} un • Custo: R$ {parseFloat(p.custo_unitario).toFixed(2)}
+
+                  <div className="text-xs text-slate-500 space-y-1 mt-3">
+                    <div className="flex justify-between">
+                      <span>Custo Unitário:</span>
+                      <strong className="text-slate-900 dark:text-slate-200">R$ {parseFloat(p.custo_unitario || 0).toFixed(2)}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Estoque Mínimo:</span>
+                      <strong className="text-slate-900 dark:text-slate-200">{p.estoque_minimo || 1} un</strong>
+                    </div>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-                  <button className="btn btn-secondary" style={{ flex: 1, padding: 6, fontSize: 13 }} onClick={() => { setSelectedProduct(p); setMovForm({ tipo: 'entrada', quantidade: 1, motivo: '' }); setShowMovement(true); }}>
-                    <ArrowUpRight size={14} color="var(--success)" /> Entrada
+                <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                  <button
+                    onClick={() => { setSelectedProduto(p); setMovForm({ tipo: 'entrada', quantidade: 1, motivo: '' }); setShowMovimento(true); }}
+                    className="flex-1 py-2.5 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xs font-extrabold hover:bg-emerald-500/20"
+                  >
+                    + Entrada
                   </button>
-                  <button className="btn btn-secondary" style={{ flex: 1, padding: 6, fontSize: 13 }} onClick={() => { setSelectedProduct(p); setMovForm({ tipo: 'saida', quantidade: 1, motivo: '' }); setShowMovement(true); }}>
-                    <ArrowDownRight size={14} color="var(--danger)" /> Saída
+                  <button
+                    onClick={() => { setSelectedProduto(p); setMovForm({ tipo: 'saida', quantidade: 1, motivo: '' }); setShowMovimento(true); }}
+                    className="flex-1 py-2.5 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 text-xs font-extrabold hover:bg-rose-500/20"
+                  >
+                    - Saída
+                  </button>
+                  <button
+                    onClick={() => { setSelectedProduto(p); setShowRazao(true); }}
+                    className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-white"
+                    title="Histórico / Extrato"
+                  >
+                    <History className="h-4 w-4" />
                   </button>
                 </div>
               </div>
@@ -136,104 +323,277 @@ export function Estoque() {
         </div>
       )}
 
-      {/* Wizard 3 Passos */}
+      {/* MODAL 1: WIZARD NOVO PRODUTO (3 PASSOS) */}
       {showWizard && (
-        <div className="modal-overlay">
-          <div className="modal-card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ fontSize: 18 }}>Passo {wizardStep} de 3 — Cadastro de Produto</h3>
-              <div style={{ display: 'flex', gap: 4 }}>
-                <div style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: wizardStep >= 1 ? 'var(--primary-color)' : 'var(--card-border)' }} />
-                <div style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: wizardStep >= 2 ? 'var(--primary-color)' : 'var(--card-border)' }} />
-                <div style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: wizardStep >= 3 ? 'var(--primary-color)' : 'var(--card-border)' }} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-5 animate-scale-in">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">WIZARD DE PRODUTO — PASSO {wizardStep}/3</span>
+                <h3 className="text-lg font-black text-white">Cadastrar Novo Produto</h3>
               </div>
+              <button onClick={() => setShowWizard(false)} className="text-slate-400 hover:text-white">
+                <X className="h-5 w-5" />
+              </button>
             </div>
 
-            {wizardStep === 1 && (
-              <div>
-                <div className="form-group">
-                  <label>Nome do Produto / Insumo</label>
-                  <input className="form-input" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="ex: Shampoo Neutro 1L" required />
-                </div>
-                <div className="form-group">
-                  <label>Tipo de Produto</label>
-                  <select className="form-input" value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })}>
-                    <option value="consumo">Consumo / Atendimento</option>
-                    <option value="venda">Revenda para Cliente</option>
-                    <option value="ferramenta">Equipamento / Ferramenta</option>
-                  </select>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
-                  <button className="btn btn-secondary" onClick={() => setShowWizard(false)}>Cancelar</button>
-                  <button className="btn btn-primary" onClick={() => { if (form.nome) setWizardStep(2); else alert('Informe o nome do produto.'); }}>Próximo &rarr;</button>
-                </div>
-              </div>
-            )}
+            <form onSubmit={handleCreateProduct} className="space-y-4">
+              {wizardStep === 1 && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">NOME DO PRODUTO</label>
+                    <input
+                      type="text"
+                      value={form.nome}
+                      onChange={(e) => setForm({ ...form, nome: e.target.value })}
+                      placeholder="Ex: Cílios Volume Brasileiro"
+                      required
+                      className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-blue-500"
+                    />
+                  </div>
 
-            {wizardStep === 2 && (
-              <div>
-                <div className="form-group">
-                  <label>Quantidade Inicial</label>
-                  <input type="number" className="form-input" value={form.quantidade} onChange={(e) => setForm({ ...form, quantidade: e.target.value })} required />
-                </div>
-                <div className="form-group">
-                  <label>Estoque Mínimo para Alerta</label>
-                  <input type="number" className="form-input" value={form.estoque_minimo} onChange={(e) => setForm({ ...form, estoque_minimo: e.target.value })} required />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginTop: 20 }}>
-                  <button className="btn btn-secondary" onClick={() => setWizardStep(1)}>&larr; Voltar</button>
-                  <button className="btn btn-primary" onClick={() => setWizardStep(3)}>Próximo &rarr;</button>
-                </div>
-              </div>
-            )}
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">SKU / CÓDIGO</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={form.codigo}
+                        onChange={(e) => setForm({ ...form, codigo: e.target.value })}
+                        className="flex-1 rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+                      />
+                      <button type="button" onClick={handleGerarSku} className="px-3 py-2 rounded-2xl bg-slate-800 text-xs font-bold text-slate-300">
+                        Gerar SKU
+                      </button>
+                    </div>
+                  </div>
 
-            {wizardStep === 3 && (
-              <form onSubmit={handleCreateProduct}>
-                <div className="form-group">
-                  <label>Custo Unitário (R$)</label>
-                  <input type="number" step="0.01" className="form-input" value={form.custo_unitario} onChange={(e) => setForm({ ...form, custo_unitario: e.target.value })} required />
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">TIPO</label>
+                    <select
+                      value={form.tipo}
+                      onChange={(e) => setForm({ ...form, tipo: e.target.value })}
+                      className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+                    >
+                      <option value="consumo">Consumo Interno (Insumo)</option>
+                      <option value="venda">Revenda para Cliente</option>
+                    </select>
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label>URL da Imagem do Produto (Opcional)</label>
-                  <input className="form-input" value={form.imagem_url} onChange={(e) => setForm({ ...form, imagem_url: e.target.value })} placeholder="https://..." />
+              )}
+
+              {wizardStep === 2 && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">QUANTIDADE INICIAL</label>
+                    <input
+                      type="number"
+                      value={form.quantidade}
+                      onChange={(e) => setForm({ ...form, quantidade: e.target.value })}
+                      required
+                      className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">ESTOQUE MÍNIMO PARA ALERTA</label>
+                    <input
+                      type="number"
+                      value={form.estoque_minimo}
+                      onChange={(e) => setForm({ ...form, estoque_minimo: e.target.value })}
+                      required
+                      className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">CUSTO UNITÁRIO (R$)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={form.custo_unitario}
+                      onChange={(e) => setForm({ ...form, custo_unitario: e.target.value })}
+                      required
+                      className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+                    />
+                  </div>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginTop: 20 }}>
-                  <button type="button" className="btn btn-secondary" onClick={() => setWizardStep(2)}>&larr; Voltar</button>
-                  <button type="submit" className="btn btn-primary">Concluir Cadastro</button>
+              )}
+
+              {wizardStep === 3 && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">LOCALIZAÇÃO NO ESTABELECIMENTO</label>
+                    <input
+                      type="text"
+                      value={form.localizacao}
+                      onChange={(e) => setForm({ ...form, localizacao: e.target.value })}
+                      placeholder="Ex: Armário A, Prateleira 2"
+                      className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">URL DA IMAGEM DO PRODUTO (OPCIONAL)</label>
+                    <input
+                      type="text"
+                      value={form.imagem_url}
+                      onChange={(e) => setForm({ ...form, imagem_url: e.target.value })}
+                      placeholder="https://..."
+                      className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+                    />
+                  </div>
                 </div>
-              </form>
-            )}
+              )}
+
+              <div className="flex items-center justify-between pt-3">
+                {wizardStep > 1 ? (
+                  <button type="button" onClick={() => setWizardStep(wizardStep - 1)} className="px-4 py-2.5 rounded-2xl bg-slate-800 text-xs font-bold text-slate-300">
+                    Voltar
+                  </button>
+                ) : <div />}
+
+                {wizardStep < 3 ? (
+                  <button type="button" onClick={() => setWizardStep(wizardStep + 1)} className="px-6 py-2.5 rounded-2xl bg-blue-600 text-xs font-black text-white">
+                    Próximo
+                  </button>
+                ) : (
+                  <button type="submit" className="px-6 py-2.5 rounded-2xl bg-emerald-600 text-xs font-black text-white shadow-lg">
+                    Salvar Produto
+                  </button>
+                )}
+              </div>
+            </form>
           </div>
         </div>
       )}
 
-      {/* Movement Modal */}
-      {showMovement && selectedProduct && (
-        <div className="modal-overlay">
-          <div className="modal-card">
-            <h3 style={{ fontSize: 18, marginBottom: 16 }}>Movimentar Estoque — {selectedProduct.nome}</h3>
-            <form onSubmit={handleMovement}>
-              <div className="form-group">
-                <label>Tipo de Movimento</label>
-                <select className="form-input" value={movForm.tipo} onChange={(e) => setMovForm({ ...movForm, tipo: e.target.value })}>
-                  <option value="entrada">Entrada (+)</option>
-                  <option value="saida">Saída (-)</option>
-                  <option value="ajuste">Ajuste de Balanço (=)</option>
-                </select>
+      {/* MODAL 2: MOVIMENTAÇÃO ENTRADA / SAÍDA */}
+      {showMovimento && selectedProduto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4 animate-scale-in">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <span className="text-[10px] font-black uppercase text-blue-400">REGISTRAR MOVIMENTAÇÃO</span>
+                <h3 className="text-lg font-black text-white">{selectedProduto.nome}</h3>
               </div>
-              <div className="form-group">
-                <label>Quantidade</label>
-                <input type="number" className="form-input" value={movForm.quantidade} onChange={(e) => setMovForm({ ...movForm, quantidade: e.target.value })} required min="1" />
+              <button onClick={() => setShowMovimento(false)} className="text-slate-400 hover:text-white">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleRegistrarMovimento} className="space-y-4">
+              <div>
+                <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">TIPO DE MOVIMENTO</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setMovForm({ ...movForm, tipo: 'entrada' })}
+                    className={`py-3 rounded-2xl text-xs font-black ${movForm.tipo === 'entrada' ? 'bg-emerald-600 text-white' : 'bg-slate-950 text-slate-400 border border-slate-800'}`}
+                  >
+                    + ENTRADA
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMovForm({ ...movForm, tipo: 'saida' })}
+                    className={`py-3 rounded-2xl text-xs font-black ${movForm.tipo === 'saida' ? 'bg-rose-600 text-white' : 'bg-slate-950 text-slate-400 border border-slate-800'}`}
+                  >
+                    - SAÍDA
+                  </button>
+                </div>
               </div>
-              <div className="form-group">
-                <label>Motivo / Observação</label>
-                <input className="form-input" value={movForm.motivo} onChange={(e) => setMovForm({ ...movForm, motivo: e.target.value })} placeholder="ex: Compra de insumos" />
+
+              <div>
+                <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">QUANTIDADE</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={movForm.quantidade}
+                  onChange={(e) => setMovForm({ ...movForm, quantidade: e.target.value })}
+                  required
+                  className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+                />
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
-                <button type="button" className="btn btn-secondary" onClick={() => setShowMovement(false)}>Cancelar</button>
-                <button type="submit" className="btn btn-primary">Confirmar Movimento</button>
+
+              <div>
+                <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">MOTIVO / OBSERVAÇÃO</label>
+                <input
+                  type="text"
+                  value={movForm.motivo}
+                  onChange={(e) => setMovForm({ ...movForm, motivo: e.target.value })}
+                  placeholder="Ex: Compra de reposição..."
+                  className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+                />
               </div>
+
+              <button type="submit" className="w-full py-3.5 rounded-2xl bg-blue-600 text-xs font-black text-white">
+                Confirmar Movimentação
+              </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: INVENTÁRIO GUIADO */}
+      {showInventario && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4 animate-scale-in max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <span className="text-[10px] font-black uppercase text-purple-400">AJUSTE RÁPIDO</span>
+                <h3 className="text-lg font-black text-white">Inventário Guiado em Lote</h3>
+              </div>
+              <button onClick={() => setShowInventario(false)} className="text-slate-400 hover:text-white">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto space-y-3 flex-1 pr-1">
+              {produtos.map(p => (
+                <div key={p.id} className="rounded-2xl border border-slate-800 bg-slate-950 p-3 flex items-center justify-between gap-3">
+                  <div>
+                    <h4 className="text-xs font-black text-white">{p.nome}</h4>
+                    <span className="text-[10px] text-slate-400">Atual: {p.quantidade} un</span>
+                  </div>
+                  <input
+                    type="number"
+                    value={inventarioData[p.id] ?? p.quantidade}
+                    onChange={(e) => setInventarioData({ ...inventarioData, [p.id]: e.target.value })}
+                    className="w-24 rounded-xl border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs font-black text-white text-center"
+                  />
+                </div>
+              ))}
+            </div>
+
+            <button onClick={handleSalvarInventario} className="w-full py-3.5 rounded-2xl bg-purple-600 text-xs font-black text-white">
+              ✓ Salvar Ajuste de Inventário
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4: RAZÃO / HISTÓRICO */}
+      {showRazao && selectedProduto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4 animate-scale-in">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <span className="text-[10px] font-black uppercase text-blue-400">EXTRATO DE MOVIMENTAÇÕES</span>
+                <h3 className="text-lg font-black text-white">{selectedProduto.nome}</h3>
+              </div>
+              <button onClick={() => setShowRazao(false)} className="text-slate-400 hover:text-white">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="text-xs text-slate-300 space-y-2 max-h-60 overflow-y-auto">
+              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex justify-between items-center">
+                <div>
+                  <span className="font-extrabold text-emerald-400 block">+ Entrada Inicial</span>
+                  <span className="text-[10px] text-slate-400">{new Date(selectedProduto.created_at || Date.now()).toLocaleDateString()}</span>
+                </div>
+                <strong className="text-white">{selectedProduto.quantidade} un</strong>
+              </div>
+            </div>
           </div>
         </div>
       )}
