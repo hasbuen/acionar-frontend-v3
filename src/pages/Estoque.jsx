@@ -88,6 +88,26 @@ export function Estoque() {
     }
   };
 
+  const openMovement = (tipo = 'entrada', produto = null) => {
+    setSelectedProduto(produto);
+    setMovForm({ tipo, quantidade: 1, motivo: '' });
+    setShowMovimento(true);
+  };
+
+  const handleTransfer = async (e) => {
+    e.preventDefault();
+    if (!selectedProduto) return;
+    try {
+      await apiRequest('/estoque/transferencias', 'POST', { produto_id: selectedProduto.id, profissional_id: transfForm.profissional_id, quantidade: parseInt(transfForm.quantidade, 10) });
+      setShowTransferencia(false);
+      setSelectedProduto(null);
+      setTransfForm({ profissional_id: '', quantidade: 1 });
+      fetchData();
+    } catch (err) {
+      alert(err.message || 'Erro ao enviar produto.');
+    }
+  };
+
   const handleRegistrarMovimento = async (e) => {
     e.preventDefault();
     if (!selectedProduto) return;
@@ -168,13 +188,13 @@ export function Estoque() {
             <ClipboardCheck className="h-4 w-4 text-purple-500" /> Inventário
           </button>
           <button
-            onClick={() => setShowTransferencia(true)}
+            onClick={() => { setSelectedProduto(null); setTransfForm({ profissional_id: '', quantidade: 1 }); setShowTransferencia(true); }}
             className="btn-animated px-4 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1.5"
           >
             <ArrowRightLeft className="h-4 w-4 text-sky-500" /> Enviar
           </button>
           <button
-            onClick={() => { setSelectedProduto(produtos[0] || null); setMovForm({ tipo: 'entrada', quantidade: 1, motivo: '' }); setShowMovimento(true); }}
+            onClick={() => openMovement('entrada')}
             className="btn-animated px-4 py-3 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-extrabold flex items-center justify-center gap-1.5 border border-emerald-500/20"
           >
             <ArrowDown className="h-4 w-4" /> Entrada
@@ -269,6 +289,9 @@ export function Estoque() {
               >
                 <div>
                   <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-slate-700 bg-slate-950">
+                      {p.imagem_url ? <img src={p.imagem_url} alt={p.nome} className="h-full w-full object-cover" /> : <Package className="mx-auto mt-5 h-6 w-6 text-slate-600" />}
+                    </div>
                     <div>
                       <span className="text-[10px] font-black uppercase text-blue-400 tracking-wider">
                         {p.tipo || 'CONSUMO'}
@@ -298,16 +321,29 @@ export function Estoque() {
 
                 <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/80">
                   <button
-                    onClick={() => { setSelectedProduto(p); setMovForm({ tipo: 'entrada', quantidade: 1, motivo: '' }); setShowMovimento(true); }}
+                    onClick={() => openMovement('entrada', p)}
+                    className="rounded-xl bg-blue-500/10 px-3 py-2.5 text-xs font-extrabold text-blue-300 border border-blue-500/20 hover:bg-blue-500/20"
+                  >
+                    Movimentar
+                  </button>
+                  <button
+                    onClick={() => openMovement('entrada', p)}
                     className="flex-1 py-2.5 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xs font-extrabold hover:bg-emerald-500/20"
                   >
                     + Entrada
                   </button>
                   <button
-                    onClick={() => { setSelectedProduto(p); setMovForm({ tipo: 'saida', quantidade: 1, motivo: '' }); setShowMovimento(true); }}
+                    onClick={() => openMovement('saida', p)}
                     className="flex-1 py-2.5 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 text-xs font-extrabold hover:bg-rose-500/20"
                   >
                     - Saída
+                  </button>
+                  <button
+                    onClick={() => { setSelectedProduto(p); setTransfForm({ profissional_id: '', quantidade: 1 }); setShowTransferencia(true); }}
+                    className="rounded-xl bg-sky-500/10 px-3 py-2.5 text-xs font-extrabold text-sky-300 border border-sky-500/20 hover:bg-sky-500/20"
+                    title="Enviar para outro auxiliar"
+                  >
+                    Enviar
                   </button>
                   <button
                     onClick={() => { setSelectedProduto(p); setShowRazao(true); }}
@@ -441,6 +477,8 @@ export function Estoque() {
                       placeholder="https://..."
                       className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
                     />
+                    <label className="mt-3 block text-[11px] font-black uppercase text-slate-400">OU ENVIE UMA FOTO<input type="file" accept="image/*" onChange={e => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => setForm(prev => ({ ...prev, imagem_url: reader.result })); reader.readAsDataURL(file); }} className="mt-1 block w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs font-semibold text-slate-300 file:mr-3 file:rounded-xl file:border-0 file:bg-blue-600 file:px-3 file:py-2 file:text-xs file:font-black file:text-white" /></label>
+                    {form.imagem_url && <img src={form.imagem_url} alt="Prévia do produto" className="mt-3 h-20 w-20 rounded-2xl border border-slate-700 object-cover" />}
                   </div>
                 </div>
               )}
@@ -467,8 +505,17 @@ export function Estoque() {
         </div>
       )}
 
+      {showTransferencia && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md space-y-4 rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3"><div><span className="text-[10px] font-black uppercase text-sky-400">TRANSFERÊNCIA DE ESTOQUE</span><h3 className="text-lg font-black text-white">Enviar para outro auxiliar</h3></div><button onClick={() => setShowTransferencia(false)} className="text-slate-400 hover:text-white"><X className="h-5 w-5" /></button></div>
+            <form onSubmit={handleTransfer} className="space-y-4"><label className="block text-[11px] font-black uppercase text-slate-400">PRODUTO<select value={selectedProduto?.id || ''} onChange={e => setSelectedProduto(produtos.find(product => Number(product.id) === Number(e.target.value)) || null)} className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white" required><option value="">Selecione um produto</option>{produtos.filter(product => Number(product.quantidade) > 0).map(product => <option key={product.id} value={product.id}>{product.nome} — saldo: {product.quantidade} un</option>)}</select></label>{selectedProduto && <div className="rounded-2xl border border-sky-500/20 bg-sky-500/10 p-3 text-xs text-sky-200">Saldo disponível: <strong>{selectedProduto.quantidade} unidades</strong></div>}<label className="block text-[11px] font-black uppercase text-slate-400">AUXILIAR DESTINO<select value={transfForm.profissional_id} onChange={e => setTransfForm({ ...transfForm, profissional_id: e.target.value })} className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white" required><option value="">Selecione o auxiliar</option>{profissionais.filter(professional => Number(professional.id) !== Number(selectedProduto?.profissional_id)).map(professional => <option key={professional.id} value={professional.id}>{professional.nome}</option>)}</select></label><label className="block text-[11px] font-black uppercase text-slate-400">QUANTIDADE<input type="number" min="1" max={selectedProduto?.quantidade || undefined} value={transfForm.quantidade} onChange={e => setTransfForm({ ...transfForm, quantidade: e.target.value })} className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white" required /></label><button className="w-full rounded-2xl bg-sky-600 py-3.5 text-xs font-black text-white shadow-lg shadow-sky-500/20">Confirmar envio</button></form>
+          </div>
+        </div>
+      )}
+
       {/* MODAL 2: MOVIMENTAÇÃO ENTRADA / SAÍDA */}
-      {showMovimento && selectedProduto && (
+      {showMovimento && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-fade-in">
           <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4 animate-scale-in">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -482,6 +529,7 @@ export function Estoque() {
             </div>
 
             <form onSubmit={handleRegistrarMovimento} className="space-y-4">
+              {!selectedProduto && <div><label className="mb-1 block text-[11px] font-black uppercase text-slate-400">PRODUTO</label><select value="" onChange={e => setSelectedProduto(produtos.find(product => Number(product.id) === Number(e.target.value)) || null)} className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white" required><option value="">Selecione o produto para movimentar...</option>{produtos.map(product => <option key={product.id} value={product.id}>{product.nome} — saldo: {product.quantidade} un</option>)}</select></div>}
               <div>
                 <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">TIPO DE MOVIMENTO</label>
                 <div className="grid grid-cols-2 gap-2">
