@@ -566,9 +566,6 @@ export function Agenda() {
                       <ActionButton kind="transfer" label="Transferir agendamento" onClick={() => openTransfer(item)}>
                         <ArrowRightLeft className="h-4 w-4" />
                       </ActionButton>
-                      <ActionButton kind="edit" label="Editar agendamento" onClick={() => setModal({ type: 'edit', item })}>
-                        <Edit3 className="h-4 w-4" />
-                      </ActionButton>
                       <ActionButton kind="delete" label="Excluir agendamento" onClick={() => removeAppointment(item)}>
                         <Trash2 className="h-4 w-4" />
                       </ActionButton>
