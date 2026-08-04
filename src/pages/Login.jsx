@@ -82,7 +82,7 @@ export function Login() {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Código da empresa</label>
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Empreendimento</label>
                     <div className="relative">
                       <Building2 className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                       <input type="text" value={tenantSlug} onChange={(event) => setTenantSlug(event.target.value)} required placeholder="ex.: patriciabeato" autoCapitalize="none" autoCorrect="off" className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 py-3.5 pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-100" />
