@@ -51,7 +51,7 @@ const buttonStyles = {
   delete: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/20 glow-rose'
 };
 
-const inputClass = 'w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-blue-500';
+const inputClass = 'w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-100 dark:focus:border-blue-500';
 
 function formatDate(value) {
   return new Date(value).toLocaleDateString('pt-BR');
@@ -67,13 +67,43 @@ function dateParts(value) {
 }
 
 function Modal({ title, subtitle, children, onClose, wide = false }) {
+  const modalRef = React.useRef(null);
+  const overlayRef = React.useRef(null);
+
+  React.useEffect(() => {
+    gsap.fromTo(overlayRef.current,
+      { opacity: 0 },
+      { opacity: 1, duration: 0.25, ease: 'power2.out' }
+    );
+    gsap.fromTo(modalRef.current,
+      { scale: 0.92, opacity: 0, y: 15 },
+      { scale: 1, opacity: 1, y: 0, duration: 0.4, ease: 'back.out(1.4)', delay: 0.05 }
+    );
+  }, []);
+
+  const handleClose = () => {
+    gsap.to(modalRef.current, {
+      scale: 0.94, opacity: 0, y: 10, duration: 0.2, ease: 'power2.in',
+      onComplete: onClose
+    });
+    gsap.to(overlayRef.current, {
+      opacity: 0, duration: 0.2, ease: 'power2.in'
+    });
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 p-4 backdrop-blur-sm">
-      <div className={`w-full ${wide ? 'max-w-2xl' : 'max-w-lg'} max-h-[92vh] overflow-y-auto rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl`}>
-        <div className="mb-5 flex items-start justify-between border-b border-slate-800 pb-4">
-          <div><h3 className="text-lg font-black text-white">{title}</h3>{subtitle && <p className="mt-1 text-xs font-semibold text-slate-400">{subtitle}</p>}</div>
-          <button type="button" onClick={onClose} className="text-slate-400 hover:text-white"><X className="h-5 w-5" /></button>
-        </div>
+    <div ref={overlayRef} className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-sm">
+      <div ref={modalRef} className={`relative w-full ${wide ? 'max-w-xl' : 'max-w-md'} overflow-hidden rounded-[2.2rem] border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100 sm:p-8`}>
+        <button
+          onClick={handleClose}
+          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors"
+        >
+          <X className="h-4 w-4" />
+        </button>
+        <header className="mb-5">
+          <h2 className="text-xl font-black text-slate-950 dark:text-white leading-tight">{title}</h2>
+          {subtitle && <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-0.5">{subtitle}</p>}
+        </header>
         {children}
       </div>
     </div>
@@ -451,21 +481,185 @@ export function Agenda() {
         </div>
       )}
 
-      {modal?.type === 'details' && <Modal title="Detalhes do agendamento" subtitle={modal.item.cliente_nome || 'Cliente'} onClose={() => setModal(null)}><div className="space-y-3 text-sm text-slate-300"><div className="flex justify-between border-b border-slate-800 pb-2"><span>Serviço</span><strong className="text-white">{modal.item.servico_nome || 'Atendimento'}</strong></div><div className="flex justify-between border-b border-slate-800 pb-2"><span>Data e horário</span><strong className="text-white">{formatDate(modal.item.data_hora)} às {formatTime(modal.item.data_hora)}</strong></div><div className="flex justify-between border-b border-slate-800 pb-2"><span>Valor total</span><strong className="text-emerald-300">R$ {Number(modal.item.valor_total || 0).toFixed(2)}</strong></div><div className="flex justify-between border-b border-slate-800 pb-2"><span>Status</span><strong className="text-blue-300">{statusLabels[modal.item.status] || modal.item.status}</strong></div>{modal.item.observacao && <div className="rounded-2xl bg-slate-950 p-3 italic">“{modal.item.observacao}”</div>}</div><div className="mt-5 flex gap-2"><button onClick={() => setModal({ type: 'status', item: modal.item })} className="flex-1 rounded-2xl bg-blue-600 py-3 text-xs font-black text-white">Alterar status</button><button onClick={() => setModal({ type: 'edit', item: modal.item })} className="rounded-2xl bg-slate-800 px-4 py-3 text-xs font-black text-white">Editar</button></div></Modal>}
+      {modal?.type === 'details' && (
+        <Modal title="Detalhes do agendamento" subtitle={modal.item.cliente_nome || 'Cliente'} onClose={() => setModal(null)}>
+          <div className="space-y-3.5 text-sm text-slate-600 dark:text-slate-350">
+            <div className="flex justify-between border-b border-slate-100 dark:border-slate-800/80 pb-2">
+              <span className="font-semibold text-slate-500">Serviço</span>
+              <strong className="text-slate-900 dark:text-white font-bold">{modal.item.servico_nome || 'Atendimento'}</strong>
+            </div>
+            <div className="flex justify-between border-b border-slate-100 dark:border-slate-800/80 pb-2">
+              <span className="font-semibold text-slate-500">Data e horário</span>
+              <strong className="text-slate-900 dark:text-white font-bold">{formatDate(modal.item.data_hora)} às {formatTime(modal.item.data_hora)}</strong>
+            </div>
+            <div className="flex justify-between border-b border-slate-100 dark:border-slate-800/80 pb-2">
+              <span className="font-semibold text-slate-500">Valor total</span>
+              <strong className="text-emerald-600 dark:text-emerald-400 font-black">R$ {Number(modal.item.valor_total || 0).toFixed(2)}</strong>
+            </div>
+            <div className="flex justify-between border-b border-slate-100 dark:border-slate-800/80 pb-2">
+              <span className="font-semibold text-slate-500">Status</span>
+              <strong className="text-blue-600 dark:text-blue-400 font-extrabold">{statusLabels[modal.item.status] || modal.item.status}</strong>
+            </div>
+            {modal.item.observacao && (
+              <div className="rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/60 dark:border-slate-800/50 p-3 italic text-slate-700 dark:text-slate-300">
+                “{modal.item.observacao}”
+              </div>
+            )}
+          </div>
+          <div className="mt-6 flex gap-2">
+            <button onClick={() => setModal({ type: 'status', item: modal.item })} className="flex-1 btn-animated rounded-2xl bg-blue-600 hover:bg-blue-700 py-3.5 text-xs font-black text-white shadow-lg shadow-blue-500/20 transition-all">Alterar status</button>
+            <button onClick={() => setModal({ type: 'edit', item: modal.item })} className="btn-animated rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white px-5 py-3.5 text-xs font-black transition-all">Editar</button>
+          </div>
+        </Modal>
+      )}
 
-      {modal?.type === 'status' && <Modal title="Alterar status" subtitle={modal.item.cliente_nome} onClose={() => setModal(null)}><div className="grid gap-2">{[['agendado', 'Confirmado'], ['em_atendimento', 'Em Atendimento'], ['concluido', 'Já Atendido / Concluído'], ['manutencao', 'Agendar Manutenção Periódica'], ['cancelado', 'Cancelado / Recusado']].map(([value, label]) => <button key={value} onClick={() => updateAppointment(modal.item, { status: value }, `Status alterado para ${label}.`)} className={`rounded-2xl border p-4 text-left text-sm font-black ${selectedStatus === value ? 'border-blue-500 bg-blue-500/10 text-blue-300' : 'border-slate-800 text-slate-300 hover:bg-slate-800'}`}>{label}{selectedStatus === value && <Check className="float-right h-4 w-4" />}</button>)}</div></Modal>}
+      {modal?.type === 'status' && (
+        <Modal title="Alterar status" subtitle={modal.item.cliente_nome} onClose={() => setModal(null)}>
+          <div className="grid gap-2 max-h-[60vh] overflow-y-auto pr-1">
+            {[
+              ['agendado', 'Confirmado'],
+              ['em_atendimento', 'Em Atendimento'],
+              ['concluido', 'Já Atendido / Concluído'],
+              ['manutencao', 'Agendar Manutenção Periódica'],
+              ['cancelado', 'Cancelado / Recusado']
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                onClick={() => updateAppointment(modal.item, { status: value }, `Status alterado para ${label}.`)}
+                className={`rounded-2xl border p-4 text-left text-sm font-black transition-all ${
+                  selectedStatus === value
+                    ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm shadow-blue-500/5'
+                    : 'border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-300'
+                }`}
+              >
+                {label}
+                {selectedStatus === value && <Check className="float-right h-4 w-4 text-blue-600 dark:text-blue-400" />}
+              </button>
+            ))}
+          </div>
+        </Modal>
+      )}
 
-      {modal?.type === 'notes' && <Modal title="Observações do agendamento" subtitle={modal.item.cliente_nome} onClose={() => setModal(null)}><form onSubmit={event => { event.preventDefault(); updateAppointment(modal.item, { observacao: event.currentTarget.observacao.value.slice(0, 1000) }, 'Observação salva.'); }} className="space-y-4"><textarea name="observacao" defaultValue={modal.item.observacao || ''} maxLength="1000" rows="6" className={inputClass} placeholder="Registre uma observação para este atendimento..." /><div className="flex justify-end gap-2"><button type="button" onClick={() => setModal(null)} className="rounded-2xl px-4 py-3 text-xs font-bold text-slate-400">Cancelar</button><button className="rounded-2xl bg-amber-500 px-5 py-3 text-xs font-black text-slate-950">Salvar observação</button></div></form></Modal>}
+      {modal?.type === 'notes' && (
+        <Modal title="Observações do agendamento" subtitle={modal.item.cliente_nome} onClose={() => setModal(null)}>
+          <form onSubmit={event => { event.preventDefault(); updateAppointment(modal.item, { observacao: event.currentTarget.observacao.value.slice(0, 1000) }, 'Observação salva.'); }} className="space-y-4">
+            <textarea name="observacao" defaultValue={modal.item.observacao || ''} maxLength="1000" rows="6" className={inputClass} placeholder="Registre uma observação para este atendimento..." />
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setModal(null)} className="btn-animated rounded-2xl px-5 py-3.5 text-xs font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white">Cancelar</button>
+              <button className="btn-animated rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-xs font-black text-white shadow-lg shadow-blue-500/20">Salvar observação</button>
+            </div>
+          </form>
+        </Modal>
+      )}
 
-      {modal?.type === 'maintenance' && <Modal title="Manutenção Periódica" subtitle={`${modal.item.cliente_nome || 'Cliente'} — ${modal.item.servico_nome || 'Atendimento'}`} onClose={() => setModal(null)}><form onSubmit={event => { event.preventDefault(); const data = new FormData(event.currentTarget); const date = `${data.get('date')}T${data.get('time')}`; apiRequest('/agendamentos', 'POST', { cliente_id: modal.item.cliente_id, profissional_id: modal.item.profissional_id, servico_id: modal.item.servico_id, data_hora: new Date(date).toISOString(), valor_total: modal.item.valor_total || 0, observacao: data.get('observacao'), status: 'agendado' }).then(() => { notify('Manutenção agendada.'); setModal(null); fetchAgenda(); }).catch(error => notify(error.message || 'Erro ao agendar manutenção.')); }} className="space-y-4"><div className="grid grid-cols-3 gap-2">{[15, 30, 45, 60, 90].map(days => <button type="button" key={days} onClick={event => { const date = new Date(modal.item.data_hora); date.setDate(date.getDate() + days); event.currentTarget.form.date.value = date.toISOString().slice(0, 10); }} className="rounded-xl border border-slate-700 px-2 py-3 text-xs font-black text-slate-300 hover:border-purple-500">{days} dias</button>)}</div><label className="block text-xs font-black uppercase text-slate-400">Data de retorno<input name="date" type="date" defaultValue={new Date(new Date(modal.item.data_hora).getTime() + 30 * 86400000).toISOString().slice(0, 10)} className={`${inputClass} mt-1`} required /></label><label className="block text-xs font-black uppercase text-slate-400">Horário<input name="time" type="time" defaultValue={formatTime(modal.item.data_hora)} className={`${inputClass} mt-1`} required /></label><textarea name="observacao" rows="3" className={inputClass} placeholder="Observações (opcional)" /><div className="flex justify-end gap-2"><button type="button" onClick={() => setModal(null)} className="rounded-2xl px-4 py-3 text-xs font-bold text-slate-400">Não agendar</button><button className="rounded-2xl bg-purple-600 px-5 py-3 text-xs font-black text-white">Confirmar e agendar</button></div></form></Modal>}
+      {modal?.type === 'maintenance' && (
+        <Modal title="Manutenção Periódica" subtitle={`${modal.item.cliente_nome || 'Cliente'} — ${modal.item.servico_nome || 'Atendimento'}`} onClose={() => setModal(null)}>
+          <form onSubmit={event => { event.preventDefault(); const data = new FormData(event.currentTarget); const date = `${data.get('date')}T${data.get('time')}`; apiRequest('/agendamentos', 'POST', { cliente_id: modal.item.cliente_id, profissional_id: modal.item.profissional_id, servico_id: modal.item.servico_id, data_hora: new Date(date).toISOString(), valor_total: modal.item.valor_total || 0, observacao: data.get('observacao'), status: 'agendado' }).then(() => { notify('Manutenção agendada.'); setModal(null); fetchAgenda(); }).catch(error => notify(error.message || 'Erro ao agendar manutenção.')); }} className="space-y-4">
+            <div className="grid grid-cols-5 gap-1.5 w-full">
+              {[15, 30, 45, 60, 90].map(days => (
+                <button type="button" key={days} onClick={event => { const date = new Date(modal.item.data_hora); date.setDate(date.getDate() + days); event.currentTarget.form.date.value = date.toISOString().slice(0, 10); }} className="btn-animated rounded-xl border border-slate-200 hover:border-purple-500 py-2.5 text-center text-xs font-black text-slate-700 dark:border-slate-800 dark:text-slate-300 dark:hover:border-purple-500">{days}d</button>
+              ))}
+            </div>
+            <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400">
+              Data de retorno
+              <input name="date" type="date" defaultValue={new Date(new Date(modal.item.data_hora).getTime() + 30 * 86400000).toISOString().slice(0, 10)} className={`${inputClass} mt-1`} required />
+            </label>
+            <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400">
+              Horário
+              <input name="time" type="time" defaultValue={formatTime(modal.item.data_hora)} className={`${inputClass} mt-1`} required />
+            </label>
+            <textarea name="observacao" rows="3" className={inputClass} placeholder="Observações (opcional)" />
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setModal(null)} className="btn-animated rounded-2xl px-5 py-3.5 text-xs font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white">Não agendar</button>
+              <button className="btn-animated rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-3.5 text-xs font-black text-white shadow-lg shadow-purple-500/20">Confirmar e agendar</button>
+            </div>
+          </form>
+        </Modal>
+      )}
 
-      {modal?.type === 'payment' && <Modal title="Pagamentos do agendamento" subtitle={modal.item.cliente_nome} onClose={() => setModal(null)}><div className="mb-4 rounded-2xl bg-slate-950 p-4"><div className="flex justify-between text-sm"><span className="text-slate-400">Valor do atendimento</span><strong className="text-white">R$ {Number(modal.item.valor_total || 0).toFixed(2)}</strong></div><div className="mt-2 flex justify-between text-sm"><span className="text-slate-400">Total registrado</span><strong className="text-emerald-300">R$ {payments.reduce((sum, payment) => sum + Number(payment.valor || 0), 0).toFixed(2)}</strong></div></div><div className="mb-5 space-y-2">{payments.length ? payments.map(payment => <div key={payment.id} className="flex justify-between rounded-xl border border-slate-800 p-3 text-xs"><span className="text-slate-300">{payment.forma_pagamento || 'Pagamento'}</span><strong className="text-emerald-300">R$ {Number(payment.valor).toFixed(2)}</strong></div>) : <p className="text-center text-xs text-slate-500">Nenhum pagamento registrado.</p>}</div><form onSubmit={event => recordPayment(event, modal.item)} className="space-y-3"><label className="block text-xs font-black uppercase text-slate-400">Valor<input name="valor" type="number" step="0.01" min="0" defaultValue={modal.item.valor_total || 0} className={`${inputClass} mt-1`} required /></label><label className="block text-xs font-black uppercase text-slate-400">Forma de pagamento<select name="forma_pagamento" className={`${inputClass} mt-1`}><option value="pix">Pix</option><option value="cartao">Cartão</option><option value="dinheiro">Dinheiro</option><option value="transferencia">Transferência</option></select></label><button className="w-full rounded-2xl bg-emerald-600 py-3 text-xs font-black text-white">Registrar pagamento</button></form></Modal>}
+      {modal?.type === 'payment' && (
+        <Modal title="Pagamentos do agendamento" subtitle={modal.item.cliente_nome} onClose={() => setModal(null)}>
+          <div className="mb-4 rounded-2xl bg-slate-50 border border-slate-200/60 dark:bg-slate-950 p-4">
+            <div className="flex justify-between text-sm"><span className="text-slate-500">Valor do atendimento</span><strong className="text-slate-900 dark:text-white">R$ {Number(modal.item.valor_total || 0).toFixed(2)}</strong></div>
+            <div className="mt-2 flex justify-between text-sm"><span className="text-slate-500">Total registrado</span><strong className="text-emerald-600 dark:text-emerald-400 font-extrabold">R$ {payments.reduce((sum, payment) => sum + Number(payment.valor || 0), 0).toFixed(2)}</strong></div>
+          </div>
+          <div className="mb-5 space-y-2 max-h-[25vh] overflow-y-auto pr-1">
+            {payments.length ? payments.map(payment => (
+              <div key={payment.id} className="flex justify-between rounded-xl border border-slate-200 dark:border-slate-800/80 p-3 text-xs">
+                <span className="text-slate-600 dark:text-slate-400 font-semibold">{payment.forma_pagamento?.toUpperCase() || 'PAGAMENTO'}</span>
+                <strong className="text-emerald-600 dark:text-emerald-400">R$ {Number(payment.valor).toFixed(2)}</strong>
+              </div>
+            )) : <p className="text-center text-xs text-slate-400 font-medium">Nenhum pagamento registrado.</p>}
+          </div>
+          <form onSubmit={event => recordPayment(event, modal.item)} className="space-y-3.5">
+            <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400">Valor<input name="valor" type="number" step="0.01" min="0" defaultValue={modal.item.valor_total || 0} className={`${inputClass} mt-1`} required /></label>
+            <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400">Forma de pagamento<select name="forma_pagamento" className={`${inputClass} mt-1`}><option value="pix">Pix</option><option value="cartao">Cartão</option><option value="dinheiro">Dinheiro</option><option value="transferencia">Transferência</option></select></label>
+            <button className="btn-animated w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 py-3.5 text-xs font-black text-white shadow-lg shadow-emerald-500/10">Registrar pagamento</button>
+          </form>
+        </Modal>
+      )}
 
-      {modal?.type === 'transfer' && <Modal title="Transferir agendamento" subtitle={modal.item.cliente_nome} onClose={() => setModal(null)}><div className="space-y-2">{profissionais.map(professional => <button key={professional.id} onClick={() => updateAppointment(modal.item, { profissional_id: professional.id }, `Agendamento transferido para ${professional.nome}.`)} className="flex w-full items-center gap-3 rounded-2xl border border-slate-800 p-4 text-left text-sm font-black text-slate-200 hover:border-indigo-500"><User className="h-5 w-5 text-indigo-300" />{professional.nome}</button>)}{!profissionais.length && <p className="text-center text-sm text-slate-500">Nenhum profissional disponível.</p>}</div></Modal>}
+      {modal?.type === 'transfer' && (
+        <Modal title="Transferir agendamento" subtitle={modal.item.cliente_nome} onClose={() => setModal(null)}>
+          <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+            {profissionais.map(professional => (
+              <button key={professional.id} onClick={() => updateAppointment(modal.item, { profissional_id: professional.id }, `Agendamento transferido para ${professional.nome}.`)} className="btn-animated flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white/50 hover:bg-slate-50 dark:bg-slate-900/50 dark:border-slate-800 p-4 text-left text-sm font-black text-slate-700 dark:text-slate-200"><User className="h-5 w-5 text-indigo-500 dark:text-indigo-400" />{professional.nome}</button>
+            ))}
+            {!profissionais.length && <p className="text-center text-sm text-slate-400 font-medium">Nenhum profissional disponível.</p>}
+          </div>
+        </Modal>
+      )}
 
-      {modal?.type === 'edit' && <Modal title="Editar agendamento" subtitle={modal.item.cliente_nome} onClose={() => setModal(null)}><form onSubmit={event => { event.preventDefault(); const data = new FormData(event.currentTarget); updateAppointment(modal.item, { data_hora: new Date(data.get('data_hora')).toISOString(), observacao: data.get('observacao'), valor_total: Number(data.get('valor_total')), status: data.get('status') }, 'Agendamento atualizado.'); }} className="space-y-4"><label className="block text-xs font-black uppercase text-slate-400">Data e horário<input name="data_hora" type="datetime-local" defaultValue={new Date(modal.item.data_hora).toISOString().slice(0, 16)} className={`${inputClass} mt-1`} required /></label><label className="block text-xs font-black uppercase text-slate-400">Valor<input name="valor_total" type="number" step="0.01" defaultValue={modal.item.valor_total || 0} className={`${inputClass} mt-1`} /></label><label className="block text-xs font-black uppercase text-slate-400">Status<select name="status" defaultValue={modal.item.status} className={`${inputClass} mt-1`}>{Object.entries(statusLabels).filter(([key]) => !['aguardando_confirmacao', 'solicitado', 'confirmado', 'atendido', 'recusado'].includes(key)).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label><textarea name="observacao" rows="3" defaultValue={modal.item.observacao || ''} className={inputClass} placeholder="Observações" /><button className="w-full rounded-2xl bg-blue-600 py-3 text-xs font-black text-white">Salvar alterações</button></form></Modal>}
+      {modal?.type === 'edit' && (
+        <Modal title="Editar agendamento" subtitle={modal.item.cliente_nome} onClose={() => setModal(null)}>
+          <form onSubmit={event => { event.preventDefault(); const data = new FormData(event.currentTarget); updateAppointment(modal.item, { data_hora: new Date(data.get('data_hora')).toISOString(), observacao: data.get('observacao'), valor_total: Number(data.get('valor_total')), status: data.get('status') }, 'Agendamento atualizado.'); }} className="space-y-4">
+            <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400">Data e horário
+              <input name="data_hora" type="datetime-local" defaultValue={new Date(modal.item.data_hora).toISOString().slice(0, 16)} className={`${inputClass} mt-1`} required />
+            </label>
+            <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400">Valor
+              <input name="valor_total" type="number" step="0.01" defaultValue={modal.item.valor_total || 0} className={`${inputClass} mt-1`} />
+            </label>
+            <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400">Status
+              <select name="status" defaultValue={modal.item.status} className={`${inputClass} mt-1`}>
+                {Object.entries(statusLabels).filter(([key]) => !['aguardando_confirmacao', 'solicitado', 'confirmado', 'atendido', 'recusado'].includes(key)).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+              </select>
+            </label>
+            <textarea name="observacao" rows="3" defaultValue={modal.item.observacao || ''} className={inputClass} placeholder="Observações" />
+            <button className="btn-animated w-full rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 py-3.5 text-xs font-black text-white shadow-lg shadow-blue-500/20 hover:from-blue-700 hover:to-indigo-700">Salvar alterações</button>
+          </form>
+        </Modal>
+      )}
 
-      {modal === 'create' && <Modal title="Novo Agendamento" subtitle="Preencha os dados do atendimento" onClose={() => setModal(null)}><form onSubmit={createAppointment} className="space-y-4"><label className="block text-xs font-black uppercase text-slate-400">Cliente<input value={form.cliente_nome} onChange={event => setForm({ ...form, cliente_nome: event.target.value, cliente_id: '' })} className={`${inputClass} mt-1`} placeholder="Nome do cliente" required /></label>{form.cliente_nome && filteredClients.length > 0 && <div className="max-h-28 overflow-y-auto rounded-xl border border-slate-800 bg-slate-950">{filteredClients.slice(0, 5).map(client => <button type="button" key={client.id} onClick={() => setForm({ ...form, cliente_id: client.id, cliente_nome: client.nome, cliente_whatsapp: client.whatsapp || '' })} className="block w-full px-3 py-2 text-left text-xs font-bold text-slate-300 hover:bg-slate-800">{client.nome}</button>)}</div>}<label className="block text-xs font-black uppercase text-slate-400">WhatsApp<input value={form.cliente_whatsapp} onChange={event => setForm({ ...form, cliente_whatsapp: event.target.value })} className={`${inputClass} mt-1`} placeholder="(11) 99999-9999" /></label><label className="block text-xs font-black uppercase text-slate-400">Serviço<select value={form.servico_id} onChange={event => setForm({ ...form, servico_id: event.target.value })} className={`${inputClass} mt-1`} required><option value="">Selecione um serviço</option>{servicos.map(service => <option key={service.id} value={service.id}>{service.nome} — R$ {Number(service.preco || 0).toFixed(2)}</option>)}</select></label><label className="block text-xs font-black uppercase text-slate-400">Data e horário<input value={form.data_hora} onChange={event => setForm({ ...form, data_hora: event.target.value })} type="datetime-local" className={`${inputClass} mt-1`} required /></label><textarea value={form.observacao} onChange={event => setForm({ ...form, observacao: event.target.value })} rows="3" className={inputClass} placeholder="Observações (opcional)" /><button className="w-full rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 py-3 text-xs font-black text-white">Confirmar agendamento</button></form></Modal>}
+      {modal === 'create' && (
+        <Modal title="Novo Agendamento" subtitle="Preencha os dados do atendimento" onClose={() => setModal(null)}>
+          <form onSubmit={createAppointment} className="space-y-4">
+            <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400">Cliente
+              <input value={form.cliente_nome} onChange={event => setForm({ ...form, cliente_nome: event.target.value, cliente_id: '' })} className={`${inputClass} mt-1`} placeholder="Nome do cliente" required />
+            </label>
+            {form.cliente_nome && filteredClients.length > 0 && (
+              <div className="max-h-28 overflow-y-auto rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+                {filteredClients.slice(0, 5).map(client => (
+                  <button type="button" key={client.id} onClick={() => setForm({ ...form, cliente_id: client.id, cliente_nome: client.nome, cliente_whatsapp: client.whatsapp || '' })} className="block w-full px-3 py-2 text-left text-xs font-bold text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">{client.nome}</button>
+                ))}
+              </div>
+            )}
+            <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400">WhatsApp
+              <input value={form.cliente_whatsapp} onChange={event => setForm({ ...form, cliente_whatsapp: event.target.value })} className={`${inputClass} mt-1`} placeholder="(11) 99999-9999" />
+            </label>
+            <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400">Serviço
+              <select value={form.servico_id} onChange={event => setForm({ ...form, servico_id: event.target.value })} className={`${inputClass} mt-1`} required>
+                <option value="">Selecione um serviço</option>
+                {servicos.map(service => <option key={service.id} value={service.id}>{service.nome} — R$ {Number(service.preco || 0).toFixed(2)}</option>)}
+              </select>
+            </label>
+            <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400">Data e horário
+              <input value={form.data_hora} onChange={event => setForm({ ...form, data_hora: event.target.value })} type="datetime-local" className={`${inputClass} mt-1`} required />
+            </label>
+            <textarea value={form.observacao} onChange={event => setForm({ ...form, observacao: event.target.value })} rows="3" className={inputClass} placeholder="Observações (opcional)" />
+            <button className="btn-animated w-full rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 py-3.5 text-xs font-black text-white shadow-lg shadow-blue-500/25">Confirmar agendamento</button>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 }
