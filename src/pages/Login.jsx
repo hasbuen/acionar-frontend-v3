@@ -8,7 +8,7 @@ export function Login() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'));
+  const [dark, setDark] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [tenantValido, setTenantValido] = useState(false);
@@ -35,6 +35,13 @@ export function Login() {
 
     return () => clearTimeout(delayDebounceFn);
   }, [tenantSlug]);
+
+  React.useEffect(() => {
+    // Forçar a tela de login a carregar no padrão tema claro
+    setDark(false);
+    document.documentElement.classList.remove('dark');
+    localStorage.setItem('color-theme', 'light');
+  }, []);
 
   React.useEffect(() => {
     const favicon = document.querySelector("link[rel='icon']");
