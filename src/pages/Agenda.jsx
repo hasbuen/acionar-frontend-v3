@@ -114,7 +114,7 @@ function ActionButton({ kind, label, children, onClick }) {
   return <button type="button" onClick={onClick} title={label} aria-label={label} className={`flex h-10 w-10 items-center justify-center rounded-xl border transition ${buttonStyles[kind]}`}>{children}</button>;
 }
 
-function DetailsModal({ item, onClose, onUpdateStatus, onEditFull }) {
+function DetailsModal({ item, onClose, onUpdateStatus, onOpenMaintenance, onEditFull }) {
   const [selectedStatus, setSelectedStatus] = useState(item.status || 'agendado');
   const [saving, setSaving] = useState(false);
 
@@ -129,6 +129,12 @@ function DetailsModal({ item, onClose, onUpdateStatus, onEditFull }) {
   const currentOption = statusOptions.find(o => o.value === selectedStatus) || statusOptions[0];
 
   const handleSave = async () => {
+    if (selectedStatus === 'manutencao') {
+      onClose();
+      onOpenMaintenance(item);
+      return;
+    }
+
     setSaving(true);
     try {
       await onUpdateStatus(item, { status: selectedStatus }, `Status alterado para ${currentOption.label}.`);
@@ -583,6 +589,7 @@ export function Agenda() {
           item={modal.item}
           onClose={() => setModal(null)}
           onUpdateStatus={updateAppointment}
+          onOpenMaintenance={(item) => setModal({ type: 'maintenance', item })}
           onEditFull={(item) => setModal({ type: 'edit', item })}
         />
       )}
