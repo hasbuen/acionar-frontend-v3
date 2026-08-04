@@ -3,7 +3,7 @@ import { apiRequest } from '../services/api';
 import { PaymentModal } from '../components/PaymentModal';
 import { NewAppointmentModal } from '../components/NewAppointmentModal';
 import {
-  AlertCircle, ArrowRightLeft, Banknote, Calendar, CalendarDays, Check, CheckCircle, Clock, CreditCard, DollarSign,
+  Activity, AlertCircle, ArrowRightLeft, Banknote, Calendar, CalendarDays, Check, CheckCircle, ChevronDown, ChevronUp, Clock, CreditCard, DollarSign,
   Edit3, Info, Link, MessageSquare, Phone, Plus, QrCode, Scissors, ShieldCheck, Trash2, User,
   WalletCards, Wrench, X, Zap
 } from 'lucide-react';
@@ -97,6 +97,7 @@ export function Agenda() {
   const [clientSearch, setClientSearch] = useState('');
   const [form, setForm] = useState({ cliente_id: '', cliente_nome: '', cliente_whatsapp: '', servico_id: '', data_hora: `${new Date().toISOString().slice(0, 10)}T18:40`, observacao: '' });
   const [todosAgendamentos, setTodosAgendamentos] = useState([]);
+  const [statsOpen, setStatsOpen] = useState(true);
 
   const notify = (message) => { setToast(message); window.setTimeout(() => setToast(''), 3000); };
 
@@ -214,36 +215,58 @@ export function Agenda() {
       {modal === 'create-new' && <NewAppointmentModal form={form} setForm={setForm} clients={filteredClients} services={servicos} onClose={() => setModal(null)} onSubmit={createAppointment} />}
       {toast && <div className="fixed right-5 top-5 z-[70] rounded-2xl border border-emerald-500/30 bg-slate-900 px-5 py-3 text-sm font-bold text-emerald-300 shadow-2xl">{toast}</div>}
 
-      <div className="flex flex-col items-start justify-between gap-4 rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-xl backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-900/60 md:flex-row md:items-center">
-        <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 w-full lg:w-auto flex-1">
-          <div className="shrink-0">
-            <span className="inline-flex rounded-full bg-blue-500/10 px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-blue-500">Gestão inteligente</span>
-            <h1 className="mt-1.5 text-2xl font-black text-slate-900 dark:text-white">Agenda</h1>
+      <div className="flex items-center justify-between w-full p-1">
+        <div>
+          <span className="inline-flex rounded-full bg-blue-500/10 px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-blue-500">Gestão inteligente</span>
+          <h1 className="mt-1 text-3xl font-black text-slate-900 dark:text-white sm:text-4xl">Agenda</h1>
+        </div>
+        <button onClick={openCreate} className="btn-animated inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-500/25 shrink-0"><Plus className="h-5 w-5" /> <span className="hidden sm:inline">Novo Agendamento</span><span className="inline sm:hidden">Novo</span></button>
+      </div>
+
+      <div className="rounded-3xl border border-slate-200 bg-white/80 dark:border-slate-800/80 dark:bg-slate-900/60 shadow-xl backdrop-blur-xl overflow-hidden w-full transition-all">
+        <div 
+          onClick={() => setStatsOpen(!statsOpen)} 
+          className="flex items-center justify-between p-5 cursor-pointer select-none"
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+              <Activity className="h-5 w-5" />
+            </div>
+            <div>
+              <span className="text-[9px] font-extrabold uppercase tracking-widest text-blue-500">Visão Geral</span>
+              <h2 className="text-base font-black text-slate-900 dark:text-white leading-tight">Indicadores de Hoje</h2>
+            </div>
           </div>
-          
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 w-full flex-1">
-            <div className="rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-slate-50/50 dark:bg-slate-950/30 p-3 shadow-sm flex flex-col justify-between">
-              <span className="text-[9px] font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400">Solicitados</span>
-              <span className="mt-0.5 text-xl font-black text-slate-900 dark:text-white">{stats.solicitados}</span>
-            </div>
-
-            <div className="rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-slate-50/50 dark:bg-slate-950/30 p-3 shadow-sm flex flex-col justify-between">
-              <span className="text-[9px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400">Confirmados</span>
-              <span className="mt-0.5 text-xl font-black text-slate-900 dark:text-white">{stats.confirmados}</span>
-            </div>
-
-            <div className="rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-slate-50/50 dark:bg-slate-950/30 p-3 shadow-sm flex flex-col justify-between">
-              <span className="text-[9px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Atendidos</span>
-              <span className="mt-0.5 text-xl font-black text-slate-900 dark:text-white">{stats.concluidos}</span>
-            </div>
-
-            <div className="rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-slate-50/50 dark:bg-slate-950/30 p-3 shadow-sm flex flex-col justify-between">
-              <span className="text-[9px] font-extrabold uppercase tracking-wider text-rose-600 dark:text-rose-400">Cancelados</span>
-              <span className="mt-0.5 text-xl font-black text-slate-900 dark:text-white">{stats.cancelados}</span>
-            </div>
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-50/80 dark:bg-slate-800 text-blue-600 dark:text-blue-400">
+            {statsOpen ? <ChevronUp className="h-4.5 w-4.5" /> : <ChevronDown className="h-4.5 w-4.5" />}
           </div>
         </div>
-        <button onClick={openCreate} className="btn-animated inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-500/25 shrink-0"><Plus className="h-5 w-5" /> Novo Agendamento</button>
+
+        {statsOpen && (
+          <div className="border-t border-slate-100 dark:border-slate-800/60 p-5 bg-slate-50/20 dark:bg-slate-950/10">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 w-full">
+              <div className="rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-white dark:bg-slate-950/40 p-4 shadow-sm flex flex-col justify-between">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400">Solicitados</span>
+                <span className="mt-1.5 text-2xl font-black text-slate-900 dark:text-white">{stats.solicitados}</span>
+              </div>
+
+              <div className="rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-white dark:bg-slate-950/40 p-4 shadow-sm flex flex-col justify-between">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400">Confirmados</span>
+                <span className="mt-1.5 text-2xl font-black text-slate-900 dark:text-white">{stats.confirmados}</span>
+              </div>
+
+              <div className="rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-white dark:bg-slate-950/40 p-4 shadow-sm flex flex-col justify-between">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Atendidos</span>
+                <span className="mt-1.5 text-2xl font-black text-slate-900 dark:text-white">{stats.concluidos}</span>
+              </div>
+
+              <div className="rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-white dark:bg-slate-950/40 p-4 shadow-sm flex flex-col justify-between">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-rose-600 dark:text-rose-400">Cancelados</span>
+                <span className="mt-1.5 text-2xl font-black text-slate-900 dark:text-white">{stats.cancelados}</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">{filters.map(([key, label]) => <button key={key} onClick={() => setActiveFilter(key)} className={`whitespace-nowrap rounded-2xl border px-4 py-2 text-xs font-extrabold transition ${activeFilter === key ? 'border-blue-500 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20' : 'border-slate-200 bg-white/80 text-slate-500 hover:bg-white dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-400'}`}>{label}</button>)}</div>
