@@ -318,6 +318,91 @@ function NotesModal({ item, onClose, onSave }) {
   );
 }
 
+function OnlinePaymentModal({ item, valor, onClose, notify }) {
+  const [copied, setCopied] = useState(false);
+  const valorFinal = Number(valor || item.valor_total || 0).toFixed(2);
+  
+  const paymentLink = `https://acionar.app/pay/${item.id || 'cobranca'}?v=${valorFinal}`;
+  const pixKey = `00020126580014BR.GOV.BCB.PIX0136${item.id || 'acionar'}5204000053039865405${valorFinal}5802BR5915${(item.cliente_nome || 'Cliente').slice(0,15)}6009SAO PAULO62070503***6304E2CA`;
+
+  const copyToClipboard = (text, label) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    notify(`${label} copiado com sucesso!`);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const whatsappMessage = `Olá ${item.cliente_nome || ''}! Segue o link seguro para pagamento do seu atendimento (${item.servico_nome || 'Atendimento'}) no valor de R$ ${valorFinal}:\n\n${paymentLink}\n\nVocê pode escolher pagar via Pix ou Cartão.`;
+
+  return (
+    <Modal
+      title="Cobrança Pix ou Cartão"
+      subtitle={`${item.cliente_nome || 'Cliente'} • R$ ${valorFinal}`}
+      onClose={onClose}
+    >
+      <div className="space-y-4 text-center">
+        <div className="mx-auto flex flex-col items-center justify-center rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/70 shadow-inner">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mb-2">
+            <QrCode className="h-6 w-6" />
+          </div>
+          <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+            QR Code Pix para Pagamento
+          </span>
+          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 mb-3">
+            Escaneie com o app do banco ou copie a chave
+          </span>
+          
+          <div className="rounded-2xl border-4 border-white bg-white p-3 shadow-md">
+            <img
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(pixKey)}`}
+              alt="QR Code Pix"
+              className="h-36 w-36 object-contain"
+            />
+          </div>
+          
+          <span className="mt-3 text-lg font-black text-emerald-600 dark:text-emerald-400">
+            R$ {valorFinal}
+          </span>
+        </div>
+
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => copyToClipboard(pixKey, 'Chave Pix')}
+            className="btn-animated flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 py-3.5 text-xs font-extrabold text-slate-800 dark:text-slate-200 shadow-sm"
+          >
+            <QrCode className="h-4 w-4 text-emerald-500" />
+            {copied ? 'Chave Pix Copiada!' : 'Copiar Chave Pix (Copia e Cola)'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => copyToClipboard(paymentLink, 'Link de Pagamento')}
+            className="btn-animated flex w-full items-center justify-center gap-2 rounded-2xl border border-blue-200 bg-blue-50/50 hover:bg-blue-100/50 dark:border-blue-900/50 dark:bg-blue-950/30 py-3.5 text-xs font-extrabold text-blue-600 dark:text-blue-400"
+          >
+            <Link className="h-4 w-4 text-blue-500" />
+            Copiar Link Checkout (Pix / Cartão)
+          </button>
+
+          {item.cliente_whatsapp && (
+            <a
+              href={`https://wa.me/55${item.cliente_whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(whatsappMessage)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-animated flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 py-3.5 text-xs font-black text-white shadow-lg shadow-emerald-500/20"
+            >
+              <svg className="h-4.5 w-4.5 fill-current" viewBox="0 0 24 24">
+                <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+              </svg>
+              Enviar Cobrança no WhatsApp
+            </a>
+          )}
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 export function Agenda() {
   const [agendamentos, setAgendamentos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -632,7 +717,15 @@ export function Agenda() {
                   ) : (
                     <>
                       <ActionButton kind="notes" label="Registrar observação" onClick={() => setModal({ type: 'notes', item })}>
-                        <MessageSquare className="h-4 w-4" />
+                        <div className="relative flex items-center justify-center">
+                          <MessageSquare className="h-4 w-4" />
+                          {item.observacao && (
+                            <span className="absolute -top-1.5 -right-1.5 flex h-3 w-3">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500 shadow-sm shadow-amber-500/50"></span>
+                            </span>
+                          )}
+                        </div>
                       </ActionButton>
                       {item.cliente_whatsapp && (
                         <a
@@ -646,7 +739,9 @@ export function Agenda() {
                           className={`flex h-10 w-10 items-center justify-center rounded-xl border ${buttonStyles.whatsapp}`}
                           title="Enviar WhatsApp"
                         >
-                          <Phone className="h-4 w-4" />
+                          <svg className="h-4.5 w-4.5 fill-current" viewBox="0 0 24 24">
+                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+                          </svg>
                         </a>
                       )}
                       <ActionButton kind="payment" label="Registrar / ver pagamentos" onClick={() => openPayment(item)}>
@@ -738,25 +833,24 @@ export function Agenda() {
       )}
 
       {modal?.type === 'payment' && (
-        <Modal title="Pagamentos do agendamento" subtitle={modal.item.cliente_nome} onClose={() => setModal(null)}>
-          <div className="mb-4 rounded-2xl bg-slate-50 border border-slate-200/60 dark:bg-slate-950 p-4">
-            <div className="flex justify-between text-sm"><span className="text-slate-500">Valor do atendimento</span><strong className="text-slate-900 dark:text-white">R$ {Number(modal.item.valor_total || 0).toFixed(2)}</strong></div>
-            <div className="mt-2 flex justify-between text-sm"><span className="text-slate-500">Total registrado</span><strong className="text-emerald-600 dark:text-emerald-400 font-extrabold">R$ {payments.reduce((sum, payment) => sum + Number(payment.valor || 0), 0).toFixed(2)}</strong></div>
-          </div>
-          <div className="mb-5 space-y-2 max-h-[25vh] overflow-y-auto pr-1">
-            {payments.length ? payments.map(payment => (
-              <div key={payment.id} className="flex justify-between rounded-xl border border-slate-200 dark:border-slate-800/80 p-3 text-xs">
-                <span className="text-slate-600 dark:text-slate-400 font-semibold">{payment.forma_pagamento?.toUpperCase() || 'PAGAMENTO'}</span>
-                <strong className="text-emerald-600 dark:text-emerald-400">R$ {Number(payment.valor).toFixed(2)}</strong>
-              </div>
-            )) : <p className="text-center text-xs text-slate-400 font-medium">Nenhum pagamento registrado.</p>}
-          </div>
-          <form onSubmit={event => recordPayment(event, modal.item)} className="space-y-3.5">
-            <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400">Valor<input name="valor" type="number" step="0.01" min="0" defaultValue={modal.item.valor_total || 0} className={`${inputClass} mt-1`} required /></label>
-            <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400">Forma de pagamento<select name="forma_pagamento" className={`${inputClass} mt-1`}><option value="pix">Pix</option><option value="cartao">Cartão</option><option value="dinheiro">Dinheiro</option><option value="transferencia">Transferência</option></select></label>
-            <button className="btn-animated w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 py-3.5 text-xs font-black text-white shadow-lg shadow-emerald-500/10">Registrar pagamento</button>
-          </form>
-        </Modal>
+        <PaymentModal
+          item={modal.item}
+          payments={payments}
+          draft={paymentDraft}
+          setDraft={setPaymentDraft}
+          onClose={() => setModal(null)}
+          onSubmit={(event) => recordPayment(event, modal.item)}
+          onOnline={() => setModal({ type: 'online_payment', item: modal.item, valor: paymentDraft.gross || modal.item.valor_total })}
+        />
+      )}
+
+      {modal?.type === 'online_payment' && (
+        <OnlinePaymentModal
+          item={modal.item}
+          valor={modal.valor}
+          onClose={() => setModal(null)}
+          notify={notify}
+        />
       )}
 
       {modal?.type === 'transfer' && (
