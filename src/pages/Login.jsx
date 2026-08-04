@@ -19,7 +19,7 @@ export function Login() {
     try {
       await login(tenantSlug.trim().toLowerCase(), email.trim().toLowerCase(), senha);
     } catch (err) {
-      setError(err.message || 'Falha na autenticação.');
+      setError('Não foi possível conectar, verifique suas credenciais ou acione o suporte');
     } finally {
       setLoading(false);
     }
