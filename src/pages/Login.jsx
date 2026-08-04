@@ -41,9 +41,7 @@ export function Login() {
 
       <header className="relative z-10 w-full max-w-6xl mx-auto flex items-center justify-between pt-safe-top">
         <div className="flex items-center gap-2">
-          <div className="h-10 w-10 rounded-[1.15rem] bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 flex items-center justify-center text-white shadow-lg shadow-blue-500/25 font-black text-lg">
-            <Sparkles className="h-5 w-5" />
-          </div>
+          <img src="/icon-192.png" alt="Logo Acionar" className="h-10 w-10 object-contain rounded-xl shadow-lg shadow-blue-500/10" />
           <div>
             <span className="block text-xl font-black tracking-tight text-slate-900 dark:text-white">Acionar</span>
             <span className="block text-[9px] font-extrabold uppercase tracking-[0.22em] text-blue-600 dark:text-blue-400">GESTÃO QUE ACOMPANHA VOCÊ</span>
