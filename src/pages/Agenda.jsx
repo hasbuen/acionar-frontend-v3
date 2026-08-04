@@ -15,22 +15,29 @@ const filters = [
 ];
 
 const statusLabels = {
-  aguardando_confirmacao: 'Solicitação', solicitado: 'Solicitação', agendado: 'Confirmado',
-  confirmado: 'Confirmado', em_atendimento: 'Em Atendimento', concluido: 'Concluído',
-  atendido: 'Atendido', manutencao: 'Manutenção', cancelado: 'Cancelado', recusado: 'Recusado'
+  aguardando_confirmacao: 'AGUARDANDO CONFIRMAÇÃO',
+  solicitado: 'AGUARDANDO CONFIRMAÇÃO',
+  agendado: 'CONFIRMADO',
+  confirmado: 'CONFIRMADO',
+  em_atendimento: 'EM ATENDIMENTO',
+  concluido: 'JÁ ATENDIDO',
+  atendido: 'JÁ ATENDIDO',
+  manutencao: 'MANUTENÇÃO',
+  cancelado: 'CANCELADO',
+  recusado: 'RECUSADO'
 };
 
 const statusClasses = {
-  aguardando_confirmacao: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
-  solicitado: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
-  agendado: 'bg-blue-500/10 text-blue-300 border-blue-500/30',
-  confirmado: 'bg-blue-500/10 text-blue-300 border-blue-500/30',
-  em_atendimento: 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30',
-  concluido: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
-  atendido: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
-  manutencao: 'bg-purple-500/10 text-purple-300 border-purple-500/30',
-  cancelado: 'bg-rose-500/10 text-rose-300 border-rose-500/30',
-  recusado: 'bg-rose-500/10 text-rose-300 border-rose-500/30'
+  aguardando_confirmacao: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+  solicitado: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+  agendado: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+  confirmado: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+  em_atendimento: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20',
+  concluido: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+  atendido: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+  manutencao: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
+  cancelado: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
+  recusado: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
 };
 
 const buttonStyles = {
@@ -181,14 +188,164 @@ export function Agenda() {
 
       <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">{filters.map(([key, label]) => <button key={key} onClick={() => setActiveFilter(key)} className={`whitespace-nowrap rounded-2xl border px-4 py-2 text-xs font-extrabold transition ${activeFilter === key ? 'border-blue-500 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20' : 'border-slate-200 bg-white/80 text-slate-500 hover:bg-white dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-400'}`}>{label}</button>)}</div>
 
-      {loading ? <div className="py-16 text-center text-sm font-semibold text-slate-400">Carregando compromissos...</div> : agendamentos.length === 0 ? <div className="rounded-3xl border border-slate-800 bg-slate-900/40 p-12 text-center text-slate-400"><Calendar className="mx-auto mb-3 h-12 w-12 opacity-30" /><p className="text-sm font-semibold">Nenhum compromisso encontrado neste filtro.</p></div> : <div className="space-y-4">{agendamentos.map(item => {
-        const parts = dateParts(item.data_hora);
-        const isRequest = ['aguardando_confirmacao', 'solicitado'].includes(item.status);
-        return <div key={item.id} className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white/80 p-5 shadow-lg backdrop-blur-xl transition hover:border-blue-500/40 dark:border-slate-800/80 dark:bg-slate-900/60 sm:flex-row sm:items-center sm:justify-between" onClick={() => setModal({ type: 'details', item })}>
-          <div className="flex min-w-0 items-start gap-4"><div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-2xl bg-blue-500/10 text-center text-blue-400"><span className="text-[9px] font-black uppercase">{parts.month}</span><span className="text-base font-black leading-none">{parts.day}</span></div><div className="min-w-0"><div className="mb-1 flex flex-wrap items-center gap-2"><span className="text-base font-black text-slate-900 dark:text-white">{item.cliente_nome || 'Cliente sem nome'}</span><span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${statusClasses[item.status] || statusClasses.agendado}`}>{statusLabels[item.status] || item.status}</span><span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-extrabold text-slate-300">{item.profissional_nome || 'Profissional'}</span></div><div className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300"><Scissors className="h-3.5 w-3.5 text-blue-400" />{item.servico_nome || 'Atendimento'} <span className="font-semibold text-slate-400">({item.duracao_total_minutos || 60} min)</span></div><div className="mt-1 flex items-center gap-3 text-[11px] font-semibold text-slate-400"><span><Clock className="mr-1 inline h-3 w-3" />{formatTime(item.data_hora)}</span><span><Calendar className="mr-1 inline h-3 w-3" />{formatDate(item.data_hora)}</span></div></div></div>
-          <div className="flex flex-wrap items-center justify-end gap-1.5" onClick={event => event.stopPropagation()}>{isRequest ? <><button onClick={() => updateAppointment(item, { status: 'agendado' }, 'Solicitação aceita.')} className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-black text-white">Aceitar</button><button onClick={() => updateAppointment(item, { status: 'recusado' }, 'Solicitação recusada.')} className="rounded-xl bg-rose-500/15 px-3 py-2 text-xs font-black text-rose-300">Recusar</button></> : <><button onClick={() => updateAppointment(item, { status: 'em_atendimento' }, 'Atendimento iniciado.')} className="rounded-xl bg-cyan-600 px-3 py-2 text-xs font-black text-white">Iniciar</button><button onClick={() => updateAppointment(item, { status: 'concluido' }, 'Atendimento concluído.')} className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-black text-white">Concluir</button><ActionButton kind="notes" label="Registrar observação" onClick={() => setModal({ type: 'notes', item })}><MessageSquare className="h-4 w-4" /></ActionButton>{item.cliente_whatsapp && <a href={`https://wa.me/55${item.cliente_whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Olá ${item.cliente_nome || ''}, confirmamos seu agendamento para ${formatDate(item.data_hora)} às ${formatTime(item.data_hora)}.`)}`} target="_blank" rel="noreferrer" className={`flex h-10 w-10 items-center justify-center rounded-xl border ${buttonStyles.whatsapp}`} title="Enviar WhatsApp"><Phone className="h-4 w-4" /></a>}<ActionButton kind="maintenance" label="Agendar manutenção" onClick={() => setModal({ type: 'maintenance', item })}><Wrench className="h-4 w-4" /></ActionButton><ActionButton kind="payment" label="Registrar / ver pagamentos" onClick={() => openPayment(item)}><DollarSign className="h-4 w-4" /></ActionButton><ActionButton kind="transfer" label="Transferir agendamento" onClick={() => openTransfer(item)}><ArrowRightLeft className="h-4 w-4" /></ActionButton><ActionButton kind="edit" label="Editar agendamento" onClick={() => setModal({ type: 'edit', item })}><Edit3 className="h-4 w-4" /></ActionButton><ActionButton kind="delete" label="Excluir agendamento" onClick={() => removeAppointment(item)}><Trash2 className="h-4 w-4" /></ActionButton></>}</div>
-        </div>;
-      })}</div>}
+      {loading ? (
+        <div className="py-16 text-center text-sm font-semibold text-slate-400">Carregando compromissos...</div>
+      ) : agendamentos.length === 0 ? (
+        <div className="rounded-3xl border border-slate-300/60 dark:border-slate-800/60 bg-white/70 dark:bg-slate-900/40 p-12 text-center text-slate-400">
+          <Calendar className="mx-auto mb-3 h-12 w-12 opacity-30" />
+          <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Nenhum compromisso encontrado.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {agendamentos.map(item => {
+            const parts = dateParts(item.data_hora);
+            const isRequest = ['aguardando_confirmacao', 'solicitado'].includes(item.status);
+            const isManutencao = item.status === 'manutencao';
+            const isAtendimentoExterno = (item.tipo_atendimento || 'salao').toLowerCase() === 'cliente' || (item.tipo_atendimento || 'salao').toLowerCase() === 'externo';
+            
+            return (
+              <div
+                key={item.id}
+                className={`group p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border border-white/80 dark:border-slate-800/60 bg-white/72 dark:bg-slate-950/20 hover:bg-white/90 dark:hover:bg-slate-800/30 shadow-[0_14px_36px_rgba(15,23,42,0.08)] hover:shadow-[0_18px_44px_rgba(37,99,235,0.12)] backdrop-blur-sm transition-all rounded-3xl animate-fade-in ${
+                  isManutencao ? 'ring-1 ring-purple-200/70 dark:ring-purple-500/15' : ''
+                }`}
+                onClick={() => setModal({ type: 'details', item })}
+              >
+                <div className="flex min-w-0 items-start gap-4">
+                  <div
+                    className={`flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-2xl font-bold ${
+                      isManutencao
+                        ? 'bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400 border border-purple-100 dark:border-purple-900/40'
+                        : 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40'
+                    }`}
+                  >
+                    <span className="text-[10px] font-semibold uppercase">{parts.month}</span>
+                    <span className="text-sm font-extrabold leading-none">{parts.day}</span>
+                  </div>
+                  
+                  <div className="min-w-0">
+                    <div className="mb-1 flex flex-wrap items-center gap-2">
+                      <span className="text-base font-black text-slate-900 dark:text-white">
+                        {item.cliente_nome || 'Cliente não identificado'}
+                      </span>
+                      <span
+                        className={`rounded-full border px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider ${
+                          statusClasses[item.status] || statusClasses.agendado
+                        }`}
+                      >
+                        {statusLabels[item.status] || item.status}
+                      </span>
+                      
+                      {item.profissional_nome && (
+                        <span
+                          className="inline-flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-full text-white shadow-sm shrink-0"
+                          style={{ backgroundColor: item.profissional_cor || '#8b5cf6' }}
+                        >
+                          <User className="h-2.5 w-2.5 shrink-0" /> {item.profissional_nome}
+                        </span>
+                      )}
+                      
+                      {isAtendimentoExterno ? (
+                        <span className="inline-flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-300 border border-orange-500/20 shrink-0">
+                          No local do cliente
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-500 dark:text-slate-300 border border-slate-500/20 shrink-0">
+                          No salão
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
+                      <Scissors className="h-3.5 w-3.5 text-blue-400" />
+                      {item.servico_nome || 'Atendimento'}{' '}
+                      <span className="font-semibold text-slate-400">({item.duracao_total_minutos || 60} min)</span>
+                    </div>
+                    
+                    <div className="mt-1 flex items-center gap-3 text-[11px] font-semibold text-slate-400">
+                      <span>
+                        <Clock className="mr-1 inline h-3 w-3" />
+                        {formatTime(item.data_hora)}
+                      </span>
+                      <span>
+                        <CalendarDays className="mr-1 inline h-3 w-3" />
+                        {formatDate(item.data_hora)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex flex-wrap items-center justify-end gap-1.5" onClick={event => event.stopPropagation()}>
+                  {isRequest ? (
+                    <>
+                      <button
+                        onClick={() => updateAppointment(item, { status: 'agendado' }, 'Solicitação aceita.')}
+                        className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-black text-white"
+                      >
+                        Aceitar
+                      </button>
+                      <button
+                        onClick={() => updateAppointment(item, { status: 'recusado' }, 'Solicitação recusada.')}
+                        className="rounded-xl bg-rose-500/15 px-3 py-2 text-xs font-black text-rose-300"
+                      >
+                        Recusar
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => updateAppointment(item, { status: 'em_atendimento' }, 'Atendimento iniciado.')}
+                        className="rounded-xl bg-cyan-600 px-3 py-2 text-xs font-black text-white"
+                      >
+                        Iniciar
+                      </button>
+                      <button
+                        onClick={() => updateAppointment(item, { status: 'concluido' }, 'Atendimento concluído.')}
+                        className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-black text-white"
+                      >
+                        Concluir
+                      </button>
+                      <ActionButton kind="notes" label="Registrar observação" onClick={() => setModal({ type: 'notes', item })}>
+                        <MessageSquare className="h-4 w-4" />
+                      </ActionButton>
+                      {item.cliente_whatsapp && (
+                        <a
+                          href={`https://wa.me/55${item.cliente_whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(
+                            `Olá ${item.cliente_nome || ''}, confirmamos seu agendamento para ${formatDate(
+                              item.data_hora
+                            )} às ${formatTime(item.data_hora)}.`
+                          )}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={`flex h-10 w-10 items-center justify-center rounded-xl border ${buttonStyles.whatsapp}`}
+                          title="Enviar WhatsApp"
+                        >
+                          <Phone className="h-4 w-4" />
+                        </a>
+                      )}
+                      <ActionButton kind="maintenance" label="Agendar manutenção" onClick={() => setModal({ type: 'maintenance', item })}>
+                        <Wrench className="h-4 w-4" />
+                      </ActionButton>
+                      <ActionButton kind="payment" label="Registrar / ver pagamentos" onClick={() => openPayment(item)}>
+                        <DollarSign className="h-4 w-4" />
+                      </ActionButton>
+                      <ActionButton kind="transfer" label="Transferir agendamento" onClick={() => openTransfer(item)}>
+                        <ArrowRightLeft className="h-4 w-4" />
+                      </ActionButton>
+                      <ActionButton kind="edit" label="Editar agendamento" onClick={() => setModal({ type: 'edit', item })}>
+                        <Edit3 className="h-4 w-4" />
+                      </ActionButton>
+                      <ActionButton kind="delete" label="Excluir agendamento" onClick={() => removeAppointment(item)}>
+                        <Trash2 className="h-4 w-4" />
+                      </ActionButton>
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {modal?.type === 'details' && <Modal title="Detalhes do agendamento" subtitle={modal.item.cliente_nome || 'Cliente'} onClose={() => setModal(null)}><div className="space-y-3 text-sm text-slate-300"><div className="flex justify-between border-b border-slate-800 pb-2"><span>Serviço</span><strong className="text-white">{modal.item.servico_nome || 'Atendimento'}</strong></div><div className="flex justify-between border-b border-slate-800 pb-2"><span>Data e horário</span><strong className="text-white">{formatDate(modal.item.data_hora)} às {formatTime(modal.item.data_hora)}</strong></div><div className="flex justify-between border-b border-slate-800 pb-2"><span>Valor total</span><strong className="text-emerald-300">R$ {Number(modal.item.valor_total || 0).toFixed(2)}</strong></div><div className="flex justify-between border-b border-slate-800 pb-2"><span>Status</span><strong className="text-blue-300">{statusLabels[modal.item.status] || modal.item.status}</strong></div>{modal.item.observacao && <div className="rounded-2xl bg-slate-950 p-3 italic">“{modal.item.observacao}”</div>}</div><div className="mt-5 flex gap-2"><button onClick={() => setModal({ type: 'status', item: modal.item })} className="flex-1 rounded-2xl bg-blue-600 py-3 text-xs font-black text-white">Alterar status</button><button onClick={() => setModal({ type: 'edit', item: modal.item })} className="rounded-2xl bg-slate-800 px-4 py-3 text-xs font-black text-white">Editar</button></div></Modal>}
 

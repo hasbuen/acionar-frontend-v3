@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Calendar, Users, Scissors, DollarSign, Clock, Bell, LogOut, HelpCircle, Moon, Sun, Globe } from 'lucide-react';
+import { Calendar, Users, Scissors, Boxes, DollarSign, Clock, Bell, LogOut, HelpCircle, Moon, Sun, Globe } from 'lucide-react';
 import { HelpCenterModal } from './HelpCenterModal';
 
 export function Navbar({ activeTab, setActiveTab }) {
@@ -70,6 +70,16 @@ export function Navbar({ activeTab, setActiveTab }) {
               }`}
             >
               <Scissors className="h-4 w-4" /> Serviços
+            </button>
+            <button
+              onClick={() => setActiveTab('estoque')}
+              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-black transition-all ${
+                activeTab === 'estoque'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+              }`}
+            >
+              <Boxes className="h-4 w-4" /> Estoque
             </button>
             <button
               onClick={() => setActiveTab('caixa')}

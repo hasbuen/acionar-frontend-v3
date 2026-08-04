@@ -108,7 +108,6 @@ export function Login() {
                 </form>
 
                 <div className="flex items-center justify-center gap-2 border-t border-slate-100 pt-5 text-[10px] font-semibold text-slate-400 dark:border-slate-800 dark:text-slate-500"><ShieldCheck className="h-3.5 w-3.5 text-emerald-500" /> Seus dados ficam protegidos</div>
-                <div className="text-center text-xs text-slate-500 dark:text-slate-400">Ainda não é cliente? <a href="/agende-orcamento" className="ml-1 font-bold text-blue-600 hover:underline dark:text-blue-400">Agende um orçamento</a></div>
               </div>
             </div>
           </section>
