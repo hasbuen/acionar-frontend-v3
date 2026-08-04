@@ -65,7 +65,7 @@ export function HelpCenterModal({ isOpen, onClose }) {
             </span>
             <span>
               <strong className="block text-sm font-extrabold text-slate-900 dark:text-white">
-                Suporte WhatsApp
+                Suporte
               </strong>
               <small className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
                 Fale com o time quando precisar de acompanhamento.
