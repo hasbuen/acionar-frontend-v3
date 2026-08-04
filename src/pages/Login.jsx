@@ -8,7 +8,11 @@ export function Login() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [dark, setDark] = useState(false);
+  const [dark, setDark] = useState(() => {
+    const saved = localStorage.getItem('color-theme');
+    if (saved) return saved === 'dark';
+    return false; // Padrão de fábrica é claro (false)
+  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [tenantValido, setTenantValido] = useState(false);
@@ -37,10 +41,14 @@ export function Login() {
   }, [tenantSlug]);
 
   React.useEffect(() => {
-    // Forçar a tela de login a carregar no padrão tema claro
-    setDark(false);
-    document.documentElement.classList.remove('dark');
-    localStorage.setItem('color-theme', 'light');
+    const saved = localStorage.getItem('color-theme') || 'light';
+    if (saved === 'dark') {
+      document.documentElement.classList.add('dark');
+      setDark(true);
+    } else {
+      document.documentElement.classList.remove('dark');
+      setDark(false);
+    }
   }, []);
 
   React.useEffect(() => {

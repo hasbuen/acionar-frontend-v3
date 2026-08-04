@@ -17,6 +17,16 @@ function MainApp() {
   const [activeTab, setActiveTab] = useState('agenda');
   const [publicSlug, setPublicSlug] = useState(null);
 
+  // 0. Sincronizar o Tema com o localStorage logo no carregamento inicial
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('color-theme') || 'light';
+    if (savedTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
   useEffect(() => {
     const path = window.location.pathname;
     if (path.startsWith('/agendar/')) {
