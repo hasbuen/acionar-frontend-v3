@@ -220,6 +220,104 @@ function DetailsModal({ item, onClose, onUpdateStatus, onOpenMaintenance, onEdit
   );
 }
 
+function NotesModal({ item, onClose, onSave }) {
+  const [text, setText] = useState(item.observacao || '');
+  const [saving, setSaving] = useState(false);
+
+  const quickTags = [
+    "Preferência de horário",
+    "Pele sensível / Alergia",
+    "Atraso informado",
+    "Atendimento concluído",
+    "Manutenção recomendada"
+  ];
+
+  const addQuickTag = (tag) => {
+    setText(prev => {
+      if (!prev.trim()) return tag;
+      if (prev.includes(tag)) return prev;
+      return `${prev}\n• ${tag}`;
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await onSave(item, { observacao: text.slice(0, 1000) }, 'Observação salva.');
+      onClose();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal
+      title="Observações do Atendimento"
+      subtitle={`${item.cliente_nome || 'Cliente'}${item.servico_nome ? ` • ${item.servico_nome}` : ''}`}
+      onClose={onClose}
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <span className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
+            Anotações Rápidas (clique para adicionar)
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {quickTags.map((tag, idx) => (
+              <button
+                type="button"
+                key={idx}
+                onClick={() => addQuickTag(tag)}
+                className="rounded-xl border border-slate-200/80 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-600 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-400 dark:hover:border-blue-500 dark:hover:bg-blue-950/40 dark:hover:text-blue-400 transition-all"
+              >
+                + {tag}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="relative">
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            maxLength={1000}
+            rows={5}
+            className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-xs font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-100 dark:focus:border-blue-500 placeholder:font-semibold placeholder:text-slate-400"
+            placeholder="Registre aqui observações detalhadas sobre este atendimento..."
+          />
+          <div className="absolute right-3.5 bottom-3.5 text-[10px] font-extrabold text-slate-400">
+            {text.length}/1000
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/60">
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-animated rounded-2xl px-5 py-3 text-xs font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-white transition-all"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="btn-animated flex items-center gap-1.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 px-6 py-3 text-xs font-black text-white shadow-lg shadow-blue-500/25 disabled:opacity-50"
+          >
+            {saving ? 'Salvando...' : (
+              <>
+                <Check className="h-4 w-4 stroke-[3px]" />
+                Salvar observação
+              </>
+            )}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
 export function Agenda() {
   const [agendamentos, setAgendamentos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -533,18 +631,6 @@ export function Agenda() {
                     </>
                   ) : (
                     <>
-                      <button
-                        onClick={() => updateAppointment(item, { status: 'em_atendimento' }, 'Atendimento iniciado.')}
-                        className="rounded-xl bg-cyan-600 px-3 py-2 text-xs font-black text-white"
-                      >
-                        Iniciar
-                      </button>
-                      <button
-                        onClick={() => updateAppointment(item, { status: 'concluido' }, 'Atendimento concluído.')}
-                        className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-black text-white"
-                      >
-                        Concluir
-                      </button>
                       <ActionButton kind="notes" label="Registrar observação" onClick={() => setModal({ type: 'notes', item })}>
                         <MessageSquare className="h-4 w-4" />
                       </ActionButton>
@@ -619,15 +705,11 @@ export function Agenda() {
       )}
 
       {modal?.type === 'notes' && (
-        <Modal title="Observações do agendamento" subtitle={modal.item.cliente_nome} onClose={() => setModal(null)}>
-          <form onSubmit={event => { event.preventDefault(); updateAppointment(modal.item, { observacao: event.currentTarget.observacao.value.slice(0, 1000) }, 'Observação salva.'); }} className="space-y-4">
-            <textarea name="observacao" defaultValue={modal.item.observacao || ''} maxLength="1000" rows="6" className={inputClass} placeholder="Registre uma observação para este atendimento..." />
-            <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setModal(null)} className="btn-animated rounded-2xl px-5 py-3.5 text-xs font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white">Cancelar</button>
-              <button className="btn-animated rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-xs font-black text-white shadow-lg shadow-blue-500/20">Salvar observação</button>
-            </div>
-          </form>
-        </Modal>
+        <NotesModal
+          item={modal.item}
+          onClose={() => setModal(null)}
+          onSave={updateAppointment}
+        />
       )}
 
       {modal?.type === 'maintenance' && (
