@@ -114,6 +114,106 @@ function ActionButton({ kind, label, children, onClick }) {
   return <button type="button" onClick={onClick} title={label} aria-label={label} className={`flex h-10 w-10 items-center justify-center rounded-xl border transition ${buttonStyles[kind]}`}>{children}</button>;
 }
 
+function DetailsModal({ item, onClose, onUpdateStatus, onEditFull }) {
+  const [selectedStatus, setSelectedStatus] = useState(item.status || 'agendado');
+  const [saving, setSaving] = useState(false);
+
+  const statusOptions = [
+    { value: 'agendado', label: 'Confirmado', badgeClass: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30' },
+    { value: 'em_atendimento', label: 'Em Atendimento', badgeClass: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30' },
+    { value: 'concluido', label: 'Já Atendido / Concluído', badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' },
+    { value: 'manutencao', label: 'Manutenção Periódica', badgeClass: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30' },
+    { value: 'cancelado', label: 'Cancelado / Recusado', badgeClass: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30' }
+  ];
+
+  const currentOption = statusOptions.find(o => o.value === selectedStatus) || statusOptions[0];
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await onUpdateStatus(item, { status: selectedStatus }, `Status alterado para ${currentOption.label}.`);
+      onClose();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal title="Detalhes do agendamento" subtitle={item.cliente_nome || 'Cliente'} onClose={onClose}>
+      <div className="space-y-3.5 text-sm text-slate-600 dark:text-slate-300">
+        <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800/80 pb-2.5">
+          <span className="font-semibold text-slate-500 dark:text-slate-400">Serviço</span>
+          <strong className="text-slate-900 dark:text-white font-bold">{item.servico_nome || 'Atendimento'}</strong>
+        </div>
+        <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800/80 pb-2.5">
+          <span className="font-semibold text-slate-500 dark:text-slate-400">Data e horário</span>
+          <strong className="text-slate-900 dark:text-white font-bold">{formatDate(item.data_hora)} às {formatTime(item.data_hora)}</strong>
+        </div>
+        <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800/80 pb-2.5">
+          <span className="font-semibold text-slate-500 dark:text-slate-400">Valor total</span>
+          <strong className="text-emerald-600 dark:text-emerald-400 font-black text-base">R$ {Number(item.valor_total || 0).toFixed(2)}</strong>
+        </div>
+        {item.observacao && (
+          <div className="rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/60 dark:border-slate-800/50 p-3.5 italic text-slate-700 dark:text-slate-300 text-xs">
+            “{item.observacao}”
+          </div>
+        )}
+      </div>
+
+      {/* Seção de Seleção de Status & Botão Salvar */}
+      <div className="mt-6 space-y-2.5">
+        <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+          Status do Agendamento
+        </label>
+        
+        <div className="flex items-center gap-2.5">
+          <div className="relative flex-1">
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className={`w-full appearance-none rounded-2xl border px-4 py-3.5 pr-10 text-xs font-extrabold outline-none transition-all cursor-pointer shadow-sm ${currentOption.badgeClass}`}
+            >
+              {statusOptions.map(opt => (
+                <option key={opt.value} value={opt.value} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold py-2">
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 opacity-70" />
+          </div>
+
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="btn-animated flex items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 px-6 py-3.5 text-xs font-black text-white shadow-lg shadow-blue-500/25 disabled:opacity-50 shrink-0"
+          >
+            {saving ? (
+              'Salvando...'
+            ) : (
+              <>
+                <Check className="h-4 w-4 stroke-[3px]" />
+                Salvar
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-4 pt-2.5 border-t border-slate-100 dark:border-slate-800/50 flex justify-center">
+        <button
+          type="button"
+          onClick={() => onEditFull(item)}
+          className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors"
+        >
+          <Edit3 className="h-3.5 w-3.5" /> Editar horário ou valor completo
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
 export function Agenda() {
   const [agendamentos, setAgendamentos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -482,35 +582,12 @@ export function Agenda() {
       )}
 
       {modal?.type === 'details' && (
-        <Modal title="Detalhes do agendamento" subtitle={modal.item.cliente_nome || 'Cliente'} onClose={() => setModal(null)}>
-          <div className="space-y-3.5 text-sm text-slate-600 dark:text-slate-350">
-            <div className="flex justify-between border-b border-slate-100 dark:border-slate-800/80 pb-2">
-              <span className="font-semibold text-slate-500">Serviço</span>
-              <strong className="text-slate-900 dark:text-white font-bold">{modal.item.servico_nome || 'Atendimento'}</strong>
-            </div>
-            <div className="flex justify-between border-b border-slate-100 dark:border-slate-800/80 pb-2">
-              <span className="font-semibold text-slate-500">Data e horário</span>
-              <strong className="text-slate-900 dark:text-white font-bold">{formatDate(modal.item.data_hora)} às {formatTime(modal.item.data_hora)}</strong>
-            </div>
-            <div className="flex justify-between border-b border-slate-100 dark:border-slate-800/80 pb-2">
-              <span className="font-semibold text-slate-500">Valor total</span>
-              <strong className="text-emerald-600 dark:text-emerald-400 font-black">R$ {Number(modal.item.valor_total || 0).toFixed(2)}</strong>
-            </div>
-            <div className="flex justify-between border-b border-slate-100 dark:border-slate-800/80 pb-2">
-              <span className="font-semibold text-slate-500">Status</span>
-              <strong className="text-blue-600 dark:text-blue-400 font-extrabold">{statusLabels[modal.item.status] || modal.item.status}</strong>
-            </div>
-            {modal.item.observacao && (
-              <div className="rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/60 dark:border-slate-800/50 p-3 italic text-slate-700 dark:text-slate-300">
-                “{modal.item.observacao}”
-              </div>
-            )}
-          </div>
-          <div className="mt-6 flex gap-2">
-            <button onClick={() => setModal({ type: 'status', item: modal.item })} className="flex-1 btn-animated rounded-2xl bg-blue-600 hover:bg-blue-700 py-3.5 text-xs font-black text-white shadow-lg shadow-blue-500/20 transition-all">Alterar status</button>
-            <button onClick={() => setModal({ type: 'edit', item: modal.item })} className="btn-animated rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white px-5 py-3.5 text-xs font-black transition-all">Editar</button>
-          </div>
-        </Modal>
+        <DetailsModal
+          item={modal.item}
+          onClose={() => setModal(null)}
+          onUpdateStatus={updateAppointment}
+          onEditFull={(item) => setModal({ type: 'edit', item })}
+        />
       )}
 
       {modal?.type === 'status' && (
