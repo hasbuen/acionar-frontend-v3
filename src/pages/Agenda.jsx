@@ -97,7 +97,7 @@ export function Agenda() {
   const [clientSearch, setClientSearch] = useState('');
   const [form, setForm] = useState({ cliente_id: '', cliente_nome: '', cliente_whatsapp: '', servico_id: '', data_hora: `${new Date().toISOString().slice(0, 10)}T18:40`, observacao: '' });
   const [todosAgendamentos, setTodosAgendamentos] = useState([]);
-  const [statsOpen, setStatsOpen] = useState(true);
+  const [statsOpen, setStatsOpen] = useState(false);
 
   const notify = (message) => { setToast(message); window.setTimeout(() => setToast(''), 3000); };
 
