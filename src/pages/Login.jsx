@@ -12,6 +12,13 @@ export function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  React.useEffect(() => {
+    const favicon = document.querySelector("link[rel='icon']");
+    if (favicon) {
+      favicon.href = dark ? "/logo-tema-escuro.png" : "/logo-tema-claro.png";
+    }
+  }, [dark]);
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
@@ -41,7 +48,7 @@ export function Login() {
 
       <header className="relative z-10 w-full max-w-6xl mx-auto flex items-center justify-between pt-safe-top">
         <div className="flex items-center gap-2">
-          <img src="/icon-192.png" alt="Logo Acionar" className="h-10 w-10 object-contain rounded-xl shadow-lg shadow-blue-500/10" />
+          <img src={dark ? "/logo-tema-escuro.png" : "/logo-tema-claro.png"} alt="Logo Acionar" className="h-10 w-10 object-contain rounded-xl shadow-lg shadow-blue-500/10" />
           <div>
             <span className="block text-xl font-black tracking-tight text-slate-900 dark:text-white">Acionar</span>
             <span className="block text-[9px] font-extrabold uppercase tracking-[0.22em] text-blue-600 dark:text-blue-400">GESTÃO QUE ACOMPANHA VOCÊ</span>
