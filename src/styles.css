@@ -1,60 +1,163 @@
-* { -webkit-tap-highlight-color: transparent; }
-::-webkit-scrollbar { width: 0px; background: transparent; }
-.no-scrollbar::-webkit-scrollbar { display: none; }
+* { 
+  -webkit-tap-highlight-color: transparent; 
+}
+
+::-webkit-scrollbar { 
+  width: 0px; 
+  background: transparent; 
+}
+
+.no-scrollbar::-webkit-scrollbar { 
+  display: none; 
+}
+
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-x;
 }
+
 input[type="date"], select {
   min-height: 48px;
   -webkit-appearance: none;
 }
+
 select, select option {
   max-width: 100% !important;
   box-sizing: border-box !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
   overflow: hidden !important;
+  padding: 10px !important;
 }
+
 html:not(.dark) select option {
   background-color: #ffffff;
   color: #0f172a;
-  padding: 10px;
 }
+
 html.dark select option {
   background-color: #0f172a;
   color: #f8fafc;
-  padding: 10px;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+/* --- Sistema de Cores e Glows Neon --- */
+:root {
+  --neon-blue: #00d2ff;
+  --neon-green: #39ff14;
+  --neon-pink: #ff007f;
+  --neon-amber: #ffaa00;
+  --neon-purple: #bd00ff;
 }
+
+.glow-blue:hover {
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.45);
+  border-color: rgba(59, 130, 246, 0.5) !important;
+}
+.dark .glow-blue:hover {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.65);
+}
+
+.glow-green:hover {
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.45);
+  border-color: rgba(16, 185, 129, 0.5) !important;
+}
+.dark .glow-green:hover {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.65);
+}
+
+.glow-amber:hover {
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.45);
+  border-color: rgba(245, 158, 11, 0.5) !important;
+}
+.dark .glow-amber:hover {
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.65);
+}
+
+.glow-purple:hover {
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.45);
+  border-color: rgba(139, 92, 246, 0.5) !important;
+}
+.dark .glow-purple:hover {
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.65);
+}
+
+.glow-rose:hover {
+  box-shadow: 0 0 15px rgba(244, 63, 94, 0.45);
+  border-color: rgba(244, 63, 94, 0.5) !important;
+}
+.dark .glow-rose:hover {
+  box-shadow: 0 0 20px rgba(244, 63, 94, 0.65);
+}
+
+/* --- Efeitos de Animação Avançados --- */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95); }
+  from { opacity: 0; transform: scale(0.94); }
   to { opacity: 1; transform: scale(1); }
 }
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 10px rgba(59, 130, 246, 0.2); }
+  50% { box-shadow: 0 0 22px rgba(59, 130, 246, 0.55); }
+}
+
+@keyframes slideRight {
+  from { transform: translateX(-15px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
 .animate-fade-in {
-  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
 .animate-scale-in {
-  animation: scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: scaleIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+.animate-slide-right {
+  animation: slideRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-neon-pulse {
+  animation: pulseGlow 2.5s infinite ease-in-out;
+}
+
 .filter-btn {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+.filter-btn:hover {
+  transform: translateY(-1px);
+}
+
 .filter-btn:active {
-  transform: translateY(0) scale(0.96);
+  transform: translateY(0) scale(0.95);
 }
+
 .btn-animated {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.15);
 }
+
 .btn-animated:hover {
-  transform: translateY(-2px) scale(1.04);
+  transform: translateY(-2.5px) scale(1.035);
+  box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.35);
 }
+
+.dark .btn-animated:hover {
+  box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.5);
+}
+
 .btn-animated:active {
-  transform: translateY(0) scale(0.96);
+  transform: translateY(0) scale(0.965);
+}
+
+/* Micro-interação em cards de agendamento */
+.group:hover {
+  transform: translateY(-2px) scale(1.008);
 }

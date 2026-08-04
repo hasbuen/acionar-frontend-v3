@@ -63,7 +63,7 @@ function MainApp() {
 
   // 4. Authenticated Management App
   return (
-    <div className="flex flex-col min-h-screen bg-[#dde6f1] dark:bg-[#020617] text-slate-900 dark:text-slate-100 transition-colors duration-300">
+    <div className="flex flex-col min-h-screen bg-gradient-to-tr from-slate-50 via-[#f0f4f9] to-[#e5eef7] dark:from-[#020617] dark:via-[#090f23] dark:to-[#020617] text-slate-900 dark:text-slate-100 transition-colors duration-300">
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
       <main className="flex-1 pb-28 md:pb-12">
         {activeTab === 'agenda' && <Agenda />}
@@ -75,7 +75,7 @@ function MainApp() {
       </main>
 
       {/* Footer Idêntico à Produção */}
-      <footer className="w-full border-t border-slate-300/60 dark:border-slate-800/80 bg-[#eef3f8]/80 dark:bg-[#020617]/80 py-4 text-center text-[11px] font-semibold text-slate-500 dark:text-slate-400 backdrop-blur-md hidden md:block">
+      <footer className="w-full border-t border-slate-300/80 dark:border-slate-800/80 bg-white/70 dark:bg-[#020617]/85 py-4 text-center text-[11.5px] font-bold text-slate-600 dark:text-slate-400 backdrop-blur-md hidden md:block transition-all duration-300 hover:text-blue-600 dark:hover:text-blue-400">
         © 2026 Acionar - Sistema de Agendamentos Inteligente.
       </footer>
     </div>
