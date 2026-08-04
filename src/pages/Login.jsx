@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { gsap } from 'gsap';
 import { ArrowRight, Building2, CalendarCheck2, Check, Eye, EyeOff, Lock, LockKeyhole, Mail, Moon, ShieldCheck, ShieldQuestion, Sparkles, Sun, WalletCards, Zap } from 'lucide-react';
 
 export function Login() {
@@ -49,6 +50,20 @@ export function Login() {
       document.documentElement.classList.remove('dark');
       setDark(false);
     }
+
+    // Animações sutis com GSAP
+    gsap.fromTo('.login-box',
+      { opacity: 0, scale: 0.96, y: 20 },
+      { opacity: 1, scale: 1, y: 0, duration: 0.55, ease: 'power2.out' }
+    );
+    gsap.fromTo('.login-field',
+      { opacity: 0, x: -12 },
+      { opacity: 1, x: 0, duration: 0.4, stagger: 0.05, ease: 'power2.out', delay: 0.1 }
+    );
+    gsap.fromTo('.login-logo',
+      { opacity: 0, scale: 0.6, rotate: -15 },
+      { opacity: 1, scale: 1, rotate: 0, duration: 0.7, ease: 'back.out(1.5)' }
+    );
   }, []);
 
   React.useEffect(() => {
@@ -87,7 +102,7 @@ export function Login() {
 
       <header className="relative z-10 w-full max-w-6xl mx-auto flex items-center justify-between pt-safe-top">
         <div className="flex items-center gap-2">
-          <img src={dark ? "/logo-tema-escuro.png" : "/logo-tema-claro.png"} alt="Logo Acionar" className="h-10 w-10 object-contain rounded-xl shadow-lg shadow-blue-500/10" />
+          <img src={dark ? "/logo-tema-escuro.png" : "/logo-tema-claro.png"} alt="Logo Acionar" className="login-logo h-10 w-10 object-contain rounded-xl shadow-lg shadow-blue-500/10" />
           <div>
             <span className="block text-xl font-black tracking-tight text-slate-900 dark:text-white">Acionar</span>
             <span className="block text-[9px] font-extrabold uppercase tracking-[0.22em] text-blue-600 dark:text-blue-400">GESTÃO QUE ACOMPANHA VOCÊ</span>
@@ -113,7 +128,7 @@ export function Login() {
             </div>
           </section>
 
-          <section className="w-full max-w-md mx-auto animate-scale-in">
+          <section className="w-full max-w-md mx-auto login-box">
             <div className="mx-auto w-full overflow-hidden rounded-[2.5rem] border border-white/80 bg-white/90 p-6 shadow-[0_24px_80px_-24px_rgba(37,99,235,0.35)] backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-950/85 sm:p-8">
               <div className="space-y-6">
                 <div className="space-y-2">
@@ -154,7 +169,7 @@ export function Login() {
                 {error && <div className="flex items-start gap-2 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-600 dark:text-rose-300"><span>{error}</span></div>}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-1.5">
+                  <div className="space-y-1.5 login-field">
                     <div className="flex justify-between items-center">
                       <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Empreendimento</label>
                       {tenantValido && (
@@ -174,14 +189,14 @@ export function Login() {
                     </div>
                     <p className="text-[10px] font-medium text-slate-400">Use o identificador fornecido na implantação da sua empresa.</p>
                   </div>
-                  <div className="space-y-1.5">
+                  <div className="space-y-1.5 login-field">
                     <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">E-mail</label>
                     <div className="relative">
                       <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                       <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required placeholder="seuemail@empresa.com" className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 py-3.5 pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-100" />
                     </div>
                   </div>
-                  <div className="space-y-1.5">
+                  <div className="space-y-1.5 login-field">
                     <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Senha</label>
                     <div className="relative">
                       <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
@@ -189,10 +204,10 @@ export function Login() {
                       <button type="button" aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'} onClick={() => setShowPassword((value) => !value)} className="absolute right-0 top-0 flex h-full items-center px-4 text-slate-400 hover:text-blue-600">{showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}</button>
                     </div>
                   </div>
-                  <button type="submit" disabled={loading} className="btn-animated mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500 px-4 py-3.5 text-sm font-extrabold text-white shadow-xl shadow-blue-500/25 disabled:opacity-50"><span>{loading ? 'Entrando...' : 'Entrar'}</span><ArrowRight className="h-4 w-4" /></button>
+                  <button type="submit" disabled={loading} className="btn-animated login-field mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500 px-4 py-3.5 text-sm font-extrabold text-white shadow-xl shadow-blue-500/25 disabled:opacity-50"><span>{loading ? 'Entrando...' : 'Entrar'}</span><ArrowRight className="h-4 w-4" /></button>
                 </form>
 
-                <div className="flex items-center justify-center gap-2 border-t border-slate-100 pt-5 text-[10px] font-semibold text-slate-400 dark:border-slate-800 dark:text-slate-500"><ShieldCheck className="h-3.5 w-3.5 text-emerald-500" /> Seus dados ficam protegidos</div>
+                <div className="login-field flex items-center justify-center gap-2 border-t border-slate-100 pt-5 text-[10px] font-semibold text-slate-400 dark:border-slate-800 dark:text-slate-500"><ShieldCheck className="h-3.5 w-3.5 text-emerald-500" /> Seus dados ficam protegidos</div>
                 <footer className="w-full pb-safe-bottom text-center text-xs text-slate-400 dark:text-slate-600">© 2026 Acionar.</footer>
               </div>
             </div>

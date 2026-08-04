@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { apiRequest } from '../services/api';
+import { gsap } from 'gsap';
 import { PaymentModal } from '../components/PaymentModal';
 import { NewAppointmentModal } from '../components/NewAppointmentModal';
 import {
@@ -100,6 +101,26 @@ export function Agenda() {
   const [statsOpen, setStatsOpen] = useState(false);
 
   const notify = (message) => { setToast(message); window.setTimeout(() => setToast(''), 3000); };
+
+  // Animação em cascata (stagger) dos cards de agendamento usando GSAP
+  useEffect(() => {
+    if (!loading && agendamentos.length > 0) {
+      gsap.fromTo('.appointment-card',
+        { opacity: 0, y: 15, scale: 0.98 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.45, stagger: 0.05, ease: 'power2.out', overwrite: 'auto' }
+      );
+    }
+  }, [loading, activeFilter, agendamentos]);
+
+  // Animação de pulsação nos contadores estatísticos quando o Accordion abre
+  useEffect(() => {
+    if (statsOpen) {
+      gsap.fromTo('.stat-card',
+        { opacity: 0, scale: 0.92, y: -8 },
+        { opacity: 1, scale: 1, y: 0, duration: 0.35, stagger: 0.04, ease: 'back.out(1.4)', overwrite: 'auto' }
+      );
+    }
+  }, [statsOpen]);
 
   async function fetchTodosAgendamentos() {
     try {
@@ -245,22 +266,22 @@ export function Agenda() {
         {statsOpen && (
           <div className="border-t border-slate-100 dark:border-slate-800/60 p-5 bg-slate-50/20 dark:bg-slate-950/10">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 w-full">
-              <div className="rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-white dark:bg-slate-950/40 p-4 shadow-sm flex flex-col justify-between">
+              <div className="stat-card rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-white dark:bg-slate-950/40 p-4 shadow-sm flex flex-col justify-between">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400">Solicitados</span>
                 <span className="mt-1.5 text-2xl font-black text-slate-900 dark:text-white">{stats.solicitados}</span>
               </div>
 
-              <div className="rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-white dark:bg-slate-950/40 p-4 shadow-sm flex flex-col justify-between">
+              <div className="stat-card rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-white dark:bg-slate-950/40 p-4 shadow-sm flex flex-col justify-between">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400">Confirmados</span>
                 <span className="mt-1.5 text-2xl font-black text-slate-900 dark:text-white">{stats.confirmados}</span>
               </div>
 
-              <div className="rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-white dark:bg-slate-950/40 p-4 shadow-sm flex flex-col justify-between">
+              <div className="stat-card rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-white dark:bg-slate-950/40 p-4 shadow-sm flex flex-col justify-between">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Atendidos</span>
                 <span className="mt-1.5 text-2xl font-black text-slate-900 dark:text-white">{stats.concluidos}</span>
               </div>
 
-              <div className="rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-white dark:bg-slate-950/40 p-4 shadow-sm flex flex-col justify-between">
+              <div className="stat-card rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-white dark:bg-slate-950/40 p-4 shadow-sm flex flex-col justify-between">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-rose-600 dark:text-rose-400">Cancelados</span>
                 <span className="mt-1.5 text-2xl font-black text-slate-900 dark:text-white">{stats.cancelados}</span>
               </div>
@@ -289,7 +310,7 @@ export function Agenda() {
             return (
               <div
                 key={item.id}
-                className={`group p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border border-white/80 dark:border-slate-800/60 bg-white/72 dark:bg-slate-950/20 hover:bg-white/90 dark:hover:bg-slate-800/30 shadow-[0_14px_36px_rgba(15,23,42,0.08)] hover:shadow-[0_18px_44px_rgba(37,99,235,0.12)] backdrop-blur-sm transition-all rounded-3xl animate-fade-in ${
+                className={`appointment-card group p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border border-white/80 dark:border-slate-800/60 bg-white/72 dark:bg-slate-950/20 hover:bg-white/90 dark:hover:bg-slate-800/30 shadow-[0_14px_36px_rgba(15,23,42,0.08)] hover:shadow-[0_18px_44px_rgba(37,99,235,0.12)] backdrop-blur-sm transition-all rounded-3xl ${
                   isManutencao ? 'ring-1 ring-purple-200/70 dark:ring-purple-500/15' : ''
                 }`}
                 onClick={() => setModal({ type: 'details', item })}
