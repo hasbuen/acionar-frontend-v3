@@ -563,9 +563,6 @@ export function Agenda() {
                           <Phone className="h-4 w-4" />
                         </a>
                       )}
-                      <ActionButton kind="maintenance" label="Agendar manutenção" onClick={() => setModal({ type: 'maintenance', item })}>
-                        <Wrench className="h-4 w-4" />
-                      </ActionButton>
                       <ActionButton kind="payment" label="Registrar / ver pagamentos" onClick={() => openPayment(item)}>
                         <DollarSign className="h-4 w-4" />
                       </ActionButton>
