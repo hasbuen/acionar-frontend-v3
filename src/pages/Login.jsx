@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { ArrowRight, Building2, CalendarCheck2, Eye, EyeOff, Lock, LockKeyhole, Mail, Moon, ShieldCheck, Sparkles, Sun, WalletCards } from 'lucide-react';
+import { ArrowRight, Building2, CalendarCheck2, Check, Eye, EyeOff, Lock, LockKeyhole, Mail, Moon, ShieldCheck, Sparkles, Sun, WalletCards } from 'lucide-react';
 
 export function Login() {
   const { login } = useAuth();
@@ -11,6 +11,30 @@ export function Login() {
   const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'));
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [tenantValido, setTenantValido] = useState(false);
+
+  useEffect(() => {
+    if (!tenantSlug.trim()) {
+      setTenantValido(false);
+      return;
+    }
+
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        const slugFormatted = tenantSlug.trim().toLowerCase();
+        const response = await fetch(`/api/public/tenant/${slugFormatted}`);
+        if (response.ok) {
+          setTenantValido(true);
+        } else {
+          setTenantValido(false);
+        }
+      } catch (err) {
+        setTenantValido(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [tenantSlug]);
 
   React.useEffect(() => {
     const favicon = document.querySelector("link[rel='icon']");
@@ -87,10 +111,22 @@ export function Login() {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Empreendimento</label>
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Empreendimento</label>
+                      {tenantValido && (
+                        <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-500 dark:text-emerald-400 animate-fade-in">
+                          <Check className="h-3.5 w-3.5" /> Validado
+                        </span>
+                      )}
+                    </div>
                     <div className="relative">
                       <Building2 className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                      <input type="text" value={tenantSlug} onChange={(event) => setTenantSlug(event.target.value)} required placeholder="ex.: patriciabeato" autoCapitalize="none" autoCorrect="off" className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 py-3.5 pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-100" />
+                      <input type="text" value={tenantSlug} onChange={(event) => setTenantSlug(event.target.value)} required placeholder="ex.: patriciabeato" autoCapitalize="none" autoCorrect="off" className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 py-3.5 pl-11 pr-32 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-100" />
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
+                        <span className="rounded-lg bg-slate-200/60 dark:bg-slate-800/80 px-2 py-0.5 text-[10px] font-black text-slate-500 dark:text-slate-400 border border-slate-300/30 dark:border-slate-700/50">
+                          .acionar.app
+                        </span>
+                      </div>
                     </div>
                     <p className="text-[10px] font-medium text-slate-400">Use o identificador fornecido na implantação da sua empresa.</p>
                   </div>
