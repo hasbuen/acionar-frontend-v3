@@ -96,8 +96,40 @@ export function Agenda() {
   const [toast, setToast] = useState('');
   const [clientSearch, setClientSearch] = useState('');
   const [form, setForm] = useState({ cliente_id: '', cliente_nome: '', cliente_whatsapp: '', servico_id: '', data_hora: `${new Date().toISOString().slice(0, 10)}T18:40`, observacao: '' });
+  const [todosAgendamentos, setTodosAgendamentos] = useState([]);
 
   const notify = (message) => { setToast(message); window.setTimeout(() => setToast(''), 3000); };
+
+  async function fetchTodosAgendamentos() {
+    try {
+      const result = await apiRequest('/agendamentos');
+      setTodosAgendamentos(result.agendamentos || []);
+    } catch (err) {
+      console.error('Erro ao buscar todos agendamentos para os contadores:', err);
+    }
+  }
+
+  const stats = useMemo(() => {
+    let solicitados = 0;
+    let confirmados = 0;
+    let concluidos = 0;
+    let cancelados = 0;
+
+    todosAgendamentos.forEach(item => {
+      const status = item.status?.toLowerCase();
+      if (status === 'aguardando_confirmacao' || status === 'solicitado') {
+        solicitados++;
+      } else if (status === 'agendado' || status === 'confirmado' || status === 'em_atendimento') {
+        confirmados++;
+      } else if (status === 'concluido' || status === 'atendido') {
+        concluidos++;
+      } else if (status === 'cancelado' || status === 'recusado') {
+        cancelados++;
+      }
+    });
+
+    return { solicitados, confirmados, concluidos, cancelados };
+  }, [todosAgendamentos]);
 
   async function fetchAgenda() {
     setLoading(true);
@@ -110,6 +142,7 @@ export function Agenda() {
       else if (activeFilter !== 'todos') query = `?status=${activeFilter}`;
       const result = await apiRequest(`/agendamentos${query}`);
       setAgendamentos(result.agendamentos || []);
+      fetchTodosAgendamentos();
     } catch (error) { notify(error.message || 'Não foi possível carregar a agenda.'); }
     finally { setLoading(false); }
   }
@@ -182,8 +215,35 @@ export function Agenda() {
       {toast && <div className="fixed right-5 top-5 z-[70] rounded-2xl border border-emerald-500/30 bg-slate-900 px-5 py-3 text-sm font-bold text-emerald-300 shadow-2xl">{toast}</div>}
 
       <div className="flex flex-col items-start justify-between gap-4 rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-xl backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-900/60 md:flex-row md:items-center">
-        <div><span className="inline-flex rounded-full bg-blue-500/10 px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-blue-500">Gestão inteligente</span><h1 className="mt-2 text-2xl font-black text-slate-900 dark:text-white sm:text-3xl">Próximos Compromissos</h1><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Aceite agendamentos recebidos e gerencie cada atendimento.</p></div>
-        <button onClick={openCreate} className="btn-animated inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-500/25"><Plus className="h-5 w-5" /> Novo Agendamento</button>
+        <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 w-full lg:w-auto flex-1">
+          <div className="shrink-0">
+            <span className="inline-flex rounded-full bg-blue-500/10 px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-blue-500">Gestão inteligente</span>
+            <h1 className="mt-1.5 text-2xl font-black text-slate-900 dark:text-white">Agenda</h1>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 w-full flex-1">
+            <div className="rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-slate-50/50 dark:bg-slate-950/30 p-3 shadow-sm flex flex-col justify-between">
+              <span className="text-[9px] font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400">Solicitados</span>
+              <span className="mt-0.5 text-xl font-black text-slate-900 dark:text-white">{stats.solicitados}</span>
+            </div>
+
+            <div className="rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-slate-50/50 dark:bg-slate-950/30 p-3 shadow-sm flex flex-col justify-between">
+              <span className="text-[9px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400">Confirmados</span>
+              <span className="mt-0.5 text-xl font-black text-slate-900 dark:text-white">{stats.confirmados}</span>
+            </div>
+
+            <div className="rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-slate-50/50 dark:bg-slate-950/30 p-3 shadow-sm flex flex-col justify-between">
+              <span className="text-[9px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Atendidos</span>
+              <span className="mt-0.5 text-xl font-black text-slate-900 dark:text-white">{stats.concluidos}</span>
+            </div>
+
+            <div className="rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-slate-50/50 dark:bg-slate-950/30 p-3 shadow-sm flex flex-col justify-between">
+              <span className="text-[9px] font-extrabold uppercase tracking-wider text-rose-600 dark:text-rose-400">Cancelados</span>
+              <span className="mt-0.5 text-xl font-black text-slate-900 dark:text-white">{stats.cancelados}</span>
+            </div>
+          </div>
+        </div>
+        <button onClick={openCreate} className="btn-animated inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-500/25 shrink-0"><Plus className="h-5 w-5" /> Novo Agendamento</button>
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">{filters.map(([key, label]) => <button key={key} onClick={() => setActiveFilter(key)} className={`whitespace-nowrap rounded-2xl border px-4 py-2 text-xs font-extrabold transition ${activeFilter === key ? 'border-blue-500 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20' : 'border-slate-200 bg-white/80 text-slate-500 hover:bg-white dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-400'}`}>{label}</button>)}</div>
