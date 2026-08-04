@@ -223,8 +223,9 @@ function DetailsModal({ item, onClose, onUpdateStatus, onOpenMaintenance, onEdit
 function NotesModal({ item, onClose, onSave }) {
   const [text, setText] = useState(item.observacao || '');
   const [saving, setSaving] = useState(false);
+  const [newBadgeText, setNewBadgeText] = useState('');
 
-  const quickTags = [
+  const DEFAULT_BADGES = [
     "Preferência de horário",
     "Pele sensível / Alergia",
     "Atraso informado",
@@ -232,12 +233,42 @@ function NotesModal({ item, onClose, onSave }) {
     "Manutenção recomendada"
   ];
 
+  const [badges, setBadges] = useState(() => {
+    const saved = localStorage.getItem('acionar_custom_note_badges');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) {}
+    }
+    return DEFAULT_BADGES;
+  });
+
   const addQuickTag = (tag) => {
     setText(prev => {
       if (!prev.trim()) return tag;
       if (prev.includes(tag)) return prev;
       return `${prev}\n• ${tag}`;
     });
+  };
+
+  const handleAddBadge = (e) => {
+    e.preventDefault();
+    const trimmed = newBadgeText.trim();
+    if (!trimmed) return;
+    if (!badges.includes(trimmed)) {
+      const updated = [...badges, trimmed];
+      setBadges(updated);
+      localStorage.setItem('acionar_custom_note_badges', JSON.stringify(updated));
+    }
+    setNewBadgeText('');
+  };
+
+  const handleDeleteBadge = (e, badgeToDelete) => {
+    e.stopPropagation();
+    const updated = badges.filter(b => b !== badgeToDelete);
+    setBadges(updated);
+    localStorage.setItem('acionar_custom_note_badges', JSON.stringify(updated));
   };
 
   const handleSubmit = async (e) => {
@@ -261,20 +292,48 @@ function NotesModal({ item, onClose, onSave }) {
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <span className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
-            Anotações Rápidas (clique para adicionar)
+          <span className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
+            Anotações Rápidas Personalizadas
           </span>
-          <div className="flex flex-wrap gap-1.5">
-            {quickTags.map((tag, idx) => (
-              <button
-                type="button"
+          
+          <div className="flex gap-2 mb-2.5">
+            <input
+              type="text"
+              value={newBadgeText}
+              onChange={(e) => setNewBadgeText(e.target.value)}
+              placeholder="Criar novo atalho de anotação..."
+              className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-900 outline-none transition focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-100"
+            />
+            <button
+              type="button"
+              onClick={handleAddBadge}
+              className="btn-animated rounded-xl bg-blue-600 hover:bg-blue-700 px-3.5 py-2 text-xs font-black text-white shrink-0 shadow-sm"
+            >
+              + Adicionar
+            </button>
+          </div>
+
+          <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1">
+            {badges.map((tag, idx) => (
+              <div
                 key={idx}
                 onClick={() => addQuickTag(tag)}
-                className="rounded-xl border border-slate-200/80 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-600 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-400 dark:hover:border-blue-500 dark:hover:bg-blue-950/40 dark:hover:text-blue-400 transition-all"
+                className="group flex items-center gap-1.5 rounded-xl border border-slate-200/80 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-700 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:bg-blue-950/40 dark:hover:text-blue-400 cursor-pointer transition-all"
               >
-                + {tag}
-              </button>
+                <span>+ {tag}</span>
+                <button
+                  type="button"
+                  onClick={(e) => handleDeleteBadge(e, tag)}
+                  title="Excluir este atalho"
+                  className="rounded-full p-0.5 text-slate-400 hover:bg-rose-500/20 hover:text-rose-500 transition-colors"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
             ))}
+            {badges.length === 0 && (
+              <p className="text-[11px] font-medium text-slate-400 italic">Nenhum atalho criado ainda.</p>
+            )}
           </div>
         </div>
 
@@ -739,7 +798,7 @@ export function Agenda() {
                           className={`flex h-10 w-10 items-center justify-center rounded-xl border ${buttonStyles.whatsapp}`}
                           title="Enviar WhatsApp"
                         >
-                          <svg className="h-4.5 w-4.5 fill-current" viewBox="0 0 24 24">
+                          <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
                             <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
                           </svg>
                         </a>
