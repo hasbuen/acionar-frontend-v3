@@ -514,7 +514,7 @@ export function Agenda() {
       )}
 
       {modal?.type === 'status' && (
-        <Modal title="Alterar status" subtitle={modal.item.cliente_nome} onClose={() => setModal(null)}>
+        <Modal title={modal.item.cliente_nome} subtitle={modal.item.cliente_whatsapp} onClose={() => setModal(null)}>
           <div className="grid gap-2 max-h-[60vh] overflow-y-auto pr-1">
             {[
               ['agendado', 'Confirmado'],
