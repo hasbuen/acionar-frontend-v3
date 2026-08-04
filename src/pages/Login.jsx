@@ -124,7 +124,7 @@ export function Login() {
                       <input type="text" value={tenantSlug} onChange={(event) => setTenantSlug(event.target.value)} required placeholder="ex.: patriciabeato" autoCapitalize="none" autoCorrect="off" className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 py-3.5 pl-11 pr-32 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-100" />
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
                         <span className="rounded-lg bg-slate-200/60 dark:bg-slate-800/80 px-2 py-0.5 text-[10px] font-black text-slate-500 dark:text-slate-400 border border-slate-300/30 dark:border-slate-700/50">
-                          .acionar.app
+                          Sua Empresa
                         </span>
                       </div>
                     </div>
