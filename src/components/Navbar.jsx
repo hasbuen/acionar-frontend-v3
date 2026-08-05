@@ -7,6 +7,7 @@ import {
   Cog
 } from 'lucide-react';
 import { ModalAlert, useModalAlert } from './ModalAlert';
+import { useAuth } from '../context/AuthContext';
 
 const NAV_ITEMS = [
   { id: 'agenda', label: 'Agenda', icon: Calendar },
@@ -18,8 +19,7 @@ const NAV_ITEMS = [
 ];
 
 export function Navbar({ activeTab, setActiveTab }) {
-  const user = { nome: 'Patricia' };
-  const tenant = { nome_empresa: 'Acionar Online', slug: 'acionar-online' };
+  const { user, tenant, logout } = useAuth();
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'));
   const publicUrl = `/agendar/${tenant?.slug || ''}`;
@@ -28,13 +28,12 @@ export function Navbar({ activeTab, setActiveTab }) {
   const handleLogout = () => {
     showAlert({
       type: 'warning',
-      title: 'Sair do sistema',
-      message: 'Deseja realmente encerrar sua sessão?',
+      title: 'Sair da conta',
+      message: 'Deseja realmente sair da sua conta?',
       confirmLabel: 'Sim, sair',
       cancelLabel: 'Cancelar',
       onConfirm: () => {
-        localStorage.clear();
-        window.location.href = '/';
+        logout();
       },
     });
   };
@@ -136,10 +135,10 @@ export function Navbar({ activeTab, setActiveTab }) {
 
               <button
                 onClick={handleLogout}
-                title="Sair"
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-rose-600 dark:text-rose-400 transition-all hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
+                title="Sair da Conta"
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-rose-500/20 bg-rose-500/5 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 hover:border-rose-500/40 hover:scale-105 active:scale-95 transition-all duration-300 shadow-sm hover:shadow-rose-500/10 dark:hover:shadow-rose-500/20"
               >
-                <LogOut className="h-5 w-5" />
+                <LogOut className="h-4.5 w-4.5 stroke-[2.5px]" />
               </button>
             </div>
           </div>
