@@ -434,18 +434,35 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
     });
   };
 
-  const handleDeleteProfissional = async (id) => {
-    if (!window.confirm('Deseja realmente remover este auxiliar da equipe?')) return;
-    setLoading(true);
-    try {
-      await apiRequest(`/profissionais/${id}`, 'DELETE');
-      showAlert({ type: 'success', message: 'Auxiliar removido com sucesso!' });
-      fetchProfissionais();
-    } catch (err) {
-      showAlert({ type: 'error', message: err.message || 'Erro ao remover auxiliar.' });
-    } finally {
-      setLoading(false);
-    }
+  const handleDeleteProfissional = (id) => {
+    // Chamamos o showAlert passando as informações E a função onConfirm
+    showAlert({
+      type: 'warning',
+      title: 'Confirmar Exclusão',
+      message: 'Tem certeza que deseja remover este auxiliar?',
+      confirmLabel: 'Sim, remover', // Você pode personalizar o texto aqui
+      cancelLabel: 'Cancelar',
+      onConfirm: async () => {
+        // Tudo o que está AQUI DENTRO só vai rodar quando o usuário clicar em "Sim, remover"
+
+        // Opcional: fechar o modal de confirmação antes de rodar o loading
+        closeAlert();
+
+        try {
+          setLoading(true);
+          await apiRequest(`/profissionais/${id}`, 'DELETE');
+
+          // Exibe o modal de sucesso logo em seguida
+          showAlert({ type: 'success', message: 'Auxiliar removido com sucesso!' });
+          fetchProfissionais();
+
+        } catch (err) {
+          showAlert({ type: 'error', message: err.message || 'Erro ao remover auxiliar.' });
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
   };
 
   const handleAddBloqueio = (e) => {
@@ -657,8 +674,8 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
                     <h3 className="text-base font-black text-slate-900 dark:text-white">Meus Recebimentos</h3>
                     <span className="text-[9px] font-black uppercase text-slate-400">OPCIONAL</span>
                     <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${payments.pix_key?.trim()
-                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
                       }`}>
                       {payments.pix_key?.trim() ? 'ATIVADO' : 'NÃO ATIVADO'}
                     </span>
@@ -725,22 +742,6 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
                 </div>
               </form>
             )}
-
-            {/* Three Info Columns */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3 pt-4 border-t border-slate-100 dark:border-slate-800/80">
-              <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800/80 dark:bg-slate-950/70">
-                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">CONTA INDIVIDUAL</p>
-                <h4 className="mt-1 text-xs font-black text-slate-900 dark:text-white">Cada profissional recebe na própria conta</h4>
-              </div>
-              <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800/80 dark:bg-slate-950/70">
-                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">PIX INSTANTÂNEO</p>
-                <h4 className="mt-1 text-xs font-black text-slate-900 dark:text-white">QR Code e Copia e Cola automático no agendamento</h4>
-              </div>
-              <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800/80 dark:bg-slate-950/70">
-                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">REPASSE DIRETO</p>
-                <h4 className="mt-1 text-xs font-black text-slate-900 dark:text-white">O valor do seu trabalho vai direto para a sua conta</h4>
-              </div>
-            </div>
 
             <p className="text-[10px] text-slate-400 dark:text-slate-500 text-center mt-4">
               Sua Chave Pix é armazenada de forma segura para recebimento automático dos atendimentos.
@@ -1075,8 +1076,8 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
                 type="button"
                 onClick={toggleAlarm}
                 className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-black transition-all ${alarmEnabled
-                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
                   }`}
               >
                 <Bell className="h-4 w-4" />

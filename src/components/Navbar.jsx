@@ -4,7 +4,8 @@ import {
   Calendar, Users, Scissors, Boxes, DollarSign, Clock,
   Bell, LogOut, HelpCircle, Moon, Sun, Globe, X,
   ChevronDown, Plus, Activity,
-  Cog
+  Cog,
+  User
 } from 'lucide-react';
 import { ModalAlert, useModalAlert } from './ModalAlert';
 import { useAuth } from '../context/AuthContext';
@@ -75,7 +76,7 @@ export function Navbar({ activeTab, setActiveTab }) {
             <img src={dark ? "/logo-tema-escuro.png" : "/logo-tema-claro.png"} alt="Logo Acionar" className="h-10 w-10 object-contain rounded-xl shadow-lg shadow-blue-500/10" />
             <div className="flex flex-col justify-center">
               <span className="text-sm font-bold tracking-tight text-slate-800 dark:text-slate-100 leading-tight">
-                Acionar Online
+                { User && user?.nome ? user.nome.charAt(0).toUpperCase() + user.nome.slice(1) : 'Usuário' }
               </span>
             </div>
           </div>
