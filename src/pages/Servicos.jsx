@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../services/api';
 import { Scissors, Plus, Boxes, Edit, Trash2, Clock, DollarSign, X, ChevronRight } from 'lucide-react';
+import { ModalAlert, useModalAlert } from '../components/ModalAlert';
 
 export function Servicos({ setActiveTab }) {
   const [servicos, setServicos] = useState([]);
@@ -9,6 +10,7 @@ export function Servicos({ setActiveTab }) {
   const [showModalSubservico, setShowModalSubservico] = useState(false);
   const [selectedServicoId, setSelectedServicoId] = useState(null);
   const [editingServico, setEditingServico] = useState(null);
+  const { alertState, showAlert, closeAlert } = useModalAlert();
 
   const [formServico, setFormServico] = useState({
     nome: '',
@@ -81,7 +83,7 @@ export function Servicos({ setActiveTab }) {
       setShowModalServico(false);
       fetchServicos();
     } catch (err) {
-      alert(err.message || 'Erro ao salvar serviço.');
+      showAlert({ type: 'error', message: err.message || 'Erro ao salvar serviço.' });
     }
   };
 
@@ -91,7 +93,7 @@ export function Servicos({ setActiveTab }) {
       await apiRequest(`/servicos/${id}`, 'DELETE');
       fetchServicos();
     } catch (err) {
-      alert('Erro ao excluir serviço.');
+      showAlert({ type: 'error', message: 'Erro ao excluir serviço.' });
     }
   };
 
@@ -112,7 +114,7 @@ export function Servicos({ setActiveTab }) {
       setShowModalSubservico(false);
       fetchServicos();
     } catch (err) {
-      alert(err.message || 'Erro ao adicionar subserviço.');
+      showAlert({ type: 'error', message: err.message || 'Erro ao adicionar subserviço.' });
     }
   };
 
@@ -138,7 +140,7 @@ export function Servicos({ setActiveTab }) {
       setMaterialModal(null);
       fetchServicos();
     } catch (err) {
-      alert(err.message || 'Erro ao vincular material.');
+      showAlert({ type: 'error', message: err.message || 'Erro ao vincular material.' });
     }
   };
 
@@ -151,12 +153,13 @@ export function Servicos({ setActiveTab }) {
       await apiRequest(endpoint, 'DELETE');
       fetchServicos();
     } catch (err) {
-      alert(err.message || 'Erro ao remover material.');
+      showAlert({ type: 'error', message: err.message || 'Erro ao remover material.' });
     }
   };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <ModalAlert {...alertState} onClose={closeAlert} />
       {/* Header Banner (Matching servicos.html) */}
       <div className="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-xl backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-900/60 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>

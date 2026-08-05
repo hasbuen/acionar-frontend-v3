@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, CheckCircle, Check, Moon, Sun, Layers } from 'lucide-react';
+import { ModalAlert, useModalAlert } from '../components/ModalAlert';
 
 export function PublicSchedule({ slug: propSlug }) {
   const slug = propSlug || window.location.pathname.split('/agendar/')[1]?.split('/')[0];
@@ -26,6 +27,7 @@ export function PublicSchedule({ slug: propSlug }) {
   // Modal Sucesso
   const [showSucessoModal, setShowSucessoModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const { alertState, showAlert, closeAlert } = useModalAlert();
 
   const todayISO = new Date().toISOString().split('T')[0];
 
@@ -93,11 +95,11 @@ export function PublicSchedule({ slug: propSlug }) {
   const handleSubmitAgendamento = async (e) => {
     e.preventDefault();
     if (!selectedServico) {
-      alert('Por favor, selecione um serviço na lista.');
+      showAlert({ type: 'warning', title: 'Serviço não selecionado', message: 'Por favor, selecione um serviço na lista.' });
       return;
     }
     if (!selectedTime) {
-      alert('Por favor, escolha um horário disponível.');
+      showAlert({ type: 'warning', title: 'Horário não selecionado', message: 'Por favor, escolha um horário disponível.' });
       return;
     }
 
@@ -121,7 +123,7 @@ export function PublicSchedule({ slug: propSlug }) {
 
       setShowSucessoModal(true);
     } catch (err) {
-      alert(err.message || 'Erro ao solicitar agendamento.');
+      showAlert({ type: 'error', message: err.message || 'Erro ao solicitar agendamento.' });
     } finally {
       setSubmitting(false);
     }
@@ -151,6 +153,7 @@ export function PublicSchedule({ slug: propSlug }) {
 
   return (
     <div className="min-h-[100dvh] text-slate-100 flex flex-col justify-between" style={{ backgroundColor: bgColor }}>
+      <ModalAlert {...alertState} onClose={closeAlert} />
       {/* Header Principal Idêntico a agendar.html */}
       <header className="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-[#020617]/80 backdrop-blur-xl">
         <div className="px-4 sm:px-6 py-3.5 max-w-xl mx-auto flex items-center justify-between">

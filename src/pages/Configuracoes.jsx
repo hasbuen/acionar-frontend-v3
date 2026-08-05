@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../services/api';
 import { Settings, Users, Bell, Globe, Palette, Copy, Check, Clock, MessageSquare, MapPin, ShieldAlert, Plus, Trash2, Upload, Image as ImageIcon, CreditCard } from 'lucide-react';
+import { ModalAlert, useModalAlert } from '../components/ModalAlert';
 
 export function Configuracoes() {
   const { tenant, setTenant } = useAuth();
@@ -12,6 +13,7 @@ export function Configuracoes() {
   const [savingPayments, setSavingPayments] = useState(false);
   const [payments, setPayments] = useState({ asaas_enabled: false, asaas_environment: 'sandbox', pix_key: '', pix_key_type: 'aleatoria', asaas_api_key: '', asaas_api_key_configured: false });
   const fileInputRef = useRef(null);
+  const { alertState, showAlert, closeAlert } = useModalAlert();
 
   // Operating Hours (Segunda a Domingo)
   const [horarios, setHorarios] = useState([
@@ -77,7 +79,7 @@ export function Configuracoes() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('Por favor selecione um arquivo de imagem válido.');
+      showAlert({ type: 'warning', title: 'Arquivo inválido', message: 'Por favor selecione um arquivo de imagem válido.' });
       return;
     }
 
@@ -91,7 +93,7 @@ export function Configuracoes() {
         setTenant({ ...tenant, foto_url: res.foto_url });
         setMessage('Foto do logotipo carregada e atualizada com sucesso!');
       } catch (err) {
-        alert(err.message || 'Erro ao carregar imagem do logotipo.');
+        showAlert({ type: 'error', message: err.message || 'Erro ao carregar imagem do logotipo.' });
       } finally {
         setUploadingLogo(false);
       }
@@ -111,7 +113,7 @@ export function Configuracoes() {
       }
       setMessage('Configurações salvas com sucesso!');
     } catch (err) {
-      alert(err.message || 'Erro ao salvar configurações.');
+      showAlert({ type: 'error', message: err.message || 'Erro ao salvar configurações.' });
     } finally {
       setLoading(false);
     }
@@ -125,7 +127,7 @@ export function Configuracoes() {
       setPayments(prev => ({ ...prev, ...res.settings, asaas_api_key: '' }));
       setMessage('Configuração Pix e Asaas salva com sucesso!');
     } catch (err) {
-      alert(err.message || 'Erro ao salvar configuração de pagamentos.');
+      showAlert({ type: 'error', message: err.message || 'Erro ao salvar configuração de pagamentos.' });
     } finally {
       setSavingPayments(false);
     }
@@ -144,6 +146,7 @@ export function Configuracoes() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <ModalAlert {...alertState} onClose={closeAlert} />
       {/* Header Banner */}
       <div className="flex items-center gap-3">
         <div className="h-10 w-10 rounded-2xl bg-blue-600/20 text-blue-400 flex items-center justify-center font-bold">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../services/api';
 import { Users, UserPlus, Search, Phone, History, Edit, Trash2, X, Calendar, MessageSquare } from 'lucide-react';
+import { ModalAlert, useModalAlert } from '../components/ModalAlert';
 
 export function Clientes() {
   const [clientes, setClientes] = useState([]);
@@ -10,6 +11,7 @@ export function Clientes() {
   const [editingCliente, setEditingCliente] = useState(null);
   const [historyCliente, setHistoryCliente] = useState(null);
   const [historyAgendamentos, setHistoryAgendamentos] = useState([]);
+  const { alertState, showAlert, closeAlert } = useModalAlert();
 
   const [form, setForm] = useState({
     nome: '',
@@ -61,7 +63,7 @@ export function Clientes() {
       setShowModal(false);
       fetchClientes();
     } catch (err) {
-      alert(err.message || 'Erro ao salvar cliente.');
+      showAlert({ type: 'error', message: err.message || 'Erro ao salvar cliente.' });
     }
   };
 
@@ -71,7 +73,7 @@ export function Clientes() {
       await apiRequest(`/clientes/${id}`, 'DELETE');
       fetchClientes();
     } catch (err) {
-      alert('Erro ao remover cliente.');
+      showAlert({ type: 'error', message: 'Erro ao remover cliente.' });
     }
   };
 
@@ -93,6 +95,7 @@ export function Clientes() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <ModalAlert {...alertState} onClose={closeAlert} />
       {/* Banner Superior */}
       <div className="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-xl backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-900/60 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>

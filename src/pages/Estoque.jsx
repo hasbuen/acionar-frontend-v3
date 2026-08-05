@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../services/api';
 import { Plus, Package, ArrowDown, ArrowUp, ArrowRightLeft, ClipboardCheck, History, AlertTriangle, Search, X, Check, DollarSign } from 'lucide-react';
+import { ModalAlert, useModalAlert } from '../components/ModalAlert';
 
 export function Estoque() {
   const [produtos, setProdutos] = useState([]);
@@ -8,6 +9,7 @@ export function Estoque() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterBaixo, setFilterBaixo] = useState(false);
+  const { alertState, showAlert, closeAlert } = useModalAlert();
 
   // Modals
   const [showWizard, setShowWizard] = useState(false);
@@ -84,7 +86,7 @@ export function Estoque() {
       setShowWizard(false);
       fetchData();
     } catch (err) {
-      alert(err.message || 'Erro ao cadastrar produto.');
+      showAlert({ type: 'error', message: err.message || 'Erro ao cadastrar produto.' });
     }
   };
 
@@ -104,7 +106,7 @@ export function Estoque() {
       setTransfForm({ profissional_id: '', quantidade: 1 });
       fetchData();
     } catch (err) {
-      alert(err.message || 'Erro ao enviar produto.');
+      showAlert({ type: 'error', message: err.message || 'Erro ao enviar produto.' });
     }
   };
 
@@ -121,7 +123,7 @@ export function Estoque() {
       setShowMovimento(false);
       fetchData();
     } catch (err) {
-      alert(err.message || 'Erro ao registrar movimentação.');
+      showAlert({ type: 'error', message: err.message || 'Erro ao registrar movimentação.' });
     }
   };
 
@@ -149,7 +151,7 @@ export function Estoque() {
       setShowInventario(false);
       fetchData();
     } catch (err) {
-      alert('Erro ao salvar inventário.');
+      showAlert({ type: 'error', message: 'Erro ao salvar inventário.' });
     }
   };
 
@@ -166,6 +168,7 @@ export function Estoque() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <ModalAlert {...alertState} onClose={closeAlert} />
       {/* Banner de Boas-vindas (Identical to estoque.html) */}
       <div className="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-xl backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-900/60 flex flex-col lg:flex-row lg:items-end justify-between gap-5">
         <div>

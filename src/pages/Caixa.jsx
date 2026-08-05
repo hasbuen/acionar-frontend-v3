@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../services/api';
 import { Plus, Wallet, TrendingUp, Clock, ArrowDownRight, CheckCircle2, DollarSign, Trash2, X } from 'lucide-react';
+import { ModalAlert, useModalAlert } from '../components/ModalAlert';
 
 export function Caixa() {
   const [data, setData] = useState({ movimentacoes: [], resumo: { totalEntradas: 0, totalSaidas: 0, saldo: 0 } });
@@ -8,6 +9,7 @@ export function Caixa() {
   const [activeFilter, setActiveFilter] = useState('todos');
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ tipo: 'entrada', descricao: '', valor: '', forma_pagamento: 'pix' });
+  const { alertState, showAlert, closeAlert } = useModalAlert();
 
   useEffect(() => {
     fetchCaixa();
@@ -35,7 +37,7 @@ export function Caixa() {
       setShowModal(false);
       fetchCaixa();
     } catch (err) {
-      alert(err.message || 'Erro ao registrar movimentação.');
+      showAlert({ type: 'error', message: err.message || 'Erro ao registrar movimentação.' });
     }
   };
 
@@ -45,12 +47,13 @@ export function Caixa() {
       await apiRequest(`/caixa/${id}`, 'DELETE');
       fetchCaixa();
     } catch (err) {
-      alert('Erro ao excluir lançamento.');
+      showAlert({ type: 'error', message: 'Erro ao excluir lançamento.' });
     }
   };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <ModalAlert {...alertState} onClose={closeAlert} />
       {/* Header Banner */}
       <div className="flex items-center gap-3">
         <div className="h-10 w-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">

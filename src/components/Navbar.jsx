@@ -6,6 +6,7 @@ import {
   ChevronDown, Plus, Activity,
   Cog
 } from 'lucide-react';
+import { ModalAlert, useModalAlert } from './ModalAlert';
 
 const NAV_ITEMS = [
   { id: 'agenda', label: 'Agenda', icon: Calendar },
@@ -22,6 +23,21 @@ export function Navbar({ activeTab, setActiveTab }) {
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'));
   const publicUrl = `/agendar/${tenant?.slug || ''}`;
+  const { alertState, showAlert, closeAlert } = useModalAlert();
+
+  const handleLogout = () => {
+    showAlert({
+      type: 'warning',
+      title: 'Sair do sistema',
+      message: 'Deseja realmente encerrar sua sessão?',
+      confirmLabel: 'Sim, sair',
+      cancelLabel: 'Cancelar',
+      onConfirm: () => {
+        localStorage.clear();
+        window.location.href = '/';
+      },
+    });
+  };
 
   useEffect(() => {
     const saved = localStorage.getItem('color-theme') || 'light';
@@ -119,7 +135,7 @@ export function Navbar({ activeTab, setActiveTab }) {
               <div className="h-5 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
 
               <button
-                onClick={() => alert('Logout clicado')}
+                onClick={handleLogout}
                 title="Sair"
                 className="flex h-9 w-9 items-center justify-center rounded-xl text-rose-600 dark:text-rose-400 transition-all hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
               >
@@ -129,6 +145,8 @@ export function Navbar({ activeTab, setActiveTab }) {
           </div>
         </div>
       </header>
+
+      <ModalAlert {...alertState} onClose={closeAlert} />
 
       {/* Help Modal */}
       {showHelpModal && (

@@ -662,7 +662,7 @@ export function Agenda() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
-      {modal?.type === 'payment-new' && <PaymentModal item={modal.item} payments={payments} draft={paymentDraft} setDraft={setPaymentDraft} onClose={() => setModal(null)} onSubmit={event => recordPayment(event, modal.item)} onOnline={() => notify('Configure o Asaas em Parâmetros para gerar cobranças online.')} />}
+      {modal?.type === 'payment-new' && <PaymentModal item={modal.item} payments={payments} draft={paymentDraft} setDraft={setPaymentDraft} onClose={() => setModal(null)} onSubmit={event => recordPayment(event, modal.item)} onOnline={() => setNestedModal({ type: 'online_payment', item: modal.item, valor: paymentDraft.gross || modal.item.valor_total })} />}
       {modal === 'create-new' && <NewAppointmentModal form={form} setForm={setForm} clients={filteredClients} services={servicos} onClose={() => setModal(null)} onSubmit={createAppointment} />}
       {toast && <div className="fixed right-5 top-5 z-[70] rounded-2xl border border-emerald-500/30 bg-slate-900 px-5 py-3 text-sm font-bold text-emerald-300 shadow-2xl">{toast}</div>}
 
