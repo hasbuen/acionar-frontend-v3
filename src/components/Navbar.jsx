@@ -75,7 +75,7 @@ export function Navbar({ activeTab, setActiveTab }) {
             <img src={dark ? "/logo-tema-escuro.png" : "/logo-tema-claro.png"} alt="Logo Acionar" className="h-10 w-10 object-contain rounded-xl shadow-lg shadow-blue-500/10" />
             <div className="flex flex-col justify-center">
               <span className="text-sm font-bold tracking-tight text-slate-800 dark:text-slate-100 leading-tight">
-                {user?.nome || tenant?.nome_empresa}
+                Acionar Online
               </span>
             </div>
           </div>

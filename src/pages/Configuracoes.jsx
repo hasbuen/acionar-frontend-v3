@@ -5,12 +5,13 @@ import { Settings, Users, Bell, Globe, Palette, Copy, Check, Clock, MessageSquar
 import { ModalAlert, useModalAlert } from '../components/ModalAlert';
 
 export function Configuracoes() {
-  const { tenant, setTenant } = useAuth();
+  const { tenant, setTenant, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [copied, setCopied] = useState(false);
   const [message, setMessage] = useState('');
   const [savingPayments, setSavingPayments] = useState(false);
+  const [showPixForm, setShowPixForm] = useState(false);
   const [payments, setPayments] = useState({ asaas_enabled: false, asaas_environment: 'sandbox', pix_key: '', pix_key_type: 'aleatoria', asaas_api_key: '', asaas_api_key_configured: false });
   const fileInputRef = useRef(null);
   const { alertState, showAlert, closeAlert } = useModalAlert();
@@ -31,16 +32,206 @@ export function Configuracoes() {
     { id: 1, inicio: '2026-12-24', fim: '2026-12-25', motivo: 'Recesso de Natal' }
   ]);
   const [novoBloqueio, setNovoBloqueio] = useState({ inicio: '', fim: '', motivo: '' });
+  const [alarmEnabled, setAlarmEnabledState] = useState(false);
+  const [profissionaisList, setProfissionaisList] = useState([]);
+  const [editingProfId, setEditingProfId] = useState(null);
+  const [profForm, setProfForm] = useState({
+    nome: '',
+    emailPrefix: '',
+    senha: '',
+    cor_identificadora: '#8c52ff', // Purple as default from screen
+    aceita_atendimento_externo: false
+  });
+  const [logoError, setLogoError] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('alarm-enabled');
+    if (saved === 'true') {
+      setAlarmEnabledState(true);
+    } else if (saved === null && 'Notification' in window && Notification.permission === 'granted') {
+      setAlarmEnabledState(true);
+      localStorage.setItem('alarm-enabled', 'true');
+    }
+  }, []);
+
+  const urlBase64ToUint8Array = (base64String) => {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  };
+
+  const playTestSound = () => {
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+      const audioCtx = new AudioContextClass();
+      const now = audioCtx.currentTime;
+
+      const osc1 = audioCtx.createOscillator();
+      const gain1 = audioCtx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(659.25, now);
+      gain1.gain.setValueAtTime(0.4, now);
+      gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+      osc1.connect(gain1);
+      gain1.connect(audioCtx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.35);
+
+      const osc2 = audioCtx.createOscillator();
+      const gain2 = audioCtx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(880, now + 0.18);
+      gain2.gain.setValueAtTime(0.5, now + 0.18);
+      gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.65);
+      osc2.connect(gain2);
+      gain2.connect(audioCtx.destination);
+      osc2.start(now + 0.18);
+      osc2.stop(now + 0.65);
+
+      if ('vibrate' in navigator) {
+        navigator.vibrate([250, 120, 250]);
+      }
+    } catch (e) {
+      console.warn('Erro ao reproduzir som:', e);
+    }
+  };
+
+  const toggleAlarm = async () => {
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass) {
+        const audioCtx = new AudioContextClass();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+      }
+    } catch (e) { }
+
+    const nextState = !alarmEnabled;
+
+    if (nextState) {
+      if (!('Notification' in window)) {
+        showAlert({ type: 'error', message: 'Este navegador não suporta notificações.' });
+        return;
+      }
+
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        showAlert({ type: 'error', message: 'Permissão de notificação negada pelo dispositivo.' });
+        return;
+      }
+
+      setAlarmEnabledState(true);
+      localStorage.setItem('alarm-enabled', 'true');
+
+      try {
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+          const registration = await navigator.serviceWorker.ready;
+
+          const keyRes = await apiRequest('/notifications/public-key');
+          const publicKey = keyRes.publicKey;
+          if (!publicKey) throw new Error('Chave pública do servidor não identificada.');
+
+          let subscription = await registration.pushManager.getSubscription();
+          if (subscription && subscription.options.applicationServerKey) {
+            const current = new Uint8Array(subscription.options.applicationServerKey);
+            const expected = urlBase64ToUint8Array(publicKey);
+            const matches = current.length === expected.length && current.every((v, i) => v === expected[i]);
+            if (!matches) {
+              await subscription.unsubscribe();
+              subscription = null;
+            }
+          }
+
+          if (!subscription) {
+            subscription = await registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(publicKey)
+            });
+          }
+
+          const subscriptionJson = subscription.toJSON();
+
+          await apiRequest('/notifications/subscribe', 'POST', {
+            endpoint: subscription.endpoint,
+            p256dh: subscriptionJson.keys?.p256dh || null,
+            auth: subscriptionJson.keys?.auth || null,
+            user_agent: navigator.userAgent,
+            plataforma: /iphone|ipad|ipod/i.test(navigator.userAgent) ? 'ios' : /android/i.test(navigator.userAgent) ? 'android' : 'web'
+          });
+
+          playTestSound();
+          showAlert({ type: 'success', message: 'Notificações e alarme ativados com sucesso!' });
+        } else {
+          playTestSound();
+          showAlert({ type: 'info', message: 'Alarme ativado localmente (Notificações em segundo plano não suportadas neste navegador).' });
+        }
+      } catch (err) {
+        console.error('[PUSH SUBSCRIBE ERROR]', err);
+        playTestSound();
+        showAlert({ type: 'error', message: 'Alarme ativado, mas falhou ao sincronizar notificações em segundo plano: ' + (err.message || '') });
+      }
+    } else {
+      setAlarmEnabledState(false);
+      localStorage.setItem('alarm-enabled', 'false');
+      showAlert({ type: 'info', message: 'Alarme sonoro desativado.' });
+
+      try {
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+          const registration = await navigator.serviceWorker.ready;
+          const subscription = await registration.pushManager.getSubscription();
+          if (subscription) {
+            await apiRequest('/notifications/unsubscribe', 'POST', { endpoint: subscription.endpoint });
+          }
+        }
+      } catch (err) {
+        console.warn('Erro ao cancelar assinatura no servidor:', err);
+      }
+    }
+  };
 
   // WhatsApp & Endereço
-  const [whatsappTemplate, setWhatsappTemplate] = useState(
-    'Olá {cliente_nome}, confirmamos seu agendamento para {data_hora} ({servico_nome}) no endereço: {endereco}.'
-  );
-  const [endereco, setEndereco] = useState('Rua da amizade 515 bairro: 14 de novembro');
+  const [messages, setMessages] = useState({
+    endereco: 'Rua da amizade 515 bairro: 14 de novembro',
+    template_confirmacao: `📍 *Endereço*: {endereco}
+
+Por gentileza, informe se concorda com este horário ou se prefere realizar alguma alteração.
+
+📌 *Lembrete importante*: Pedimos a gentileza de chegar com **15 minutos de antecedência**.
+
+Agradecemos a preferência e aguardamos você!😊`,
+    template_manutencao: `Olá, *{cliente}*! 👋
+
+Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está agendada para o dia *{data}* às *{hora}*.
+
+📍 *Endereço*: {endereco}`
+  });
+  const [lastFocusedField, setLastFocusedField] = useState('confirmacao');
+  const textareaConfRef = useRef(null);
+  const textareaManutRef = useRef(null);
+
+  const DEFAULT_CONFIRMACAO = `📍 *Endereço*: {endereco}
+
+Por gentileza, informe se concorda com este horário ou se prefere realizar alguma alteração.
+
+📌 *Lembrete importante*: Pedimos a gentileza de chegar com **15 minutos de antecedência**.
+
+Agradecemos a preferência e aguardamos você!😊`;
+
+  const DEFAULT_MANUTENCAO = `Olá, *{cliente}*! 👋
+
+Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está agendada para o dia *{data}* às *{hora}*.
+
+📍 *Endereço*: {endereco}`;
 
   // Branding & Public Schedule
   const [form, setForm] = useState({
     agenda_publica_ativa: true,
+    nome_empresa: '',
     foto_url: '',
     cor_primaria: '#0d9488',
     cor_destaque: '#f59e0b',
@@ -52,6 +243,7 @@ export function Configuracoes() {
     if (tenant) {
       setForm({
         agenda_publica_ativa: tenant.agenda_publica_ativa ?? true,
+        nome_empresa: tenant.nome_empresa || '',
         foto_url: tenant.foto_url || '',
         cor_primaria: tenant.cor_primaria || '#0d9488',
         cor_destaque: tenant.cor_destaque || '#f59e0b',
@@ -61,8 +253,22 @@ export function Configuracoes() {
     }
   }, [tenant]);
 
+  const fetchProfissionais = () => {
+    apiRequest('/profissionais?all=true')
+      .then(res => {
+        if (res.profissionais) setProfissionaisList(res.profissionais);
+      })
+      .catch(() => { });
+  };
+
   useEffect(() => {
-    apiRequest('/config/payments').then(res => setPayments(prev => ({ ...prev, ...res.settings }))).catch(() => {});
+    apiRequest('/config/payments').then(res => setPayments(prev => ({ ...prev, ...res.settings }))).catch(() => { });
+    apiRequest('/config/messages').then(res => {
+      if (res.settings) {
+        setMessages(res.settings);
+      }
+    }).catch(() => { });
+    fetchProfissionais();
   }, []);
 
   const publicLink = `${window.location.origin}/agendar/${form.novo_slug || tenant?.slug || ''}`;
@@ -123,13 +329,122 @@ export function Configuracoes() {
     e.preventDefault();
     setSavingPayments(true);
     try {
-      const res = await apiRequest('/config/payments', 'PUT', payments);
-      setPayments(prev => ({ ...prev, ...res.settings, asaas_api_key: '' }));
-      setMessage('Configuração Pix e Asaas salva com sucesso!');
+      const isKeyFilled = Boolean(payments.pix_key?.trim());
+      const payload = {
+        ...payments,
+        asaas_enabled: isKeyFilled,
+      };
+      const res = await apiRequest('/config/payments', 'PUT', payload);
+      setPayments(prev => ({ ...prev, ...res.settings }));
+      setShowPixForm(false);
+      setMessage('Chave Pix salva com sucesso!');
     } catch (err) {
-      showAlert({ type: 'error', message: err.message || 'Erro ao salvar configuração de pagamentos.' });
+      showAlert({ type: 'error', message: err.message || 'Erro ao salvar chave Pix.' });
     } finally {
       setSavingPayments(false);
+    }
+  };
+
+  const handleSaveMessages = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage('');
+    try {
+      const res = await apiRequest('/config/messages', 'PUT', messages);
+      setMessages(res.settings);
+      setMessage('Configurações de mensagens salvas com sucesso!');
+    } catch (err) {
+      showAlert({ type: 'error', message: err.message || 'Erro ao salvar configurações de mensagens.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInsertVariable = (variable) => {
+    const field = lastFocusedField === 'confirmacao' ? 'template_confirmacao' : 'template_manutencao';
+    const ref = lastFocusedField === 'confirmacao' ? textareaConfRef.current : textareaManutRef.current;
+    if (!ref) return;
+
+    const start = ref.selectionStart || 0;
+    const end = ref.selectionEnd || 0;
+    const currentText = messages[field] || '';
+    const newText = currentText.substring(0, start) + variable + currentText.substring(end);
+
+    setMessages(prev => ({
+      ...prev,
+      [field]: newText
+    }));
+
+    setTimeout(() => {
+      ref.focus();
+      ref.setSelectionRange(start + variable.length, start + variable.length);
+    }, 0);
+  };
+
+  const handleSaveProfissional = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage('');
+    try {
+      const email = `${profForm.emailPrefix.trim()}@acionar.online`;
+      const payload = {
+        nome: profForm.nome,
+        email,
+        senha: profForm.senha,
+        cor_identificadora: profForm.cor_identificadora,
+        aceita_atendimento_externo: profForm.aceita_atendimento_externo
+      };
+
+      if (editingProfId) {
+        await apiRequest(`/profissionais/${editingProfId}`, 'PUT', {
+          ...payload,
+          senha: profForm.senha || undefined // Send only if provided
+        });
+        showAlert({ type: 'success', message: 'Auxiliar atualizado com sucesso!' });
+      } else {
+        await apiRequest('/profissionais', 'POST', payload);
+        showAlert({ type: 'success', message: 'Novo auxiliar cadastrado com sucesso!' });
+      }
+
+      setEditingProfId(null);
+      setProfForm({
+        nome: '',
+        emailPrefix: '',
+        senha: '',
+        cor_identificadora: '#8c52ff',
+        aceita_atendimento_externo: false
+      });
+      fetchProfissionais();
+    } catch (err) {
+      showAlert({ type: 'error', message: err.message || 'Erro ao salvar auxiliar.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditProfissional = (p) => {
+    setEditingProfId(p.id);
+    const emailPrefix = p.email.replace('@acionar.online', '');
+    setProfForm({
+      nome: p.nome,
+      emailPrefix,
+      senha: '', // Keep blank unless updating
+      cor_identificadora: p.cor_identificadora || '#8c52ff',
+      aceita_atendimento_externo: p.aceita_atendimento_externo || false
+    });
+  };
+
+  const handleDeleteProfissional = async (id) => {
+    if (!window.confirm('Deseja realmente remover este auxiliar da equipe?')) return;
+    setLoading(true);
+    try {
+      await apiRequest(`/profissionais/${id}`, 'DELETE');
+      showAlert({ type: 'success', message: 'Auxiliar removido com sucesso!' });
+      fetchProfissionais();
+    } catch (err) {
+      showAlert({ type: 'error', message: err.message || 'Erro ao remover auxiliar.' });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -171,80 +486,10 @@ export function Configuracoes() {
 
       {/* Organização em Grid com 2 Colunas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        
+
         {/* COLUNA DA ESQUERDA: Informações Básicas, Logotipo, Cores e Links */}
         <div className="space-y-6">
-          
-          {/* Card: Resumo Rápido */}
-          <div className={cardClass}>
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold shadow-sm">
-                <Globe className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-base font-black text-slate-900 dark:text-white">Resumo rápido da operação</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Visão geral do branding e agenda pública.</p>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-              <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800/80 dark:bg-slate-950/70">
-                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Empresa</p>
-                <h4 className="mt-1 text-sm font-black text-slate-900 dark:text-white truncate">{tenant?.nome_empresa || 'Sua empresa'}</h4>
-              </div>
-              <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800/80 dark:bg-slate-950/70">
-                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Agenda pública</p>
-                <h4 className="mt-1 text-sm font-black text-slate-900 dark:text-white">{form.agenda_publica_ativa ? 'Ativa' : 'Desativada'}</h4>
-              </div>
-              <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800/80 dark:bg-slate-950/70">
-                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Slug ativo</p>
-                <h4 className="mt-1 truncate text-sm font-black text-blue-600 dark:text-blue-400">{tenant?.slug || 'Padrão'}</h4>
-              </div>
-            </div>
-          </div>
-
-          {/* Card: Logotipo da Empresa */}
-          <div className={cardClass}>
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-2xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold shadow-sm">
-                <ImageIcon className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-base font-black text-slate-900 dark:text-white">Foto do Logotipo da Empresa</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Carregue a marca que seus clientes verão na agenda.</p>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-center gap-5 pt-2">
-              <div className="h-24 w-24 rounded-3xl bg-slate-50 border-2 border-dashed border-slate-200 dark:bg-slate-950 dark:border-slate-800 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
-                {form.foto_url ? (
-                  <img src={form.foto_url} alt="Logotipo" className="h-full w-full object-cover" />
-                ) : (
-                  <ImageIcon className="h-8 w-8 text-slate-400 dark:text-slate-600" />
-                )}
-              </div>
-
-              <div className="space-y-3 w-full sm:w-auto flex-1">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  accept="image/*"
-                  className="hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploadingLogo}
-                  className="btn-animated inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-600 px-5 py-3 text-xs font-black text-white shadow-lg shadow-teal-500/20 w-full sm:w-auto"
-                >
-                  <Upload className="h-4 w-4" />
-                  {uploadingLogo ? 'Enviando imagem...' : 'Escolher Foto / Logotipo'}
-                </button>
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">Formatos aceitos: PNG, JPG, JPEG, WEBP. Armazenado na VPS.</p>
-              </div>
-            </div>
-          </div>
 
           {/* Card: Agenda Pública & Personalização */}
           <form onSubmit={handleSave} className="space-y-6">
@@ -252,7 +497,7 @@ export function Configuracoes() {
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3">
                 <div>
                   <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
-                    <Globe className="h-5 w-5 text-blue-500 dark:text-blue-400" /> Agenda Pública Online
+                    <Globe className="h-5 w-5 text-blue-500 dark:text-blue-400" /> Agenda Pública Online?
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Permita que seus clientes agendem horários sozinhos.</p>
                 </div>
@@ -263,13 +508,13 @@ export function Configuracoes() {
                     onChange={(e) => setForm({ ...form, agenda_publica_ativa: e.target.checked })}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-slate-200 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  <div className="w-11 h-6 bg-gray-500 dark:bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                 </label>
               </div>
 
               <div className="space-y-4 pt-2">
                 <div>
-                  <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Subdomínio / Slug da Agenda</label>
+                  <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Subdomínio da Agenda</label>
                   <input
                     type="text"
                     value={form.novo_slug}
@@ -277,6 +522,19 @@ export function Configuracoes() {
                     placeholder="patriciabeato"
                     required
                     className={inputClass}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Nome da Agenda Acionar</label>
+                  <input
+                    type="text"
+                    value={form.nome_empresa}
+                    onChange={(e) => setForm({ ...form, nome_empresa: e.target.value })}
+                    placeholder="Ex: Meu Espaço de Beleza"
+                    required={form.agenda_publica_ativa}
+                    disabled={!form.agenda_publica_ativa}
+                    className={`${inputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
                   />
                 </div>
 
@@ -337,63 +595,157 @@ export function Configuracoes() {
                   {loading ? 'Salvando...' : 'Salvar Alterações de Cores e Marca'}
                 </button>
               </div>
+
+              {/* Card: Logotipo da Empresa */}
+              <div className={cardClass}>
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-2xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold shadow-sm">
+                    <ImageIcon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-slate-900 dark:text-white">Foto do Logotipo</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Carregue a marca que seus clientes verão na agenda.</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center gap-5 pt-2">
+                  <div className="h-24 w-24 rounded-3xl bg-slate-50 border-2 border-dashed border-slate-200 dark:bg-slate-950 dark:border-slate-800 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
+                    {form.foto_url ? (
+                      <img src={form.foto_url} alt="Logotipo" className="h-full w-full object-cover" />
+                    ) : (
+                      <ImageIcon className="h-8 w-8 text-slate-400 dark:text-slate-600" />
+                    )}
+                  </div>
+
+                  <div className="space-y-3 w-full sm:w-auto flex-1">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingLogo}
+                      className="btn-animated inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-600 px-5 py-3 text-xs font-black text-white shadow-lg shadow-teal-500/20 w-full sm:w-auto"
+                    >
+                      <Upload className="h-4 w-4" />
+                      {uploadingLogo ? 'Enviando imagem...' : 'Escolher Foto / Logotipo'}
+                    </button>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">Formatos aceitos: PNG, JPG, JPEG, WEBP. Armazenado na VPS.</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </form>
         </div>
 
         {/* COLUNA DA DIREITA: Financeiro, Horários, Alertas, WhatsApp */}
         <div className="space-y-6">
-          
-          {/* Card: Pix e Asaas */}
-          <form onSubmit={handleSavePayments} className={cardClass}>
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold shadow-sm">
-                <CreditCard className="h-5 w-5" />
+
+          {/* Card: Meus Recebimentos (Pix) */}
+          <div className={cardClass}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold shadow-sm">
+                  <CreditCard className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base font-black text-slate-900 dark:text-white">Meus Recebimentos</h3>
+                    <span className="text-[9px] font-black uppercase text-slate-400">OPCIONAL</span>
+                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${payments.pix_key?.trim()
+                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                      }`}>
+                      {payments.pix_key?.trim() ? 'ATIVADO' : 'NÃO ATIVADO'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Cadastre sua Chave Pix para receber os atendimentos diretamente no seu banco com repasse automático.</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-base font-black text-slate-900 dark:text-white">Pix e Asaas</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Receba agendamentos online automaticamente.</p>
+
+              <button
+                type="button"
+                onClick={() => setShowPixForm(!showPixForm)}
+                className="btn-animated inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 hover:bg-blue-500 px-5 py-3 text-xs font-black text-white shadow-lg shadow-blue-500/20 shrink-0 self-start sm:self-center"
+              >
+                <Copy className="h-3.5 w-3.5" />
+                {showPixForm ? 'Fechar configurações' : 'Informe sua Chave Pix'}
+              </button>
+            </div>
+
+            {/* Pix Form Toggle */}
+            {showPixForm && (
+              <form onSubmit={handleSavePayments} className="py-4 border-t border-slate-100 dark:border-slate-800/80 space-y-4 animate-fade-in">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Tipo da chave Pix</label>
+                    <select
+                      value={payments.pix_key_type}
+                      onChange={e => setPayments({ ...payments, pix_key_type: e.target.value })}
+                      className={selectClass}
+                    >
+                      <option value="cpf">CPF</option>
+                      <option value="cnpj">CNPJ</option>
+                      <option value="email">E-mail</option>
+                      <option value="telefone">Celular/Telefone</option>
+                      <option value="aleatoria">Chave aleatória (EVP)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Chave Pix</label>
+                    <input
+                      type="text"
+                      value={payments.pix_key}
+                      onChange={e => setPayments({ ...payments, pix_key: e.target.value })}
+                      className={inputClass}
+                      placeholder="Insira sua chave Pix"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setShowPixForm(false)}
+                    className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-black text-slate-700 dark:text-slate-200 transition"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingPayments}
+                    className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-black text-white transition"
+                  >
+                    {savingPayments ? 'Salvando...' : 'Salvar Chave Pix'}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Three Info Columns */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3 pt-4 border-t border-slate-100 dark:border-slate-800/80">
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800/80 dark:bg-slate-950/70">
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">CONTA INDIVIDUAL</p>
+                <h4 className="mt-1 text-xs font-black text-slate-900 dark:text-white">Cada profissional recebe na própria conta</h4>
+              </div>
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800/80 dark:bg-slate-950/70">
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">PIX INSTANTÂNEO</p>
+                <h4 className="mt-1 text-xs font-black text-slate-900 dark:text-white">QR Code e Copia e Cola automático no agendamento</h4>
+              </div>
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800/80 dark:bg-slate-950/70">
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">REPASSE DIRETO</p>
+                <h4 className="mt-1 text-xs font-black text-slate-900 dark:text-white">O valor do seu trabalho vai direto para a sua conta</h4>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 pt-2">
-              <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Ambiente</label>
-                <select value={payments.asaas_environment} onChange={e => setPayments({ ...payments, asaas_environment: e.target.value })} className={selectClass}>
-                  <option value="sandbox">Sandbox (Testes)</option>
-                  <option value="production">Produção (Real)</option>
-                </select>
-              </div>
-              <div className="flex items-end">
-                <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-950/40 w-full px-4 py-3.5 text-xs font-bold text-slate-700 dark:text-slate-200 cursor-pointer">
-                  <input type="checkbox" checked={payments.asaas_enabled} onChange={e => setPayments({ ...payments, asaas_enabled: e.target.checked })} className="h-4.5 w-4.5 accent-emerald-500 rounded" />
-                  Ativar cobrança pelo Asaas
-                </label>
-              </div>
-              <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Tipo da chave Pix</label>
-                <select value={payments.pix_key_type} onChange={e => setPayments({ ...payments, pix_key_type: e.target.value })} className={selectClass}>
-                  <option value="cpf">CPF</option>
-                  <option value="cnpj">CNPJ</option>
-                  <option value="email">E-mail</option>
-                  <option value="telefone">Telefone</option>
-                  <option value="aleatoria">Chave aleatória</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Chave Pix</label>
-                <input value={payments.pix_key} onChange={e => setPayments({ ...payments, pix_key: e.target.value })} className={inputClass} placeholder="Chave para receber o Pix" />
-              </div>
-            </div>
-
-            <div className="space-y-3 pt-2">
-              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Token privado Asaas {payments.asaas_api_key_configured && <span className="normal-case text-emerald-600 dark:text-emerald-400 font-extrabold">(Configurado ✔)</span>}
-                <input type="password" value={payments.asaas_api_key} onChange={e => setPayments({ ...payments, asaas_api_key: e.target.value })} className={`${inputClass} mt-1.5`} placeholder="Deixe em branco para manter o configurado" autoComplete="new-password" />
-              </label>
-              <button type="submit" disabled={savingPayments} className="w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 py-3.5 text-xs font-black text-white shadow-lg shadow-emerald-500/20 transition hover:opacity-95">{savingPayments ? 'Salvando...' : 'Salvar Pix e Asaas'}</button>
-            </div>
-          </form>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 text-center mt-4">
+              Sua Chave Pix é armazenada de forma segura para recebimento automático dos atendimentos.
+            </p>
+          </div>
 
           {/* Card: Alerta Pop-up */}
           <div className={cardClass}>
@@ -483,6 +835,173 @@ export function Configuracoes() {
             </div>
           </div>
 
+          {/* Card: Gestão de Equipe & Auxiliares */}
+          {user?.cargo !== 'auxiliar' && (
+            <div className={cardClass}>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold shadow-sm">
+                  <Users className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 dark:text-white">Gestão de Equipe & Auxiliares</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Cadastre auxiliares com e-mail obrigatoriamente no domínio @acionar.online</p>
+                </div>
+              </div>
+
+              {/* Form de Cadastro/Edição */}
+              <form onSubmit={handleSaveProfissional} className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                <span className="text-[11px] font-black uppercase text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
+                  <Plus className="h-3.5 w-3.5" />
+                  {editingProfId ? 'Editar Auxiliar / Membro da Equipe' : 'Cadastrar Novo Auxiliar / Membro da Equipe'}
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Nome Completo</label>
+                    <input
+                      type="text"
+                      value={profForm.nome}
+                      onChange={(e) => setProfForm({ ...profForm, nome: e.target.value })}
+                      placeholder="Ex: Maria Santos"
+                      className={inputClass}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">E-mail Corporativo (@acionar.online)</label>
+                    <div className="flex items-stretch rounded-2xl border border-slate-200 bg-slate-50/50 overflow-hidden dark:border-slate-800 dark:bg-slate-950/40 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10 transition">
+                      <input
+                        type="text"
+                        value={profForm.emailPrefix}
+                        onChange={(e) => setProfForm({ ...profForm, emailPrefix: e.target.value })}
+                        placeholder="patricia"
+                        className="flex-1 bg-transparent px-4 py-3 text-sm font-bold text-slate-900 outline-none dark:text-slate-100 placeholder:text-slate-400"
+                        required
+                      />
+                      <span className="flex items-center px-4 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-xs font-black border-l border-slate-200 dark:border-slate-800">
+                        @acionar.online
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Senha de Acesso</label>
+                    <input
+                      type="password"
+                      value={profForm.senha}
+                      onChange={(e) => setProfForm({ ...profForm, senha: e.target.value })}
+                      placeholder={editingProfId ? "Preencha apenas para alterar" : "••••••••"}
+                      className={inputClass}
+                      required={!editingProfId}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Cor do Selo de Identificação</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={profForm.cor_identificadora}
+                        onChange={(e) => setProfForm({ ...profForm, cor_identificadora: e.target.value })}
+                        className="w-12 h-10 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer bg-transparent"
+                      />
+                      <span className="text-xs text-slate-500 dark:text-slate-400">Usado nos selos dos agendamentos</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Atende no local do cliente */}
+                <div className="flex items-start gap-3 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 bg-slate-50/30 dark:bg-slate-950/20 p-4">
+                  <input
+                    type="checkbox"
+                    id="chkAtendeLocal"
+                    checked={profForm.aceita_atendimento_externo}
+                    onChange={(e) => setProfForm({ ...profForm, aceita_atendimento_externo: e.target.checked })}
+                    className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                  <label htmlFor="chkAtendeLocal" className="text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer select-none">
+                    Atende no local do cliente
+                    <span className="block text-[10px] text-slate-400 font-normal mt-0.5">Permite que este profissional receba solicitações para atendimento no endereço informado pelo cliente.</span>
+                  </label>
+                </div>
+
+                <div className="flex gap-2 justify-end">
+                  {editingProfId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingProfId(null);
+                        setProfForm({ nome: '', emailPrefix: '', senha: '', cor_identificadora: '#8c52ff', aceita_atendimento_externo: false });
+                      }}
+                      className="px-5 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-black hover:opacity-90"
+                    >
+                      Cancelar Edição
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    className="px-6 py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-black shadow-lg shadow-purple-500/25 hover:opacity-90"
+                  >
+                    {editingProfId ? 'Salvar Alterações' : 'Cadastrar Auxiliar'}
+                  </button>
+                </div>
+              </form>
+
+              {/* Lista de Membros */}
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 space-y-3">
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Membros da Equipe Cadastrados</label>
+
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 no-scrollbar">
+                  {profissionaisList.map((p) => (
+                    <div key={p.id} className="flex items-center justify-between p-3.5 rounded-2xl border border-slate-200/50 bg-slate-50/20 dark:border-slate-800/50 dark:bg-slate-950/20">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="h-4 w-4 rounded-full border border-white/20 shadow-sm shrink-0"
+                          style={{ backgroundColor: p.cor_identificadora || '#8c52ff' }}
+                        />
+                        <div>
+                          <strong className="text-sm font-extrabold text-slate-800 dark:text-white block">{p.nome}</strong>
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold block mt-0.5">
+                            {p.email} • <span className="uppercase text-purple-500">{p.cargo === 'proprietario' ? 'Proprietário' : 'Auxiliar'}</span>
+                            {p.aceita_atendimento_externo && ' • Atende Domicílio'}
+                            {!p.ativo && ' • Inativo'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {p.cargo !== 'proprietario' && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleEditProfissional(p)}
+                            className="p-2 rounded-xl text-blue-500 hover:bg-blue-500/10 transition"
+                          >
+                            <svg className="h-4 w-4 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2.5">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteProfissional(p.id)}
+                            className="p-2 rounded-xl text-rose-500 hover:bg-rose-500/10 transition"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {profissionaisList.length === 0 && (
+                    <div className="text-center py-6 text-xs text-slate-400 font-bold">
+                      Nenhum auxiliar cadastrado ainda.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Card: Bloqueios / Férias */}
           <div className={cardClass}>
             <div className="flex items-center gap-3">
@@ -539,15 +1058,42 @@ export function Configuracoes() {
             </div>
           </div>
 
-          {/* Card: WhatsApp & Endereço */}
+          {/* Card: Notificações de Novos Agendamentos */}
           <div className={cardClass}>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold shadow-sm">
+                <Bell className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-slate-900 dark:text-white">Notificações de Novos Agendamentos</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Solicita permissão do dispositivo e emite alerta detalhado quando chegar novo agendamento</p>
+              </div>
+            </div>
+
+            <div className="pt-2.5">
+              <button
+                type="button"
+                onClick={toggleAlarm}
+                className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-black transition-all ${alarmEnabled
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                  }`}
+              >
+                <Bell className="h-4 w-4" />
+                {alarmEnabled ? 'Alarme Ativado 🔔' : 'Alarme Desativado 🔕'}
+              </button>
+            </div>
+          </div>
+
+          {/* Card: WhatsApp & Endereço */}
+          <form onSubmit={handleSaveMessages} className={cardClass}>
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold shadow-sm">
                 <MessageSquare className="h-5 w-5" />
               </div>
               <div>
                 <h3 className="text-base font-black text-slate-900 dark:text-white">Mensagem no WhatsApp & Endereço</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Mensagens automáticas de confirmação de agendamentos.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Personalize o texto enviado ao aceitar e confirmar agendamentos</p>
               </div>
             </div>
 
@@ -556,23 +1102,87 @@ export function Configuracoes() {
                 <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Endereço do Estabelecimento</label>
                 <input
                   type="text"
-                  value={endereco}
-                  onChange={(e) => setEndereco(e.target.value)}
+                  value={messages.endereco || ''}
+                  onChange={(e) => setMessages({ ...messages, endereco: e.target.value })}
                   className={inputClass}
+                  placeholder="Ex: Rua da amizade 515 bairro: 14 de novembro"
+                  required
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Modelo de Mensagem no WhatsApp</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">1. Modelo da Mensagem de Confirmação (Novos Agendamentos)</label>
+                  <button
+                    type="button"
+                    onClick={() => setMessages({ ...messages, template_confirmacao: DEFAULT_CONFIRMACAO })}
+                    className="text-[10px] font-bold text-blue-600 hover:text-blue-500 transition"
+                  >
+                    Restaurar Padrão
+                  </button>
+                </div>
                 <textarea
-                  rows="3"
-                  value={whatsappTemplate}
-                  onChange={(e) => setWhatsappTemplate(e.target.value)}
-                  className={`${inputClass} resize-none h-24 p-4`}
+                  ref={textareaConfRef}
+                  rows="5"
+                  value={messages.template_confirmacao || ''}
+                  onFocus={() => setLastFocusedField('confirmacao')}
+                  onChange={(e) => setMessages({ ...messages, template_confirmacao: e.target.value })}
+                  className={`${inputClass} resize-none h-32 p-4 font-mono text-xs`}
+                  required
                 />
               </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <div>
+                    <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">2. Modelo da Mensagem de Manutenção (Lembrete 2 dias antes)</label>
+                    <span className="text-[10px] text-slate-400 block font-normal">Enviada ao clicar em "Lembrete Manutenção" nos agendamentos de retorno</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMessages({ ...messages, template_manutencao: DEFAULT_MANUTENCAO })}
+                    className="text-[10px] font-bold text-blue-600 hover:text-blue-500 transition"
+                  >
+                    Restaurar Padrão
+                  </button>
+                </div>
+                <textarea
+                  ref={textareaManutRef}
+                  rows="5"
+                  value={messages.template_manutencao || ''}
+                  onFocus={() => setLastFocusedField('manutencao')}
+                  onChange={(e) => setMessages({ ...messages, template_manutencao: e.target.value })}
+                  className={`${inputClass} resize-none h-32 p-4 font-mono text-xs`}
+                  required
+                />
+              </div>
+
+              {/* Toque para inserir variáveis */}
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 space-y-2">
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Toque para inserir variáveis na mensagem:</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {['{cliente}', '{servico}', '{data}', '{hora}', '{endereco}'].map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => handleInsertVariable(v)}
+                      className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 text-xs font-black text-slate-600 dark:text-slate-300 hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600 transition-all select-none"
+                    >
+                      +{v}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full btn-animated py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-xs font-black text-white shadow-lg shadow-emerald-500/20"
+              >
+                {loading ? 'Salvando...' : '✓ Salvar Configurações de Mensagens'}
+              </button>
             </div>
-          </div>
+          </form>
 
         </div>
       </div>

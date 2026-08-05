@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { apiRequest } from '../services/api';
 import { Plus, Package, ArrowDown, ArrowUp, ArrowRightLeft, ClipboardCheck, History, AlertTriangle, Search, X, Check, DollarSign } from 'lucide-react';
@@ -34,6 +34,7 @@ export function Estoque() {
     custo_unitario: 15.0,
     imagem_url: '',
     localizacao: '',
+    status_pagamento: 'pago',
   });
 
   // Form Movimento
@@ -41,6 +42,7 @@ export function Estoque() {
     tipo: 'entrada',
     quantidade: 1,
     motivo: '',
+    status_pagamento: 'pago',
   });
 
   // Form Transferencia
@@ -93,7 +95,7 @@ export function Estoque() {
 
   const openMovement = (tipo = 'entrada', produto = null) => {
     setSelectedProduto(produto);
-    setMovForm({ tipo, quantidade: 1, motivo: '' });
+    setMovForm({ tipo, quantidade: 1, motivo: '', status_pagamento: 'pago' });
     setShowMovimento(true);
   };
 
@@ -120,6 +122,7 @@ export function Estoque() {
         tipo: movForm.tipo,
         quantidade: parseInt(movForm.quantidade, 10),
         motivo: movForm.motivo,
+        status_pagamento: movForm.tipo === 'entrada' ? (movForm.status_pagamento || 'pago') : undefined,
       });
       setShowMovimento(false);
       fetchData();
@@ -205,7 +208,7 @@ export function Estoque() {
             <ArrowDown className="h-4 w-4" /> Entrada
           </button>
           <button
-            onClick={() => { setWizardStep(1); setForm({ nome: '', tipo: 'consumo', codigo: '', categoria: 'Geral', quantidade: 10, estoque_minimo: 3, custo_unitario: 15.0, imagem_url: '', localizacao: '' }); handleGerarSku(); setShowWizard(true); }}
+            onClick={() => { setWizardStep(1); setForm({ nome: '', tipo: 'consumo', codigo: '', categoria: 'Geral', quantidade: 10, estoque_minimo: 3, custo_unitario: 15.0, imagem_url: '', localizacao: '', status_pagamento: 'pago' }); handleGerarSku(); setShowWizard(true); }}
             className="px-4 py-3 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white text-xs font-black shadow-lg shadow-blue-500/25 flex items-center justify-center gap-1.5 transition hover:opacity-90"
           >
             <Plus className="h-4 w-4" /> Novo produto
@@ -457,6 +460,20 @@ export function Estoque() {
                       className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
                     />
                   </div>
+
+                  {parseFloat(form.custo_unitario || 0) > 0 && parseInt(form.quantidade || 0, 10) > 0 && (
+                    <div>
+                      <label className="block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 mb-1">SITUAÇÃO DO PAGAMENTO</label>
+                      <select
+                        value={form.status_pagamento || 'pago'}
+                        onChange={(e) => setForm({ ...form, status_pagamento: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      >
+                        <option value="pago">Pago (Gerar despesa paga no caixa)</option>
+                        <option value="a_pagar">A Pagar / Pendente (Gerar despesa pendente no caixa)</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -669,6 +686,20 @@ export function Estoque() {
                   className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
                 />
               </div>
+
+              {movForm.tipo === 'entrada' && selectedProduto && parseFloat(selectedProduto.custo_unitario || 0) > 0 && (
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 mb-1">SITUAÇÃO DO PAGAMENTO</label>
+                  <select
+                    value={movForm.status_pagamento || 'pago'}
+                    onChange={(e) => setMovForm({ ...movForm, status_pagamento: e.target.value })}
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                  >
+                    <option value="pago">Pago (Gerar despesa paga no caixa)</option>
+                    <option value="a_pagar">A Pagar / Pendente (Gerar despesa pendente no caixa)</option>
+                  </select>
+                </div>
+              )}
 
               <button type="submit" className="w-full py-3.5 rounded-2xl bg-blue-600 text-xs font-black text-white transition hover:bg-blue-700">
                 Confirmar Movimentação

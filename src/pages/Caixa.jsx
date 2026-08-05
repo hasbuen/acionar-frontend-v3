@@ -564,7 +564,7 @@ export function Caixa() {
                     : 'text-slate-500 dark:text-slate-400'
                 }`}
               >
-                <Hourglass className="h-3.5 w-3.5 shrink-0" /> A Receber
+                <Hourglass className="h-3.5 w-3.5 shrink-0" /> Pendentes
               </button>
             </div>
           </div>
