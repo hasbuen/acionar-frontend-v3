@@ -147,8 +147,16 @@ function DetailsModal({ item, onClose, onUpdateStatus, onOpenMaintenance, onEdit
   };
 
   return (
-    <Modal title="Detalhes do agendamento" subtitle={item.cliente_nome || 'Cliente'} onClose={onClose}>
+    <Modal
+      title="Detalhes"
+      subtitle={`${item.servico_nome || 'Serviço'} • ${formatDate(item.data_hora)} às ${formatTime(item.data_hora)}`}
+      onClose={onClose}
+    >
       <div className="space-y-3.5 text-sm text-slate-600 dark:text-slate-300">
+        <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800/80 pb-2.5">
+          <span className="font-semibold text-slate-500 dark:text-slate-400">Cliente</span>
+          <strong className="text-slate-900 dark:text-white font-bold">{item.cliente_nome || 'Cliente'}</strong>
+        </div>
         <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800/80 pb-2.5">
           <span className="font-semibold text-slate-500 dark:text-slate-400">Serviço</span>
           <strong className="text-slate-900 dark:text-white font-bold">{item.servico_nome || 'Atendimento'}</strong>
@@ -173,7 +181,7 @@ function DetailsModal({ item, onClose, onUpdateStatus, onOpenMaintenance, onEdit
         <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
           Status do Agendamento
         </label>
-        
+
         <div className="flex items-center gap-2.5">
           <div className="relative flex-1">
             <select
@@ -239,7 +247,7 @@ function NotesModal({ item, onClose, onSave }) {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) return parsed;
-      } catch (e) {}
+      } catch (e) { }
     }
     return DEFAULT_BADGES;
   });
@@ -295,7 +303,7 @@ function NotesModal({ item, onClose, onSave }) {
           <span className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
             Anotações Rápidas Personalizadas
           </span>
-          
+
           <div className="flex gap-2 mb-2.5">
             <input
               type="text"
@@ -379,10 +387,28 @@ function NotesModal({ item, onClose, onSave }) {
 
 function OnlinePaymentModal({ item, valor, onClose, notify }) {
   const [copied, setCopied] = useState(false);
-  const valorFinal = Number(valor || item.valor_total || 0).toFixed(2);
+  const [loading, setLoading] = useState(true);
+  const [paymentData, setPaymentData] = useState(null);
   
-  const paymentLink = `https://acionar.app/pay/${item.id || 'cobranca'}?v=${valorFinal}`;
-  const pixKey = `00020126580014BR.GOV.BCB.PIX0136${item.id || 'acionar'}5204000053039865405${valorFinal}5802BR5915${(item.cliente_nome || 'Cliente').slice(0,15)}6009SAO PAULO62070503***6304E2CA`;
+  const valorFinal = Number(valor || item.valor_total || 0).toFixed(2);
+
+  useEffect(() => {
+    let isMounted = true;
+    apiRequest(`/agendamentos/${item.id}/payment`, 'GET')
+      .then(data => {
+        if (isMounted) {
+          setPaymentData(data);
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        if (isMounted) {
+          notify('Erro ao gerar cobrança: ' + (err.message || ''));
+          onClose();
+        }
+      });
+    return () => { isMounted = false; };
+  }, [item.id, onClose, notify]);
 
   const copyToClipboard = (text, label) => {
     navigator.clipboard.writeText(text);
@@ -390,6 +416,18 @@ function OnlinePaymentModal({ item, valor, onClose, notify }) {
     notify(`${label} copiado com sucesso!`);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  if (loading || !paymentData) {
+    return (
+      <Modal title="Gerando cobrança..." subtitle="Aguarde um instante" onClose={onClose}>
+        <div className="flex h-40 items-center justify-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent"></div>
+        </div>
+      </Modal>
+    );
+  }
+
+  const { pixKey, paymentLink } = paymentData;
 
   const whatsappMessage = `Olá ${item.cliente_nome || ''}! Segue o link seguro para pagamento do seu atendimento (${item.servico_nome || 'Atendimento'}) no valor de R$ ${valorFinal}:\n\n${paymentLink}\n\nVocê pode escolher pagar via Pix ou Cartão.`;
 
@@ -410,7 +448,7 @@ function OnlinePaymentModal({ item, valor, onClose, notify }) {
           <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 mb-3">
             Escaneie com o app do banco ou copie a chave
           </span>
-          
+
           <div className="rounded-2xl border-4 border-white bg-white p-3 shadow-md">
             <img
               src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(pixKey)}`}
@@ -418,7 +456,7 @@ function OnlinePaymentModal({ item, valor, onClose, notify }) {
               className="h-36 w-36 object-contain"
             />
           </div>
-          
+
           <span className="mt-3 text-lg font-black text-emerald-600 dark:text-emerald-400">
             R$ {valorFinal}
           </span>
@@ -451,7 +489,7 @@ function OnlinePaymentModal({ item, valor, onClose, notify }) {
               className="btn-animated flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 py-3.5 text-xs font-black text-white shadow-lg shadow-emerald-500/20"
             >
               <svg className="h-4.5 w-4.5 fill-current" viewBox="0 0 24 24">
-                <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+                <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z" />
               </svg>
               Enviar Cobrança no WhatsApp
             </a>
@@ -467,16 +505,18 @@ export function Agenda() {
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('hoje');
   const [modal, setModal] = useState(null);
+  const [nestedModal, setNestedModal] = useState(null);
   const [clientes, setClientes] = useState([]);
   const [servicos, setServicos] = useState([]);
   const [profissionais, setProfissionais] = useState([]);
   const [payments, setPayments] = useState([]);
-  const [paymentDraft, setPaymentDraft] = useState({ gross: '', discount: '0.00', condition: 'a_vista', method: 'pix', status: 'pago', notes: '' });
+  const [paymentDraft, setPaymentDraft] = useState({ gross: '', discount: '', date: '', method: 'pix', status: 'pago', notes: '' });
   const [toast, setToast] = useState('');
   const [clientSearch, setClientSearch] = useState('');
   const [form, setForm] = useState({ cliente_id: '', cliente_nome: '', cliente_whatsapp: '', servico_id: '', data_hora: `${new Date().toISOString().slice(0, 10)}T18:40`, observacao: '' });
   const [todosAgendamentos, setTodosAgendamentos] = useState([]);
   const [statsOpen, setStatsOpen] = useState(false);
+  const [deleteModalItem, setDeleteModalItem] = useState(null);
 
   const notify = (message) => { setToast(message); window.setTimeout(() => setToast(''), 3000); };
 
@@ -600,9 +640,21 @@ export function Agenda() {
   }
 
   async function removeAppointment(item) {
-    if (!window.confirm('Deseja excluir este agendamento?')) return;
-    try { await apiRequest(`/agendamentos/${item.id}`, 'DELETE'); notify('Agendamento excluído.'); fetchAgenda(); }
-    catch (error) { notify(error.message || 'Erro ao excluir agendamento.'); }
+    setDeleteModalItem(item);
+  }
+
+  async function confirmRemoveAppointment() {
+    if (!deleteModalItem) return;
+    const item = deleteModalItem;
+    setDeleteModalItem(null);
+    try {
+      await apiRequest(`/agendamentos/${item.id}`, 'DELETE');
+      notify('Agendamento excluído.');
+      fetchAgenda();
+    }
+    catch (error) {
+      notify(error.message || 'Erro ao excluir agendamento.');
+    }
   }
 
   const filteredClients = useMemo(() => clientes.filter(c => (c.nome || '').toLowerCase().includes(clientSearch.toLowerCase())), [clientes, clientSearch]);
@@ -623,8 +675,8 @@ export function Agenda() {
       </div>
 
       <div className="rounded-3xl border border-slate-200 bg-white/80 dark:border-slate-800/80 dark:bg-slate-900/60 shadow-xl backdrop-blur-xl overflow-hidden w-full transition-all">
-        <div 
-          onClick={() => setStatsOpen(!statsOpen)} 
+        <div
+          onClick={() => setStatsOpen(!statsOpen)}
           className="flex items-center justify-between p-5 cursor-pointer select-none"
         >
           <div className="flex items-center gap-3.5">
@@ -684,40 +736,37 @@ export function Agenda() {
             const isRequest = ['aguardando_confirmacao', 'solicitado'].includes(item.status);
             const isManutencao = item.status === 'manutencao';
             const isAtendimentoExterno = (item.tipo_atendimento || 'salao').toLowerCase() === 'cliente' || (item.tipo_atendimento || 'salao').toLowerCase() === 'externo';
-            
+
             return (
               <div
                 key={item.id}
-                className={`appointment-card group p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border border-white/80 dark:border-slate-800/60 bg-white/72 dark:bg-slate-950/20 hover:bg-white/90 dark:hover:bg-slate-800/30 shadow-[0_14px_36px_rgba(15,23,42,0.08)] hover:shadow-[0_18px_44px_rgba(37,99,235,0.12)] backdrop-blur-sm transition-all rounded-3xl ${
-                  isManutencao ? 'ring-1 ring-purple-200/70 dark:ring-purple-500/15' : ''
-                }`}
+                className={`appointment-card group p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border border-white/80 dark:border-slate-800/60 bg-white/72 dark:bg-slate-950/20 hover:bg-white/90 dark:hover:bg-slate-800/30 shadow-[0_14px_36px_rgba(15,23,42,0.08)] hover:shadow-[0_18px_44px_rgba(37,99,235,0.12)] backdrop-blur-sm transition-all rounded-3xl ${isManutencao ? 'ring-1 ring-purple-200/70 dark:ring-purple-500/15' : ''
+                  }`}
                 onClick={() => setModal({ type: 'details', item })}
               >
                 <div className="flex min-w-0 items-start gap-4">
                   <div
-                    className={`flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-2xl font-bold ${
-                      isManutencao
-                        ? 'bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400 border border-purple-100 dark:border-purple-900/40'
-                        : 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40'
-                    }`}
+                    className={`flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-2xl font-bold ${isManutencao
+                      ? 'bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400 border border-purple-100 dark:border-purple-900/40'
+                      : 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40'
+                      }`}
                   >
                     <span className="text-[10px] font-semibold uppercase">{parts.month}</span>
                     <span className="text-sm font-extrabold leading-none">{parts.day}</span>
                   </div>
-                  
+
                   <div className="min-w-0">
                     <div className="mb-1 flex flex-wrap items-center gap-2">
                       <span className="text-base font-black text-slate-900 dark:text-white">
                         {item.cliente_nome || 'Cliente não identificado'}
                       </span>
                       <span
-                        className={`rounded-full border px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider ${
-                          statusClasses[item.status] || statusClasses.agendado
-                        }`}
+                        className={`rounded-full border px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider ${statusClasses[item.status] || statusClasses.agendado
+                          }`}
                       >
                         {statusLabels[item.status] || item.status}
                       </span>
-                      
+
                       {item.profissional_nome && (
                         <span
                           className="inline-flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-full text-white shadow-sm shrink-0"
@@ -726,7 +775,7 @@ export function Agenda() {
                           <User className="h-2.5 w-2.5 shrink-0" /> {item.profissional_nome}
                         </span>
                       )}
-                      
+
                       {isAtendimentoExterno ? (
                         <span className="inline-flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-300 border border-orange-500/20 shrink-0">
                           No local do cliente
@@ -737,13 +786,13 @@ export function Agenda() {
                         </span>
                       )}
                     </div>
-                    
+
                     <div className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
                       <Scissors className="h-3.5 w-3.5 text-blue-400" />
                       {item.servico_nome || 'Atendimento'}{' '}
                       <span className="font-semibold text-slate-400">({item.duracao_total_minutos || 60} min)</span>
                     </div>
-                    
+
                     <div className="mt-1 flex items-center gap-3 text-[11px] font-semibold text-slate-400">
                       <span>
                         <Clock className="mr-1 inline h-3 w-3" />
@@ -756,7 +805,7 @@ export function Agenda() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex flex-wrap items-center justify-end gap-1.5" onClick={event => event.stopPropagation()}>
                   {isRequest ? (
                     <>
@@ -799,7 +848,7 @@ export function Agenda() {
                           title="Enviar WhatsApp"
                         >
                           <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
-                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z" />
                           </svg>
                         </a>
                       )}
@@ -844,11 +893,10 @@ export function Agenda() {
               <button
                 key={value}
                 onClick={() => updateAppointment(modal.item, { status: value }, `Status alterado para ${label}.`)}
-                className={`rounded-2xl border p-4 text-left text-sm font-black transition-all ${
-                  selectedStatus === value
-                    ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm shadow-blue-500/5'
-                    : 'border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-300'
-                }`}
+                className={`rounded-2xl border p-4 text-left text-sm font-black transition-all ${selectedStatus === value
+                  ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm shadow-blue-500/5'
+                  : 'border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-300'
+                  }`}
               >
                 {label}
                 {selectedStatus === value && <Check className="float-right h-4 w-4 text-blue-600 dark:text-blue-400" />}
@@ -899,7 +947,16 @@ export function Agenda() {
           setDraft={setPaymentDraft}
           onClose={() => setModal(null)}
           onSubmit={(event) => recordPayment(event, modal.item)}
-          onOnline={() => setModal({ type: 'online_payment', item: modal.item, valor: paymentDraft.gross || modal.item.valor_total })}
+          onOnline={() => setNestedModal({ type: 'online_payment', item: modal.item, valor: paymentDraft.gross || modal.item.valor_total })}
+        />
+      )}
+
+      {nestedModal?.type === 'online_payment' && (
+        <OnlinePaymentModal
+          item={nestedModal.item}
+          valor={nestedModal.valor}
+          onClose={() => setNestedModal(null)}
+          notify={notify}
         />
       )}
 
@@ -971,6 +1028,41 @@ export function Agenda() {
             <textarea value={form.observacao} onChange={event => setForm({ ...form, observacao: event.target.value })} rows="3" className={inputClass} placeholder="Observações (opcional)" />
             <button className="btn-animated w-full rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 py-3.5 text-xs font-black text-white shadow-lg shadow-blue-500/25">Confirmar agendamento</button>
           </form>
+        </Modal>
+      )}
+
+      {deleteModalItem && (
+        <Modal
+          title="Excluir Agendamento"
+          subtitle={deleteModalItem.cliente_nome || 'Atenção'}
+          onClose={() => setDeleteModalItem(null)}
+        >
+          <div className="space-y-4 pt-1">
+            <div className="flex items-start gap-3 rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4 text-rose-600 dark:text-rose-400">
+              <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+              <div className="text-xs font-semibold leading-relaxed">
+                Tem certeza absoluta que deseja excluir este agendamento de <strong className="font-black">{deleteModalItem.cliente_nome}</strong>? Esta ação é irreversível e removerá todos os dados vinculados.
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/60">
+              <button
+                type="button"
+                onClick={() => setDeleteModalItem(null)}
+                className="btn-animated rounded-2xl px-5 py-3 text-xs font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-white transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmRemoveAppointment}
+                className="btn-animated flex items-center gap-1.5 rounded-2xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 px-6 py-3 text-xs font-black text-white shadow-lg shadow-rose-500/25"
+              >
+                <Trash2 className="h-4 w-4" />
+                Sim, excluir agendamento
+              </button>
+            </div>
+          </div>
         </Modal>
       )}
     </div>
