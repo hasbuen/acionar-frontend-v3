@@ -63,9 +63,9 @@ function MainApp() {
 
   // 4. Authenticated Management App
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-tr from-slate-50 via-[#f0f4f9] to-[#e5eef7] dark:from-[#020617] dark:via-[#090f23] dark:to-[#020617] text-slate-900 dark:text-slate-100 transition-colors duration-300">
+    <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden bg-gradient-to-tr from-slate-50 via-[#f0f4f9] to-[#e5eef7] dark:from-[#020617] dark:via-[#090f23] dark:to-[#020617] text-slate-900 dark:text-slate-100 transition-colors duration-300">
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
-      <main className="flex-1 pb-28 md:pb-12">
+      <main className="flex-1 w-full max-w-full overflow-x-hidden pb-28 md:pb-12">
         {activeTab === 'agenda' && <Agenda />}
         {activeTab === 'clientes' && <Clientes />}
         {activeTab === 'servicos' && <Servicos setActiveTab={setActiveTab} />}

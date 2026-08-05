@@ -77,7 +77,7 @@ function Modal({ title, subtitle, children, onClose, wide = false }) {
     );
     gsap.fromTo(modalRef.current,
       { scale: 0.92, opacity: 0, y: 15 },
-      { scale: 1, opacity: 1, y: 0, duration: 0.4, ease: 'back.out(1.4)', delay: 0.05 }
+      { scale: 1, opacity: 1, y: 0, x: 0, duration: 0.4, ease: 'back.out(1.4)', delay: 0.05 }
     );
   }, []);
 
@@ -92,7 +92,11 @@ function Modal({ title, subtitle, children, onClose, wide = false }) {
   };
 
   return (
-    <div ref={overlayRef} className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/15 p-4 backdrop-blur-sm">
+    <div 
+      ref={overlayRef} 
+      className="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-md"
+      style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', margin: 0, transform: 'none' }}
+    >
       <div ref={modalRef} className={`relative w-full ${wide ? 'max-w-xl' : 'max-w-md'} overflow-hidden rounded-[2.2rem] border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100 sm:p-8`}>
         <button
           onClick={handleClose}
@@ -389,7 +393,7 @@ function OnlinePaymentModal({ item, valor, onClose, notify }) {
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [paymentData, setPaymentData] = useState(null);
-  
+
   const valorFinal = Number(valor || item.valor_total || 0).toFixed(2);
 
   useEffect(() => {

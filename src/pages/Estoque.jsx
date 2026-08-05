@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { apiRequest } from '../services/api';
 import { Plus, Package, ArrowDown, ArrowUp, ArrowRightLeft, ClipboardCheck, History, AlertTriangle, Search, X, Check, DollarSign } from 'lucide-react';
 import { ModalAlert, useModalAlert } from '../components/ModalAlert';
@@ -169,7 +170,8 @@ export function Estoque() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
       <ModalAlert {...alertState} onClose={closeAlert} />
-      {/* Banner de Boas-vindas (Identical to estoque.html) */}
+      
+      {/* Banner de Boas-vindas */}
       <div className="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-xl backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-900/60 flex flex-col lg:flex-row lg:items-end justify-between gap-5">
         <div>
           <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400">
@@ -186,25 +188,25 @@ export function Estoque() {
         <div className="grid grid-cols-2 sm:flex gap-2">
           <button
             onClick={handleOpenInventario}
-            className="btn-animated px-4 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1.5"
+            className="px-4 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1.5 transition hover:opacity-90"
           >
             <ClipboardCheck className="h-4 w-4 text-purple-500" /> Inventário
           </button>
           <button
             onClick={() => { setSelectedProduto(null); setTransfForm({ profissional_id: '', quantidade: 1 }); setShowTransferencia(true); }}
-            className="btn-animated px-4 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1.5"
+            className="px-4 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1.5 transition hover:opacity-90"
           >
             <ArrowRightLeft className="h-4 w-4 text-sky-500" /> Enviar
           </button>
           <button
             onClick={() => openMovement('entrada')}
-            className="btn-animated px-4 py-3 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-extrabold flex items-center justify-center gap-1.5 border border-emerald-500/20"
+            className="px-4 py-3 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-extrabold flex items-center justify-center gap-1.5 border border-emerald-500/20 transition hover:bg-emerald-500/20"
           >
             <ArrowDown className="h-4 w-4" /> Entrada
           </button>
           <button
             onClick={() => { setWizardStep(1); setForm({ nome: '', tipo: 'consumo', codigo: '', categoria: 'Geral', quantidade: 10, estoque_minimo: 3, custo_unitario: 15.0, imagem_url: '', localizacao: '' }); handleGerarSku(); setShowWizard(true); }}
-            className="btn-animated px-4 py-3 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white text-xs font-black shadow-lg shadow-blue-500/25 flex items-center justify-center gap-1.5"
+            className="px-4 py-3 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white text-xs font-black shadow-lg shadow-blue-500/25 flex items-center justify-center gap-1.5 transition hover:opacity-90"
           >
             <Plus className="h-4 w-4" /> Novo produto
           </button>
@@ -217,7 +219,7 @@ export function Estoque() {
           <div className="h-10 w-10 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center text-lg mb-2">
             <Package className="h-5 w-5" />
           </div>
-          <span className="text-[10px] font-black uppercase text-slate-500">TOTAL DE PRODUTOS</span>
+          <span className="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400">TOTAL DE PRODUTOS</span>
           <h3 className="text-xl font-black text-slate-900 dark:text-white mt-0.5">{totalItens}</h3>
         </div>
 
@@ -225,16 +227,16 @@ export function Estoque() {
           <div className="h-10 w-10 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-lg mb-2">
             <DollarSign className="h-5 w-5" />
           </div>
-          <span className="text-[10px] font-black uppercase text-slate-500">VALOR EM ESTOQUE</span>
-          <h3 className="text-xl font-black text-emerald-500 mt-0.5">R$ {valorTotalCusto.toFixed(2)}</h3>
+          <span className="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400">VALOR EM ESTOQUE</span>
+          <h3 className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">R$ {valorTotalCusto.toFixed(2)}</h3>
         </div>
 
         <div className="rounded-3xl bg-white/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-4 shadow-sm backdrop-blur-md">
-          <div className={`h-10 w-10 rounded-2xl flex items-center justify-center text-lg mb-2 ${alertasBaixo > 0 ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-800 text-slate-500'}`}>
+          <div className={`h-10 w-10 rounded-2xl flex items-center justify-center text-lg mb-2 ${alertasBaixo > 0 ? 'bg-amber-500/20 text-amber-500 dark:text-amber-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
             <AlertTriangle className="h-5 w-5" />
           </div>
-          <span className="text-[10px] font-black uppercase text-slate-500">ALERTAS DE ESTOQUE</span>
-          <h3 className={`text-xl font-black mt-0.5 ${alertasBaixo > 0 ? 'text-amber-400' : 'text-slate-900 dark:text-white'}`}>
+          <span className="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400">ALERTAS DE ESTOQUE</span>
+          <h3 className={`text-xl font-black mt-0.5 ${alertasBaixo > 0 ? 'text-amber-500 dark:text-amber-400' : 'text-slate-900 dark:text-white'}`}>
             {alertasBaixo} {alertasBaixo === 1 ? 'produto' : 'produtos'}
           </h3>
         </div>
@@ -243,7 +245,7 @@ export function Estoque() {
           <div className="h-10 w-10 rounded-2xl bg-purple-500/10 text-purple-500 flex items-center justify-center text-lg mb-2">
             <History className="h-5 w-5" />
           </div>
-          <span className="text-[10px] font-black uppercase text-slate-500">ESTADO DO ESTOQUE</span>
+          <span className="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400">ESTADO DO ESTOQUE</span>
           <h3 className="text-sm font-black text-slate-900 dark:text-white mt-1">100% Atualizado</h3>
         </div>
       </div>
@@ -257,7 +259,7 @@ export function Estoque() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por nome ou SKU..."
-            className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 pl-11 pr-4 py-3 text-xs font-semibold outline-none focus:border-blue-500"
+            className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 pl-11 pr-4 py-3 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-blue-500"
           />
         </div>
 
@@ -265,8 +267,8 @@ export function Estoque() {
           onClick={() => setFilterBaixo(!filterBaixo)}
           className={`px-4 py-3 rounded-2xl border text-xs font-extrabold transition ${
             filterBaixo
-              ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-              : 'bg-white/80 dark:bg-slate-900/80 border-slate-200 dark:border-slate-800 text-slate-400'
+              ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30'
+              : 'bg-white/80 dark:bg-slate-900/80 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300'
           }`}
         >
           ⚠️ Mostrar Apenas Estoque Baixo
@@ -292,11 +294,11 @@ export function Estoque() {
               >
                 <div>
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-slate-700 bg-slate-950">
-                      {p.imagem_url ? <img src={p.imagem_url} alt={p.nome} className="h-full w-full object-cover" /> : <Package className="mx-auto mt-5 h-6 w-6 text-slate-600" />}
+                    <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-950">
+                      {p.imagem_url ? <img src={p.imagem_url} alt={p.nome} className="h-full w-full object-cover" /> : <Package className="mx-auto mt-5 h-6 w-6 text-slate-400 dark:text-slate-600" />}
                     </div>
                     <div>
-                      <span className="text-[10px] font-black uppercase text-blue-400 tracking-wider">
+                      <span className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400 tracking-wider">
                         {p.tipo || 'CONSUMO'}
                       </span>
                       <h3 className="text-lg font-black text-slate-900 dark:text-white leading-tight">{p.nome}</h3>
@@ -304,13 +306,13 @@ export function Estoque() {
                     </div>
 
                     <span className={`px-3 py-1 rounded-full text-xs font-black ${
-                      isBaixo ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-emerald-500/10 text-emerald-400'
+                      isBaixo ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                     }`}>
                       {p.quantidade} un
                     </span>
                   </div>
 
-                  <div className="text-xs text-slate-500 space-y-1 mt-3">
+                  <div className="text-xs text-slate-500 dark:text-slate-400 space-y-1 mt-3">
                     <div className="flex justify-between">
                       <span>Custo Unitário:</span>
                       <strong className="text-slate-900 dark:text-slate-200">R$ {parseFloat(p.custo_unitario || 0).toFixed(2)}</strong>
@@ -325,32 +327,32 @@ export function Estoque() {
                 <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/80">
                   <button
                     onClick={() => openMovement('entrada', p)}
-                    className="rounded-xl bg-blue-500/10 px-3 py-2.5 text-xs font-extrabold text-blue-300 border border-blue-500/20 hover:bg-blue-500/20"
+                    className="rounded-xl bg-blue-500/10 px-3 py-2.5 text-xs font-extrabold text-blue-600 dark:text-blue-300 border border-blue-500/20 hover:bg-blue-500/20 transition"
                   >
                     Movimentar
                   </button>
                   <button
                     onClick={() => openMovement('entrada', p)}
-                    className="flex-1 py-2.5 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xs font-extrabold hover:bg-emerald-500/20"
+                    className="flex-1 py-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-500 border border-emerald-500/20 text-xs font-extrabold hover:bg-emerald-500/20 transition"
                   >
                     + Entrada
                   </button>
                   <button
                     onClick={() => openMovement('saida', p)}
-                    className="flex-1 py-2.5 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 text-xs font-extrabold hover:bg-rose-500/20"
+                    className="flex-1 py-2.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-500 border border-rose-500/20 text-xs font-extrabold hover:bg-rose-500/20 transition"
                   >
                     - Saída
                   </button>
                   <button
                     onClick={() => { setSelectedProduto(p); setTransfForm({ profissional_id: '', quantidade: 1 }); setShowTransferencia(true); }}
-                    className="rounded-xl bg-sky-500/10 px-3 py-2.5 text-xs font-extrabold text-sky-300 border border-sky-500/20 hover:bg-sky-500/20"
+                    className="rounded-xl bg-sky-500/10 px-3 py-2.5 text-xs font-extrabold text-sky-600 dark:text-sky-300 border border-sky-500/20 hover:bg-sky-500/20 transition"
                     title="Enviar para outro auxiliar"
                   >
                     Enviar
                   </button>
                   <button
                     onClick={() => { setSelectedProduto(p); setShowRazao(true); }}
-                    className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-white"
+                    className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition"
                     title="Histórico / Extrato"
                   >
                     <History className="h-4 w-4" />
@@ -362,16 +364,16 @@ export function Estoque() {
         </div>
       )}
 
-      {/* MODAL 1: WIZARD NOVO PRODUTO (3 PASSOS) */}
-      {showWizard && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/15 p-4 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-5 animate-scale-in">
+      {/* MODAL 1: WIZARD NOVO PRODUTO */}
+      {showWizard && createPortal(
+        <div className="fixed inset-0 z-[999999] h-screen w-screen flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl space-y-5 text-slate-900 dark:text-slate-100">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
               <div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">WIZARD DE PRODUTO — PASSO {wizardStep}/3</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400">WIZARD DE PRODUTO — PASSO {wizardStep}/3</span>
                 <h3 className="text-lg font-black text-slate-900 dark:text-white">Cadastrar Novo Produto</h3>
               </div>
-              <button onClick={() => setShowWizard(false)} className="text-slate-400 hover:text-slate-900 dark:text-white">
+              <button onClick={() => setShowWizard(false)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -380,7 +382,7 @@ export function Estoque() {
               {wizardStep === 1 && (
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">NOME DO PRODUTO</label>
+                    <label className="block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 mb-1">NOME DO PRODUTO</label>
                     <input
                       type="text"
                       value={form.nome}
@@ -392,7 +394,7 @@ export function Estoque() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">SKU / CÓDIGO</label>
+                    <label className="block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 mb-1">SKU / CÓDIGO</label>
                     <div className="flex gap-2">
                       <input
                         type="text"
@@ -400,14 +402,14 @@ export function Estoque() {
                         onChange={(e) => setForm({ ...form, codigo: e.target.value })}
                         className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
                       />
-                      <button type="button" onClick={handleGerarSku} className="px-3 py-2 rounded-2xl bg-slate-800 text-xs font-bold text-slate-300">
+                      <button type="button" onClick={handleGerarSku} className="px-3 py-2 rounded-2xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300">
                         Gerar SKU
                       </button>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">TIPO</label>
+                    <label className="block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 mb-1">TIPO</label>
                     <select
                       value={form.tipo}
                       onChange={(e) => setForm({ ...form, tipo: e.target.value })}
@@ -423,7 +425,7 @@ export function Estoque() {
               {wizardStep === 2 && (
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">QUANTIDADE INICIAL</label>
+                    <label className="block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 mb-1">QUANTIDADE INICIAL</label>
                     <input
                       type="number"
                       value={form.quantidade}
@@ -434,7 +436,7 @@ export function Estoque() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">ESTOQUE MÍNIMO PARA ALERTA</label>
+                    <label className="block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 mb-1">ESTOQUE MÍNIMO PARA ALERTA</label>
                     <input
                       type="number"
                       value={form.estoque_minimo}
@@ -445,7 +447,7 @@ export function Estoque() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">CUSTO UNITÁRIO (R$)</label>
+                    <label className="block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 mb-1">CUSTO UNITÁRIO (R$)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -461,7 +463,7 @@ export function Estoque() {
               {wizardStep === 3 && (
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">LOCALIZAÇÃO NO ESTABELECIMENTO</label>
+                    <label className="block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 mb-1">LOCALIZAÇÃO NO ESTABELECIMENTO</label>
                     <input
                       type="text"
                       value={form.localizacao}
@@ -472,7 +474,7 @@ export function Estoque() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">URL DA IMAGEM DO PRODUTO (OPCIONAL)</label>
+                    <label className="block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 mb-1">URL DA IMAGEM DO PRODUTO (OPCIONAL)</label>
                     <input
                       type="text"
                       value={form.imagem_url}
@@ -480,21 +482,35 @@ export function Estoque() {
                       placeholder="https://..."
                       className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
                     />
-                    <label className="mt-3 block text-[11px] font-black uppercase text-slate-400">OU ENVIE UMA FOTO<input type="file" accept="image/*" onChange={e => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => setForm(prev => ({ ...prev, imagem_url: reader.result })); reader.readAsDataURL(file); }} className="mt-1 block w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs font-semibold text-slate-300 file:mr-3 file:rounded-xl file:border-0 file:bg-blue-600 file:px-3 file:py-2 file:text-xs file:font-black file:text-white" /></label>
-                    {form.imagem_url && <img src={form.imagem_url} alt="Prévia do produto" className="mt-3 h-20 w-20 rounded-2xl border border-slate-700 object-cover" />}
+                    <label className="mt-3 block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400">
+                      OU ENVIE UMA FOTO
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={e => { 
+                          const file = e.target.files?.[0]; 
+                          if (!file) return; 
+                          const reader = new FileReader(); 
+                          reader.onload = () => setForm(prev => ({ ...prev, imagem_url: reader.result })); 
+                          reader.readAsDataURL(file); 
+                        }} 
+                        className="mt-1 block w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-4 py-3 text-xs font-semibold text-slate-700 dark:text-slate-300 file:mr-3 file:rounded-xl file:border-0 file:bg-blue-600 file:px-3 file:py-2 file:text-xs file:font-black file:text-white" 
+                      />
+                    </label>
+                    {form.imagem_url && <img src={form.imagem_url} alt="Prévia do produto" className="mt-3 h-20 w-20 rounded-2xl border border-slate-200 dark:border-slate-700 object-cover" />}
                   </div>
                 </div>
               )}
 
               <div className="flex items-center justify-between pt-3">
                 {wizardStep > 1 ? (
-                  <button type="button" onClick={() => setWizardStep(wizardStep - 1)} className="px-4 py-2.5 rounded-2xl bg-slate-800 text-xs font-bold text-slate-300">
+                  <button type="button" onClick={() => setWizardStep(wizardStep - 1)} className="px-4 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300">
                     Voltar
                   </button>
                 ) : <div />}
 
                 {wizardStep < 3 ? (
-                  <button type="button" onClick={() => setWizardStep(wizardStep + 1)} className="px-6 py-2.5 rounded-2xl bg-blue-600 text-xs font-black text-slate-900 dark:text-white">
+                  <button type="button" onClick={() => setWizardStep(wizardStep + 1)} className="px-6 py-2.5 rounded-2xl bg-blue-600 text-xs font-black text-white">
                     Próximo
                   </button>
                 ) : (
@@ -505,48 +521,126 @@ export function Estoque() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {showTransferencia && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/15 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md space-y-4 rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800"><div><span className="text-[10px] font-black uppercase text-sky-400">TRANSFERÊNCIA DE ESTOQUE</span><h3 className="text-lg font-black text-slate-900 dark:text-white">Enviar para outro auxiliar</h3></div><button onClick={() => setShowTransferencia(false)} className="text-slate-400 hover:text-white"><X className="h-5 w-5" /></button></div>
-            <form onSubmit={handleTransfer} className="space-y-4"><label className="block text-[11px] font-black uppercase text-slate-400">PRODUTO<select value={selectedProduto?.id || ''} onChange={e => setSelectedProduto(produtos.find(product => Number(product.id) === Number(e.target.value)) || null)} className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" required><option value="">Selecione um produto</option>{produtos.filter(product => Number(product.quantidade) > 0).map(product => <option key={product.id} value={product.id}>{product.nome} — saldo: {product.quantidade} un</option>)}</select></label>{selectedProduto && <div className="rounded-2xl border border-sky-500/20 bg-sky-500/10 p-3 text-xs text-sky-200">Saldo disponível: <strong>{selectedProduto.quantidade} unidades</strong></div>}<label className="block text-[11px] font-black uppercase text-slate-400">AUXILIAR DESTINO<select value={transfForm.profissional_id} onChange={e => setTransfForm({ ...transfForm, profissional_id: e.target.value })} className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" required><option value="">Selecione o auxiliar</option>{profissionais.filter(professional => Number(professional.id) !== Number(selectedProduto?.profissional_id)).map(professional => <option key={professional.id} value={professional.id}>{professional.nome}</option>)}</select></label><label className="block text-[11px] font-black uppercase text-slate-400">QUANTIDADE<input type="number" min="1" max={selectedProduto?.quantidade || undefined} value={transfForm.quantidade} onChange={e => setTransfForm({ ...transfForm, quantidade: e.target.value })} className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" required /></label><button className="w-full rounded-2xl bg-sky-600 py-3.5 text-xs font-black text-white shadow-lg shadow-sky-500/20">Confirmar envio</button></form>
+      {/* MODAL: TRANSFERÊNCIA */}
+      {showTransferencia && createPortal(
+        <div className="fixed inset-0 z-[999999] h-screen w-screen flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
+          <div className="w-full max-w-md space-y-4 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
+              <div>
+                <span className="text-[10px] font-black uppercase text-sky-600 dark:text-sky-400">TRANSFERÊNCIA DE ESTOQUE</span>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">Enviar para outro auxiliar</h3>
+              </div>
+              <button onClick={() => setShowTransferencia(false)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={handleTransfer} className="space-y-4">
+              <label className="block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400">
+                PRODUTO
+                <select 
+                  value={selectedProduto?.id || ''} 
+                  onChange={e => setSelectedProduto(produtos.find(product => Number(product.id) === Number(e.target.value)) || null)} 
+                  className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" 
+                  required
+                >
+                  <option value="">Selecione um produto</option>
+                  {produtos.filter(product => Number(product.quantidade) > 0).map(product => (
+                    <option key={product.id} value={product.id}>{product.nome} — saldo: {product.quantidade} un</option>
+                  ))}
+                </select>
+              </label>
+
+              {selectedProduto && (
+                <div className="rounded-2xl border border-sky-500/25 bg-sky-500/10 p-3 text-xs text-sky-700 dark:text-sky-200">
+                  Saldo disponível: <strong>{selectedProduto.quantidade} unidades</strong>
+                </div>
+              )}
+
+              <label className="block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400">
+                AUXILIAR DESTINO
+                <select 
+                  value={transfForm.profissional_id} 
+                  onChange={e => setTransfForm({ ...transfForm, profissional_id: e.target.value })} 
+                  className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" 
+                  required
+                >
+                  <option value="">Selecione o auxiliar</option>
+                  {profissionais.filter(professional => Number(professional.id) !== Number(selectedProduto?.profissional_id)).map(professional => (
+                    <option key={professional.id} value={professional.id}>{professional.nome}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400">
+                QUANTIDADE
+                <input 
+                  type="number" 
+                  min="1" 
+                  max={selectedProduto?.quantidade || undefined} 
+                  value={transfForm.quantidade} 
+                  onChange={e => setTransfForm({ ...transfForm, quantidade: e.target.value })} 
+                  className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" 
+                  required 
+                />
+              </label>
+
+              <button className="w-full rounded-2xl bg-sky-600 py-3.5 text-xs font-black text-white shadow-lg shadow-sky-500/20 transition hover:bg-sky-700">
+                Confirmar envio
+              </button>
+            </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* MODAL 2: MOVIMENTAÇÃO ENTRADA / SAÍDA */}
-      {showMovimento && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/15 p-4 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100 animate-scale-in">
+      {showMovimento && createPortal(
+        <div className="fixed inset-0 z-[999999] h-screen w-screen flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
               <div>
-                <span className="text-[10px] font-black uppercase text-blue-400">REGISTRAR MOVIMENTAÇÃO</span>
-                <h3 className="text-lg font-black text-slate-900 dark:text-white">{selectedProduto.nome}</h3>
+                <span className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400">REGISTRAR MOVIMENTAÇÃO</span>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">{selectedProduto?.nome}</h3>
               </div>
-              <button onClick={() => setShowMovimento(false)} className="text-slate-400 hover:text-slate-900 dark:text-white">
+              <button onClick={() => setShowMovimento(false)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <form onSubmit={handleRegistrarMovimento} className="space-y-4">
-              {!selectedProduto && <div><label className="mb-1 block text-[11px] font-black uppercase text-slate-400">PRODUTO</label><select value="" onChange={e => setSelectedProduto(produtos.find(product => Number(product.id) === Number(e.target.value)) || null)} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" required><option value="">Selecione o produto para movimentar...</option>{produtos.map(product => <option key={product.id} value={product.id}>{product.nome} — saldo: {product.quantidade} un</option>)}</select></div>}
+              {!selectedProduto && (
+                <div>
+                  <label className="mb-1 block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400">PRODUTO</label>
+                  <select 
+                    value="" 
+                    onChange={e => setSelectedProduto(produtos.find(product => Number(product.id) === Number(e.target.value)) || null)} 
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" 
+                    required
+                  >
+                    <option value="">Selecione o produto para movimentar...</option>
+                    {produtos.map(product => <option key={product.id} value={product.id}>{product.nome} — saldo: {product.quantidade} un</option>)}
+                  </select>
+                </div>
+              )}
+
               <div>
-                <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">TIPO DE MOVIMENTO</label>
+                <label className="block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 mb-1">TIPO DE MOVIMENTO</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setMovForm({ ...movForm, tipo: 'entrada' })}
-                    className={`py-3 rounded-2xl text-xs font-black ${movForm.tipo === 'entrada' ? 'bg-emerald-600 text-white' : 'bg-slate-950 text-slate-400 border border-slate-800'}`}
+                    className={`py-3 rounded-2xl text-xs font-black transition ${movForm.tipo === 'entrada' ? 'bg-emerald-600 text-white' : 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800'}`}
                   >
                     + ENTRADA
                   </button>
                   <button
                     type="button"
                     onClick={() => setMovForm({ ...movForm, tipo: 'saida' })}
-                    className={`py-3 rounded-2xl text-xs font-black ${movForm.tipo === 'saida' ? 'bg-rose-600 text-white' : 'bg-slate-950 text-slate-400 border border-slate-800'}`}
+                    className={`py-3 rounded-2xl text-xs font-black transition ${movForm.tipo === 'saida' ? 'bg-rose-600 text-white' : 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800'}`}
                   >
                     - SAÍDA
                   </button>
@@ -554,7 +648,7 @@ export function Estoque() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">QUANTIDADE</label>
+                <label className="block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 mb-1">QUANTIDADE</label>
                 <input
                   type="number"
                   min="1"
@@ -566,7 +660,7 @@ export function Estoque() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">MOTIVO / OBSERVAÇÃO</label>
+                <label className="block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 mb-1">MOTIVO / OBSERVAÇÃO</label>
                 <input
                   type="text"
                   value={movForm.motivo}
@@ -576,79 +670,81 @@ export function Estoque() {
                 />
               </div>
 
-              <button type="submit" className="w-full py-3.5 rounded-2xl bg-blue-600 text-xs font-black text-slate-900 dark:text-white">
+              <button type="submit" className="w-full py-3.5 rounded-2xl bg-blue-600 text-xs font-black text-white transition hover:bg-blue-700">
                 Confirmar Movimentação
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* MODAL 3: INVENTÁRIO GUIADO */}
-      {showInventario && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/15 p-4 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100 animate-scale-in max-h-[85vh] flex flex-col">
+      {showInventario && createPortal(
+        <div className="fixed inset-0 z-[999999] h-screen w-screen flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100 max-h-[85vh] flex flex-col">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
               <div>
-                <span className="text-[10px] font-black uppercase text-purple-400">AJUSTE RÁPIDO</span>
+                <span className="text-[10px] font-black uppercase text-purple-600 dark:text-purple-400">AJUSTE RÁPIDO</span>
                 <h3 className="text-lg font-black text-slate-900 dark:text-white">Inventário Guiado em Lote</h3>
               </div>
-              <button onClick={() => setShowInventario(false)} className="text-slate-400 hover:text-slate-900 dark:text-white">
+              <button onClick={() => setShowInventario(false)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <div className="overflow-y-auto space-y-3 flex-1 pr-1">
               {produtos.map(p => (
-                <div key={p.id} className="rounded-2xl border border-slate-800 bg-slate-950 p-3 flex items-center justify-between gap-3">
+                <div key={p.id} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-3 flex items-center justify-between gap-3">
                   <div>
                     <h4 className="text-xs font-black text-slate-900 dark:text-white">{p.nome}</h4>
-                    <span className="text-[10px] text-slate-400">Atual: {p.quantidade} un</span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400">Atual: {p.quantidade} un</span>
                   </div>
                   <input
                     type="number"
                     value={inventarioData[p.id] ?? p.quantidade}
                     onChange={(e) => setInventarioData({ ...inventarioData, [p.id]: e.target.value })}
-                    className="w-24 rounded-xl border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs font-black text-white text-center"
+                    className="w-24 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-black text-slate-900 dark:text-white text-center"
                   />
                 </div>
               ))}
             </div>
 
-            <button onClick={handleSalvarInventario} className="w-full py-3.5 rounded-2xl bg-purple-600 text-xs font-black text-slate-900 dark:text-white">
+            <button onClick={handleSalvarInventario} className="w-full py-3.5 rounded-2xl bg-purple-600 text-xs font-black text-white transition hover:opacity-90">
               ✓ Salvar Ajuste de Inventário
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* MODAL 4: RAZÃO / HISTÓRICO */}
-      {showRazao && selectedProduto && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/15 p-4 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100 animate-scale-in">
+      {showRazao && selectedProduto && createPortal(
+        <div className="fixed inset-0 z-[999999] h-screen w-screen flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
               <div>
-                <span className="text-[10px] font-black uppercase text-blue-400">EXTRATO DE MOVIMENTAÇÕES</span>
+                <span className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400">EXTRATO DE MOVIMENTAÇÕES</span>
                 <h3 className="text-lg font-black text-slate-900 dark:text-white">{selectedProduto.nome}</h3>
               </div>
-              <button onClick={() => setShowRazao(false)} className="text-slate-400 hover:text-slate-900 dark:text-white">
+              <button onClick={() => setShowRazao(false)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="text-xs text-slate-300 space-y-2 max-h-60 overflow-y-auto">
-              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex justify-between items-center">
+            <div className="text-xs text-slate-600 dark:text-slate-300 space-y-2 max-h-60 overflow-y-auto">
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex justify-between items-center">
                 <div>
-                  <span className="font-extrabold text-emerald-400 block">+ Entrada Inicial</span>
-                  <span className="text-[10px] text-slate-400">{new Date(selectedProduto.created_at || Date.now()).toLocaleDateString()}</span>
+                  <span className="font-extrabold text-emerald-600 dark:text-emerald-400 block">+ Entrada Inicial</span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400">{new Date(selectedProduto.created_at || Date.now()).toLocaleDateString()}</span>
                 </div>
                 <strong className="text-slate-900 dark:text-white">{selectedProduto.quantidade} un</strong>
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
 }
-
