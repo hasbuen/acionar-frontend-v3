@@ -17,7 +17,7 @@ export function HelpCenterModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/75 backdrop-blur-md p-4 animate-fade-in">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/15 backdrop-blur-sm p-4 animate-fade-in">
       <div className="w-full max-w-md max-h-[88dvh] overflow-y-auto rounded-[2rem] border border-white/70 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900 animate-scale-in space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">

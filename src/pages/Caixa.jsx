@@ -41,14 +41,23 @@ export function Caixa() {
     }
   };
 
-  const handleDeleteEntry = async (id) => {
-    if (!confirm('Deseja excluir este lançamento do caixa?')) return;
-    try {
-      await apiRequest(`/caixa/${id}`, 'DELETE');
-      fetchCaixa();
-    } catch (err) {
-      showAlert({ type: 'error', message: 'Erro ao excluir lançamento.' });
-    }
+  const handleDeleteEntry = (id) => {
+    showAlert({
+      type: 'warning',
+      title: 'Excluir lançamento',
+      message: 'Deseja excluir este lançamento do caixa?',
+      confirmLabel: 'Excluir',
+      cancelLabel: 'Cancelar',
+      onConfirm: async () => {
+        closeAlert();
+        try {
+          await apiRequest(`/caixa/${id}`, 'DELETE');
+          fetchCaixa();
+        } catch (err) {
+          showAlert({ type: 'error', message: 'Erro ao excluir lançamento.' });
+        }
+      }
+    });
   };
 
   return (
@@ -202,47 +211,47 @@ export function Caixa() {
 
       {/* Modal Nova Movimentação */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-lg font-black text-white">Nova Movimentação</h3>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-white">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/15 p-4 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="text-lg font-black text-slate-900 dark:text-white">Nova Movimentação</h3>
+              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-800 dark:hover:text-white p-1 rounded-lg">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <form onSubmit={handleCreateEntry} className="space-y-4">
               <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">TIPO DE LANÇAMENTO</label>
-                <select value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })} className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white">
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">TIPO DE LANÇAMENTO</label>
+                <select value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
                   <option value="entrada">Entrada (+)</option>
                   <option value="saida">Saída (-)</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">DESCRIÇÃO</label>
-                <input type="text" value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} placeholder="ex: Pagamento de Atendimento" required className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white" />
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">DESCRIÇÃO</label>
+                <input type="text" value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} placeholder="ex: Pagamento de Atendimento" required className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" />
               </div>
 
               <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">VALOR (R$)</label>
-                <input type="number" step="0.01" value={form.valor} onChange={(e) => setForm({ ...form, valor: e.target.value })} placeholder="0.00" required className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white" />
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">VALOR (R$)</label>
+                <input type="number" step="0.01" value={form.valor} onChange={(e) => setForm({ ...form, valor: e.target.value })} placeholder="0.00" required className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" />
               </div>
 
               <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">FORMA DE PAGAMENTO</label>
-                <select value={form.forma_pagamento} onChange={(e) => setForm({ ...form, forma_pagamento: e.target.value })} className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white">
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">FORMA DE PAGAMENTO</label>
+                <select value={form.forma_pagamento} onChange={(e) => setForm({ ...form, forma_pagamento: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
                   <option value="pix">PIX</option>
                   <option value="cartao_credito">Cartão de Crédito</option>
-                  <option value="cartao_debito">Cartão de Débito</option>
+                  <option value="cartao_debito">Cartão de Debito</option>
                   <option value="dinheiro">Dinheiro</option>
                 </select>
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-xs font-bold text-slate-400">Cancelar</button>
-                <button type="submit" className="px-5 py-2.5 rounded-2xl bg-emerald-600 text-xs font-black text-white">Lançar no Caixa</button>
+                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition">Cancelar</button>
+                <button type="submit" className="px-5 py-2.5 rounded-2xl bg-emerald-600 text-xs font-black text-white hover:bg-emerald-500 transition shadow-md shadow-emerald-500/10">Lançar no Caixa</button>
               </div>
             </form>
           </div>

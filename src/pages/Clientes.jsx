@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../services/api';
 import { Users, UserPlus, Search, Phone, History, Edit, Trash2, X, Calendar, MessageSquare } from 'lucide-react';
 import { ModalAlert, useModalAlert } from '../components/ModalAlert';
@@ -67,14 +67,23 @@ export function Clientes() {
     }
   };
 
-  const handleDeleteCliente = async (id) => {
-    if (!confirm('Deseja realmente remover este cliente?')) return;
-    try {
-      await apiRequest(`/clientes/${id}`, 'DELETE');
-      fetchClientes();
-    } catch (err) {
-      showAlert({ type: 'error', message: 'Erro ao remover cliente.' });
-    }
+  const handleDeleteCliente = (id) => {
+    showAlert({
+      type: 'warning',
+      title: 'Remover cliente',
+      message: 'Deseja realmente remover este cliente?',
+      confirmLabel: 'Remover',
+      cancelLabel: 'Cancelar',
+      onConfirm: async () => {
+        closeAlert();
+        try {
+          await apiRequest(`/clientes/${id}`, 'DELETE');
+          fetchClientes();
+        } catch (err) {
+          showAlert({ type: 'error', message: 'Erro ao remover cliente.' });
+        }
+      }
+    });
   };
 
   const handleViewHistory = async (cliente) => {
@@ -211,54 +220,54 @@ export function Clientes() {
 
       {/* Modal Novo / Editar Cliente */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-lg font-black text-white">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/15 p-4 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
+              <h3 className="text-lg font-black text-slate-900 dark:text-white">
                 {editingCliente ? 'Editar Cliente' : 'Novo Cliente'}
               </h3>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-900 dark:text-white">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <form onSubmit={handleSaveCliente} className="space-y-4">
               <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">NOME COMPLETO</label>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">NOME COMPLETO</label>
                 <input
                   type="text"
                   value={form.nome}
                   onChange={(e) => setForm({ ...form, nome: e.target.value })}
                   placeholder="Ex: Fernanda Silva"
                   required
-                  className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-blue-500"
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">WHATSAPP</label>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">WHATSAPP</label>
                 <input
                   type="text"
                   value={form.whatsapp}
                   onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
                   placeholder="(11) 98765-4321"
-                  className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-blue-500"
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">E-MAIL</label>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">E-MAIL</label>
                 <input
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   placeholder="fernanda@gmail.com"
-                  className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-blue-500"
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">OBSERVAÇÕES / PREFERÊNCIAS</label>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">OBSERVAÇÕES / PREFERÊNCIAS</label>
                 <textarea
                   rows="2"
                   value={form.observacoes}
@@ -281,14 +290,14 @@ export function Clientes() {
 
       {/* Modal Histórico do Cliente */}
       {historyCliente && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-lg rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/15 p-4 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
               <div>
-                <h3 className="text-lg font-black text-white">Histórico de Atendimentos</h3>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">Histórico de Atendimentos</h3>
                 <p className="text-xs text-blue-400 font-bold">{historyCliente.nome}</p>
               </div>
-              <button onClick={() => setHistoryCliente(null)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setHistoryCliente(null)} className="text-slate-400 hover:text-slate-900 dark:text-white">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -314,3 +323,4 @@ export function Clientes() {
     </div>
   );
 }
+

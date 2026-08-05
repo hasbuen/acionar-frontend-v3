@@ -23,7 +23,7 @@ export function PaymentModal({ item, payments, draft, setDraft, onClose, onSubmi
   const finalValue = Math.max(0, Number(draft.gross || 0) - Number(draft.discount || 0));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-slate-950/75 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+    <div className="fixed inset-0 z-[9999] flex items-end justify-center overflow-y-auto bg-slate-950/15 p-0 backdrop-blur-sm sm:items-center sm:p-4">
       <div className="my-0 max-h-[92vh] w-full max-w-lg space-y-4 overflow-y-auto rounded-t-[2.2rem] border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100 sm:my-auto sm:rounded-[2.2rem] sm:p-7">
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3">
           <div className="flex items-center gap-2.5">

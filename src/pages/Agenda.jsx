@@ -92,7 +92,7 @@ function Modal({ title, subtitle, children, onClose, wide = false }) {
   };
 
   return (
-    <div ref={overlayRef} className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-sm">
+    <div ref={overlayRef} className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/15 p-4 backdrop-blur-sm">
       <div ref={modalRef} className={`relative w-full ${wide ? 'max-w-xl' : 'max-w-md'} overflow-hidden rounded-[2.2rem] border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100 sm:p-8`}>
         <button
           onClick={handleClose}

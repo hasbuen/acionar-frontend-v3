@@ -18,33 +18,33 @@ import { X, CheckCircle2, AlertTriangle, XCircle, Info } from 'lucide-react';
 const TYPE_CONFIG = {
   info: {
     icon: Info,
-    iconBg: 'bg-blue-500/15',
-    iconColor: 'text-blue-400',
-    borderColor: 'border-blue-500/30',
-    titleColor: 'text-blue-400',
-    btnClass: 'bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-500/30',
+    iconBg: 'bg-blue-500/10 dark:bg-blue-500/15',
+    iconColor: 'text-blue-600 dark:text-blue-400',
+    borderColor: 'border-blue-500/20 dark:border-blue-500/30',
+    titleColor: 'text-blue-600 dark:text-blue-400',
+    btnClass: 'bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-500/20 dark:shadow-blue-500/30',
     defaultTitle: 'Informação',
-    glowClass: 'shadow-blue-500/10',
+    glowClass: 'shadow-blue-500/5 dark:shadow-blue-500/10',
   },
   error: {
     icon: XCircle,
-    iconBg: 'bg-rose-500/15',
-    iconColor: 'text-rose-400',
-    borderColor: 'border-rose-500/30',
-    titleColor: 'text-rose-400',
-    btnClass: 'bg-gradient-to-r from-rose-600 to-red-600 shadow-rose-500/30',
+    iconBg: 'bg-rose-500/10 dark:bg-rose-500/15',
+    iconColor: 'text-rose-600 dark:text-rose-400',
+    borderColor: 'border-rose-500/20 dark:border-rose-500/30',
+    titleColor: 'text-rose-600 dark:text-rose-400',
+    btnClass: 'bg-gradient-to-r from-rose-600 to-red-600 shadow-rose-500/20 dark:shadow-rose-500/30',
     defaultTitle: 'Erro',
-    glowClass: 'shadow-rose-500/10',
+    glowClass: 'shadow-rose-500/5 dark:shadow-rose-500/10',
   },
   warning: {
     icon: AlertTriangle,
-    iconBg: 'bg-amber-500/15',
-    iconColor: 'text-amber-400',
-    borderColor: 'border-amber-500/30',
-    titleColor: 'text-amber-400',
-    btnClass: 'bg-gradient-to-r from-amber-500 to-orange-500 shadow-amber-500/30',
+    iconBg: 'bg-amber-500/10 dark:bg-amber-500/15',
+    iconColor: 'text-amber-600 dark:text-amber-400',
+    borderColor: 'border-amber-500/20 dark:border-amber-500/30',
+    titleColor: 'text-amber-600 dark:text-amber-400',
+    btnClass: 'bg-gradient-to-r from-amber-500 to-orange-500 shadow-amber-500/20 dark:shadow-amber-500/30',
     defaultTitle: 'Atenção',
-    glowClass: 'shadow-amber-500/10',
+    glowClass: 'shadow-amber-500/5 dark:shadow-amber-500/10',
   },
 };
 
@@ -82,7 +82,7 @@ export function ModalAlert({
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/15 backdrop-blur-sm animate-fade-in"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-alert-title"
@@ -90,7 +90,7 @@ export function ModalAlert({
     >
       <div
         className={`
-          relative w-full max-w-sm rounded-3xl border bg-slate-900 p-6 shadow-2xl
+          relative w-full max-w-sm rounded-[2rem] border bg-white dark:bg-slate-900 p-6 shadow-2xl
           ${config.borderColor} ${config.glowClass}
           animate-scale-in
         `}
@@ -98,7 +98,7 @@ export function ModalAlert({
         {/* Close button — top-right */}
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 transition-all hover:bg-slate-800 hover:text-white"
+          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800 dark:hover:text-white"
           aria-label="Fechar"
         >
           <X className="h-4 w-4" />
@@ -107,18 +107,18 @@ export function ModalAlert({
         {/* Icon + Title */}
         <div className="flex flex-col items-center text-center gap-3 mb-5">
           <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${config.iconBg}`}>
-            <Icon className={`h-7 w-7 ${config.iconColor}`} strokeWidth={2} />
+            <Icon className={`h-7 w-7 ${config.iconColor}`} strokeWidth={2.2} />
           </div>
           <h2
             id="modal-alert-title"
-            className={`text-lg font-black ${config.titleColor}`}
+            className={`text-lg font-black tracking-tight ${config.titleColor}`}
           >
             {resolvedTitle}
           </h2>
         </div>
 
         {/* Message */}
-        <p className="text-center text-sm font-medium text-slate-300 leading-relaxed mb-6">
+        <p className="text-center text-sm font-bold text-slate-600 dark:text-slate-300 leading-relaxed mb-6">
           {message}
         </p>
 
@@ -127,7 +127,7 @@ export function ModalAlert({
           {onConfirm && (
             <button
               onClick={onClose}
-              className="flex-1 rounded-2xl border border-slate-700 px-5 py-3 text-xs font-black text-slate-300 transition-all hover:bg-slate-800 hover:text-white"
+              className="flex-1 rounded-2xl border border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white px-5 py-3 text-xs font-black transition-all"
             >
               {cancelLabel}
             </button>
@@ -137,7 +137,7 @@ export function ModalAlert({
             onClick={onConfirm ? onConfirm : onClose}
             className={`
               flex-1 rounded-2xl px-5 py-3 text-xs font-black text-white shadow-lg
-              transition-all hover:opacity-90 hover:scale-[1.02] active:scale-95
+              transition-all hover:opacity-95 hover:scale-[1.02] active:scale-95
               ${config.btnClass}
             `}
           >
@@ -150,15 +150,7 @@ export function ModalAlert({
 }
 
 /**
- * useModalAlert — hook utilitário para abrir ModalAlert de forma imperativa,
- * similar a chamar alert() ou confirm() em qualquer lugar do componente.
- *
- * Uso:
- *   const { alertState, showAlert, closeAlert } = useModalAlert();
- *   // ...
- *   showAlert({ type: 'error', message: 'Algo deu errado.' });
- *   // No JSX:
- *   <ModalAlert {...alertState} onClose={closeAlert} />
+ * useModalAlert — hook utilitário para abrir ModalAlert de forma imperativa.
  */
 export function useModalAlert() {
   const [alertState, setAlertState] = React.useState({

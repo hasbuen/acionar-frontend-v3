@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../services/api';
 import { Plus, Package, ArrowDown, ArrowUp, ArrowRightLeft, ClipboardCheck, History, AlertTriangle, Search, X, Check, DollarSign } from 'lucide-react';
 import { ModalAlert, useModalAlert } from '../components/ModalAlert';
@@ -364,14 +364,14 @@ export function Estoque() {
 
       {/* MODAL 1: WIZARD NOVO PRODUTO (3 PASSOS) */}
       {showWizard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/15 p-4 backdrop-blur-sm animate-fade-in">
           <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-5 animate-scale-in">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">WIZARD DE PRODUTO — PASSO {wizardStep}/3</span>
-                <h3 className="text-lg font-black text-white">Cadastrar Novo Produto</h3>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">Cadastrar Novo Produto</h3>
               </div>
-              <button onClick={() => setShowWizard(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setShowWizard(false)} className="text-slate-400 hover:text-slate-900 dark:text-white">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -387,7 +387,7 @@ export function Estoque() {
                       onChange={(e) => setForm({ ...form, nome: e.target.value })}
                       placeholder="Ex: Cílios Volume Brasileiro"
                       required
-                      className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-blue-500"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
                     />
                   </div>
 
@@ -398,7 +398,7 @@ export function Estoque() {
                         type="text"
                         value={form.codigo}
                         onChange={(e) => setForm({ ...form, codigo: e.target.value })}
-                        className="flex-1 rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+                        className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
                       />
                       <button type="button" onClick={handleGerarSku} className="px-3 py-2 rounded-2xl bg-slate-800 text-xs font-bold text-slate-300">
                         Gerar SKU
@@ -411,7 +411,7 @@ export function Estoque() {
                     <select
                       value={form.tipo}
                       onChange={(e) => setForm({ ...form, tipo: e.target.value })}
-                      className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
                     >
                       <option value="consumo">Consumo Interno (Insumo)</option>
                       <option value="venda">Revenda para Cliente</option>
@@ -429,7 +429,7 @@ export function Estoque() {
                       value={form.quantidade}
                       onChange={(e) => setForm({ ...form, quantidade: e.target.value })}
                       required
-                      className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
                     />
                   </div>
 
@@ -440,7 +440,7 @@ export function Estoque() {
                       value={form.estoque_minimo}
                       onChange={(e) => setForm({ ...form, estoque_minimo: e.target.value })}
                       required
-                      className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
                     />
                   </div>
 
@@ -452,7 +452,7 @@ export function Estoque() {
                       value={form.custo_unitario}
                       onChange={(e) => setForm({ ...form, custo_unitario: e.target.value })}
                       required
-                      className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
                     />
                   </div>
                 </div>
@@ -467,7 +467,7 @@ export function Estoque() {
                       value={form.localizacao}
                       onChange={(e) => setForm({ ...form, localizacao: e.target.value })}
                       placeholder="Ex: Armário A, Prateleira 2"
-                      className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
                     />
                   </div>
 
@@ -478,7 +478,7 @@ export function Estoque() {
                       value={form.imagem_url}
                       onChange={(e) => setForm({ ...form, imagem_url: e.target.value })}
                       placeholder="https://..."
-                      className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
                     />
                     <label className="mt-3 block text-[11px] font-black uppercase text-slate-400">OU ENVIE UMA FOTO<input type="file" accept="image/*" onChange={e => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => setForm(prev => ({ ...prev, imagem_url: reader.result })); reader.readAsDataURL(file); }} className="mt-1 block w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs font-semibold text-slate-300 file:mr-3 file:rounded-xl file:border-0 file:bg-blue-600 file:px-3 file:py-2 file:text-xs file:font-black file:text-white" /></label>
                     {form.imagem_url && <img src={form.imagem_url} alt="Prévia do produto" className="mt-3 h-20 w-20 rounded-2xl border border-slate-700 object-cover" />}
@@ -494,7 +494,7 @@ export function Estoque() {
                 ) : <div />}
 
                 {wizardStep < 3 ? (
-                  <button type="button" onClick={() => setWizardStep(wizardStep + 1)} className="px-6 py-2.5 rounded-2xl bg-blue-600 text-xs font-black text-white">
+                  <button type="button" onClick={() => setWizardStep(wizardStep + 1)} className="px-6 py-2.5 rounded-2xl bg-blue-600 text-xs font-black text-slate-900 dark:text-white">
                     Próximo
                   </button>
                 ) : (
@@ -509,30 +509,30 @@ export function Estoque() {
       )}
 
       {showTransferencia && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/15 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md space-y-4 rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3"><div><span className="text-[10px] font-black uppercase text-sky-400">TRANSFERÊNCIA DE ESTOQUE</span><h3 className="text-lg font-black text-white">Enviar para outro auxiliar</h3></div><button onClick={() => setShowTransferencia(false)} className="text-slate-400 hover:text-white"><X className="h-5 w-5" /></button></div>
-            <form onSubmit={handleTransfer} className="space-y-4"><label className="block text-[11px] font-black uppercase text-slate-400">PRODUTO<select value={selectedProduto?.id || ''} onChange={e => setSelectedProduto(produtos.find(product => Number(product.id) === Number(e.target.value)) || null)} className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white" required><option value="">Selecione um produto</option>{produtos.filter(product => Number(product.quantidade) > 0).map(product => <option key={product.id} value={product.id}>{product.nome} — saldo: {product.quantidade} un</option>)}</select></label>{selectedProduto && <div className="rounded-2xl border border-sky-500/20 bg-sky-500/10 p-3 text-xs text-sky-200">Saldo disponível: <strong>{selectedProduto.quantidade} unidades</strong></div>}<label className="block text-[11px] font-black uppercase text-slate-400">AUXILIAR DESTINO<select value={transfForm.profissional_id} onChange={e => setTransfForm({ ...transfForm, profissional_id: e.target.value })} className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white" required><option value="">Selecione o auxiliar</option>{profissionais.filter(professional => Number(professional.id) !== Number(selectedProduto?.profissional_id)).map(professional => <option key={professional.id} value={professional.id}>{professional.nome}</option>)}</select></label><label className="block text-[11px] font-black uppercase text-slate-400">QUANTIDADE<input type="number" min="1" max={selectedProduto?.quantidade || undefined} value={transfForm.quantidade} onChange={e => setTransfForm({ ...transfForm, quantidade: e.target.value })} className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white" required /></label><button className="w-full rounded-2xl bg-sky-600 py-3.5 text-xs font-black text-white shadow-lg shadow-sky-500/20">Confirmar envio</button></form>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800"><div><span className="text-[10px] font-black uppercase text-sky-400">TRANSFERÊNCIA DE ESTOQUE</span><h3 className="text-lg font-black text-slate-900 dark:text-white">Enviar para outro auxiliar</h3></div><button onClick={() => setShowTransferencia(false)} className="text-slate-400 hover:text-white"><X className="h-5 w-5" /></button></div>
+            <form onSubmit={handleTransfer} className="space-y-4"><label className="block text-[11px] font-black uppercase text-slate-400">PRODUTO<select value={selectedProduto?.id || ''} onChange={e => setSelectedProduto(produtos.find(product => Number(product.id) === Number(e.target.value)) || null)} className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" required><option value="">Selecione um produto</option>{produtos.filter(product => Number(product.quantidade) > 0).map(product => <option key={product.id} value={product.id}>{product.nome} — saldo: {product.quantidade} un</option>)}</select></label>{selectedProduto && <div className="rounded-2xl border border-sky-500/20 bg-sky-500/10 p-3 text-xs text-sky-200">Saldo disponível: <strong>{selectedProduto.quantidade} unidades</strong></div>}<label className="block text-[11px] font-black uppercase text-slate-400">AUXILIAR DESTINO<select value={transfForm.profissional_id} onChange={e => setTransfForm({ ...transfForm, profissional_id: e.target.value })} className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" required><option value="">Selecione o auxiliar</option>{profissionais.filter(professional => Number(professional.id) !== Number(selectedProduto?.profissional_id)).map(professional => <option key={professional.id} value={professional.id}>{professional.nome}</option>)}</select></label><label className="block text-[11px] font-black uppercase text-slate-400">QUANTIDADE<input type="number" min="1" max={selectedProduto?.quantidade || undefined} value={transfForm.quantidade} onChange={e => setTransfForm({ ...transfForm, quantidade: e.target.value })} className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" required /></label><button className="w-full rounded-2xl bg-sky-600 py-3.5 text-xs font-black text-white shadow-lg shadow-sky-500/20">Confirmar envio</button></form>
           </div>
         </div>
       )}
 
       {/* MODAL 2: MOVIMENTAÇÃO ENTRADA / SAÍDA */}
       {showMovimento && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4 animate-scale-in">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/15 p-4 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100 animate-scale-in">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
               <div>
                 <span className="text-[10px] font-black uppercase text-blue-400">REGISTRAR MOVIMENTAÇÃO</span>
-                <h3 className="text-lg font-black text-white">{selectedProduto.nome}</h3>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">{selectedProduto.nome}</h3>
               </div>
-              <button onClick={() => setShowMovimento(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setShowMovimento(false)} className="text-slate-400 hover:text-slate-900 dark:text-white">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <form onSubmit={handleRegistrarMovimento} className="space-y-4">
-              {!selectedProduto && <div><label className="mb-1 block text-[11px] font-black uppercase text-slate-400">PRODUTO</label><select value="" onChange={e => setSelectedProduto(produtos.find(product => Number(product.id) === Number(e.target.value)) || null)} className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white" required><option value="">Selecione o produto para movimentar...</option>{produtos.map(product => <option key={product.id} value={product.id}>{product.nome} — saldo: {product.quantidade} un</option>)}</select></div>}
+              {!selectedProduto && <div><label className="mb-1 block text-[11px] font-black uppercase text-slate-400">PRODUTO</label><select value="" onChange={e => setSelectedProduto(produtos.find(product => Number(product.id) === Number(e.target.value)) || null)} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" required><option value="">Selecione o produto para movimentar...</option>{produtos.map(product => <option key={product.id} value={product.id}>{product.nome} — saldo: {product.quantidade} un</option>)}</select></div>}
               <div>
                 <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">TIPO DE MOVIMENTO</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -561,7 +561,7 @@ export function Estoque() {
                   value={movForm.quantidade}
                   onChange={(e) => setMovForm({ ...movForm, quantidade: e.target.value })}
                   required
-                  className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
                 />
               </div>
 
@@ -572,11 +572,11 @@ export function Estoque() {
                   value={movForm.motivo}
                   onChange={(e) => setMovForm({ ...movForm, motivo: e.target.value })}
                   placeholder="Ex: Compra de reposição..."
-                  className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
                 />
               </div>
 
-              <button type="submit" className="w-full py-3.5 rounded-2xl bg-blue-600 text-xs font-black text-white">
+              <button type="submit" className="w-full py-3.5 rounded-2xl bg-blue-600 text-xs font-black text-slate-900 dark:text-white">
                 Confirmar Movimentação
               </button>
             </form>
@@ -586,14 +586,14 @@ export function Estoque() {
 
       {/* MODAL 3: INVENTÁRIO GUIADO */}
       {showInventario && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-lg rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4 animate-scale-in max-h-[85vh] flex flex-col">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/15 p-4 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100 animate-scale-in max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
               <div>
                 <span className="text-[10px] font-black uppercase text-purple-400">AJUSTE RÁPIDO</span>
-                <h3 className="text-lg font-black text-white">Inventário Guiado em Lote</h3>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">Inventário Guiado em Lote</h3>
               </div>
-              <button onClick={() => setShowInventario(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setShowInventario(false)} className="text-slate-400 hover:text-slate-900 dark:text-white">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -602,7 +602,7 @@ export function Estoque() {
               {produtos.map(p => (
                 <div key={p.id} className="rounded-2xl border border-slate-800 bg-slate-950 p-3 flex items-center justify-between gap-3">
                   <div>
-                    <h4 className="text-xs font-black text-white">{p.nome}</h4>
+                    <h4 className="text-xs font-black text-slate-900 dark:text-white">{p.nome}</h4>
                     <span className="text-[10px] text-slate-400">Atual: {p.quantidade} un</span>
                   </div>
                   <input
@@ -615,7 +615,7 @@ export function Estoque() {
               ))}
             </div>
 
-            <button onClick={handleSalvarInventario} className="w-full py-3.5 rounded-2xl bg-purple-600 text-xs font-black text-white">
+            <button onClick={handleSalvarInventario} className="w-full py-3.5 rounded-2xl bg-purple-600 text-xs font-black text-slate-900 dark:text-white">
               ✓ Salvar Ajuste de Inventário
             </button>
           </div>
@@ -624,14 +624,14 @@ export function Estoque() {
 
       {/* MODAL 4: RAZÃO / HISTÓRICO */}
       {showRazao && selectedProduto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4 animate-scale-in">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/15 p-4 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100 animate-scale-in">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
               <div>
                 <span className="text-[10px] font-black uppercase text-blue-400">EXTRATO DE MOVIMENTAÇÕES</span>
-                <h3 className="text-lg font-black text-white">{selectedProduto.nome}</h3>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">{selectedProduto.nome}</h3>
               </div>
-              <button onClick={() => setShowRazao(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setShowRazao(false)} className="text-slate-400 hover:text-slate-900 dark:text-white">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -642,7 +642,7 @@ export function Estoque() {
                   <span className="font-extrabold text-emerald-400 block">+ Entrada Inicial</span>
                   <span className="text-[10px] text-slate-400">{new Date(selectedProduto.created_at || Date.now()).toLocaleDateString()}</span>
                 </div>
-                <strong className="text-white">{selectedProduto.quantidade} un</strong>
+                <strong className="text-slate-900 dark:text-white">{selectedProduto.quantidade} un</strong>
               </div>
             </div>
           </div>
@@ -651,3 +651,4 @@ export function Estoque() {
     </div>
   );
 }
+

@@ -144,381 +144,438 @@ export function Configuracoes() {
     setBloqueios(bloqueios.filter(b => b.id !== id));
   };
 
+  const selectClass = "w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-100 dark:focus:border-blue-500";
+  const inputClass = "w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-100 dark:focus:border-blue-500 placeholder:text-slate-400";
+  const cardClass = "rounded-3xl border border-slate-200 bg-white/80 dark:border-slate-800/80 dark:bg-slate-900/60 p-6 shadow-xl space-y-4 backdrop-blur-xl transition-all duration-300";
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
       <ModalAlert {...alertState} onClose={closeAlert} />
+
       {/* Header Banner */}
       <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-2xl bg-blue-600/20 text-blue-400 flex items-center justify-center font-bold">
+        <div className="h-10 w-10 rounded-2xl bg-blue-600/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
           <Settings className="h-5 w-5" />
         </div>
         <div>
-          <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">PARÂMETROS</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-blue-500 dark:text-blue-400">PARÂMETROS</span>
           <h1 className="text-2xl font-black text-slate-900 dark:text-white">Configurações Gerais</h1>
         </div>
       </div>
 
       {message && (
-        <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/30 p-4 text-xs font-bold text-emerald-400">
+        <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-4 text-xs font-black text-emerald-600 dark:text-emerald-400 animate-fade-in">
           {message}
         </div>
       )}
 
-      <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold">
-            <Globe className="h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="text-base font-black text-white">Resumo rápido da operação</h3>
-            <p className="text-xs text-slate-400">Mantenha a agenda pública, o branding e os pagamentos sempre prontos para o dia a dia.</p>
-          </div>
-        </div>
+      {/* Organização em Grid com 2 Colunas */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        
+        {/* COLUNA DA ESQUERDA: Informações Básicas, Logotipo, Cores e Links */}
+        <div className="space-y-6">
+          
+          {/* Card: Resumo Rápido */}
+          <div className={cardClass}>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold shadow-sm">
+                <Globe className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-slate-900 dark:text-white">Resumo rápido da operação</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Visão geral do branding e agenda pública.</p>
+              </div>
+            </div>
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-            <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Empresa</p>
-            <h4 className="mt-1 text-sm font-black text-white">{tenant?.nome_empresa || 'Sua empresa'}</h4>
-          </div>
-          <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-            <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Agenda pública</p>
-            <h4 className="mt-1 text-sm font-black text-white">{form.agenda_publica_ativa ? 'Ativa' : 'Desativada'}</h4>
-          </div>
-          <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-            <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Link de agendamento</p>
-            <h4 className="mt-1 truncate text-sm font-black text-emerald-400">{publicLink}</h4>
-          </div>
-        </div>
-      </div>
-
-      {/* Card 1: Logotipo / Foto com Upload Intuitivo */}
-      <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-2xl bg-teal-500/10 text-teal-400 flex items-center justify-center font-bold">
-            <ImageIcon className="h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="text-base font-black text-white">Foto do Logotipo da Empresa</h3>
-            <p className="text-xs text-slate-400">Carregue a imagem da sua marca diretamente do seu dispositivo</p>
-          </div>
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-center gap-5 pt-2">
-          <div className="h-24 w-24 rounded-3xl bg-slate-950 border-2 border-dashed border-slate-700 flex items-center justify-center overflow-hidden shrink-0">
-            {form.foto_url ? (
-              <img src={form.foto_url} alt="Logotipo" className="h-full w-full object-cover" />
-            ) : (
-              <ImageIcon className="h-8 w-8 text-slate-600" />
-            )}
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800/80 dark:bg-slate-950/70">
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Empresa</p>
+                <h4 className="mt-1 text-sm font-black text-slate-900 dark:text-white truncate">{tenant?.nome_empresa || 'Sua empresa'}</h4>
+              </div>
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800/80 dark:bg-slate-950/70">
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Agenda pública</p>
+                <h4 className="mt-1 text-sm font-black text-slate-900 dark:text-white">{form.agenda_publica_ativa ? 'Ativa' : 'Desativada'}</h4>
+              </div>
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800/80 dark:bg-slate-950/70">
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Slug ativo</p>
+                <h4 className="mt-1 truncate text-sm font-black text-blue-600 dark:text-blue-400">{tenant?.slug || 'Padrão'}</h4>
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-3 w-full sm:w-auto flex-1">
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              accept="image/*"
-              className="hidden"
-            />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploadingLogo}
-              className="btn-animated inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-3.5 text-xs font-black text-white shadow-lg shadow-teal-500/25 w-full sm:w-auto"
-            >
-              <Upload className="h-4 w-4" />
-              {uploadingLogo ? 'Enviando imagem...' : 'Clique para Escolher Foto / Logotipo'}
-            </button>
-            <p className="text-[11px] text-slate-500">Formatos aceitos: PNG, JPG, JPEG, WEBP. Armazenamento automático no servidor VPS.</p>
-          </div>
-        </div>
-      </div>
+          {/* Card: Logotipo da Empresa */}
+          <div className={cardClass}>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-2xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold shadow-sm">
+                <ImageIcon className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-slate-900 dark:text-white">Foto do Logotipo da Empresa</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Carregue a marca que seus clientes verão na agenda.</p>
+              </div>
+            </div>
 
-      <form onSubmit={handleSavePayments} className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-5">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center"><CreditCard className="h-5 w-5" /></div>
-          <div><h3 className="text-base font-black text-white">Pix e Asaas</h3><p className="text-xs text-slate-400">Configure a chave Pix e a integração de pagamentos online.</p></div>
-        </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label className="text-[11px] font-black uppercase tracking-wider text-slate-400">Ambiente<select value={payments.asaas_environment} onChange={e => setPayments({ ...payments, asaas_environment: e.target.value })} className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white"><option value="sandbox">Sandbox</option><option value="production">Produção</option></select></label>
-          <label className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs font-bold text-white"><input type="checkbox" checked={payments.asaas_enabled} onChange={e => setPayments({ ...payments, asaas_enabled: e.target.checked })} className="h-4 w-4 accent-emerald-500" /> Ativar cobrança pelo Asaas</label>
-          <label className="text-[11px] font-black uppercase tracking-wider text-slate-400">Tipo da chave Pix<select value={payments.pix_key_type} onChange={e => setPayments({ ...payments, pix_key_type: e.target.value })} className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white"><option value="cpf">CPF</option><option value="cnpj">CNPJ</option><option value="email">E-mail</option><option value="telefone">Telefone</option><option value="aleatoria">Chave aleatória</option></select></label>
-          <label className="text-[11px] font-black uppercase tracking-wider text-slate-400">Chave Pix<input value={payments.pix_key} onChange={e => setPayments({ ...payments, pix_key: e.target.value })} className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white" placeholder="Informe a chave Pix" /></label>
-        </div>
-        <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400">Token privado Asaas {payments.asaas_api_key_configured && <span className="normal-case text-emerald-400">(já configurado; deixe vazio para manter)</span>}<input type="password" value={payments.asaas_api_key} onChange={e => setPayments({ ...payments, asaas_api_key: e.target.value })} className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white" placeholder="$aact_..." autoComplete="new-password" /></label>
-        <button type="submit" disabled={savingPayments} className="w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 py-3.5 text-xs font-black text-white shadow-lg shadow-emerald-500/20">{savingPayments ? 'Salvando...' : 'Salvar Pix e Asaas'}</button>
-      </form>
-
-      {/* Card 2: Alerta Pop-up de Atendimento Próximo */}
-      <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold">
-            <Bell className="h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="text-base font-black text-white">Alerta Pop-up de Atendimento Próximo</h3>
-            <p className="text-xs text-slate-400">Exibe modal na tela e toca sinal sonoro antes do início de cada atendimento</p>
-          </div>
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
-          <select className="w-full sm:w-auto flex-1 rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white">
-            <option value="5">5 Minutos antes (Padrão)</option>
-            <option value="10">10 Minutos antes</option>
-            <option value="15">15 Minutos antes</option>
-            <option value="20">20 Minutos antes</option>
-            <option value="30">30 Minutos antes</option>
-            <option value="60">1 Hora antes</option>
-          </select>
-          <button className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-amber-500 text-xs font-black text-slate-950 hover:bg-amber-400 transition">
-            ✓ Salvar Alerta
-          </button>
-        </div>
-      </div>
-
-      {/* Card 3: Horários de Funcionamento por Dia da Semana */}
-      <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold">
-            <Clock className="h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="text-base font-black text-white">Horários de Funcionamento</h3>
-            <p className="text-xs text-slate-400">Defina o expediente para atendimento presencial e online</p>
-          </div>
-        </div>
-
-        <div className="space-y-3 pt-2">
-          {horarios.map((h, idx) => (
-            <div key={idx} className="rounded-2xl border border-slate-800 bg-slate-950 p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <input
-                  type="checkbox"
-                  checked={h.ativo}
-                  onChange={(e) => {
-                    const next = [...horarios];
-                    next[idx].ativo = e.target.checked;
-                    setHorarios(next);
-                  }}
-                  className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-blue-500 focus:ring-blue-500"
-                />
-                <span className="font-extrabold text-white min-w-[110px]">{h.dia}</span>
+            <div className="flex flex-col sm:flex-row items-center gap-5 pt-2">
+              <div className="h-24 w-24 rounded-3xl bg-slate-50 border-2 border-dashed border-slate-200 dark:bg-slate-950 dark:border-slate-800 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
+                {form.foto_url ? (
+                  <img src={form.foto_url} alt="Logotipo" className="h-full w-full object-cover" />
+                ) : (
+                  <ImageIcon className="h-8 w-8 text-slate-400 dark:text-slate-600" />
+                )}
               </div>
 
-              {h.ativo ? (
-                <div className="flex items-center gap-2">
+              <div className="space-y-3 w-full sm:w-auto flex-1">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingLogo}
+                  className="btn-animated inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-600 px-5 py-3 text-xs font-black text-white shadow-lg shadow-teal-500/20 w-full sm:w-auto"
+                >
+                  <Upload className="h-4 w-4" />
+                  {uploadingLogo ? 'Enviando imagem...' : 'Escolher Foto / Logotipo'}
+                </button>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">Formatos aceitos: PNG, JPG, JPEG, WEBP. Armazenado na VPS.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Card: Agenda Pública & Personalização */}
+          <form onSubmit={handleSave} className="space-y-6">
+            <div className={cardClass}>
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3">
+                <div>
+                  <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                    <Globe className="h-5 w-5 text-blue-500 dark:text-blue-400" /> Agenda Pública Online
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Permita que seus clientes agendem horários sozinhos.</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
                   <input
-                    type="time"
-                    value={h.inicio}
-                    onChange={(e) => {
-                      const next = [...horarios];
-                      next[idx].inicio = e.target.value;
-                      setHorarios(next);
-                    }}
-                    className="rounded-xl border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs font-bold text-white"
+                    type="checkbox"
+                    checked={form.agenda_publica_ativa}
+                    onChange={(e) => setForm({ ...form, agenda_publica_ativa: e.target.checked })}
+                    className="sr-only peer"
                   />
-                  <span className="text-slate-400">até</span>
+                  <div className="w-11 h-6 bg-slate-200 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              <div className="space-y-4 pt-2">
+                <div>
+                  <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Subdomínio / Slug da Agenda</label>
                   <input
-                    type="time"
-                    value={h.fim}
-                    onChange={(e) => {
-                      const next = [...horarios];
-                      next[idx].fim = e.target.value;
-                      setHorarios(next);
-                    }}
-                    className="rounded-xl border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs font-bold text-white"
+                    type="text"
+                    value={form.novo_slug}
+                    onChange={(e) => setForm({ ...form, novo_slug: e.target.value })}
+                    placeholder="patriciabeato"
+                    required
+                    className={inputClass}
                   />
                 </div>
-              ) : (
-                <span className="text-xs font-extrabold text-rose-400 uppercase">Fechado</span>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Card 4: Bloqueios de Horários / Folgas / Férias */}
-      <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center font-bold">
-            <ShieldAlert className="h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="text-base font-black text-white">Bloqueios de Horários / Folgas / Férias</h3>
-            <p className="text-xs text-slate-400">Impeça agendamentos em datas específicas de folga</p>
-          </div>
-        </div>
-
-        <form onSubmit={handleAddBloqueio} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <input
-            type="date"
-            value={novoBloqueio.inicio}
-            onChange={(e) => setNovoBloqueio({ ...novoBloqueio, inicio: e.target.value })}
-            required
-            className="rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs font-bold text-white"
-          />
-          <input
-            type="date"
-            value={novoBloqueio.fim}
-            onChange={(e) => setNovoBloqueio({ ...novoBloqueio, fim: e.target.value })}
-            required
-            className="rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs font-bold text-white"
-          />
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={novoBloqueio.motivo}
-              onChange={(e) => setNovoBloqueio({ ...novoBloqueio, motivo: e.target.value })}
-              placeholder="Motivo (ex: Recesso)"
-              className="flex-1 rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs font-bold text-white"
-            />
-            <button type="submit" className="px-4 py-3 rounded-2xl bg-rose-600 text-xs font-black text-white hover:bg-rose-500">
-              <Plus className="h-4 w-4" />
-            </button>
-          </div>
-        </form>
-
-        <div className="space-y-2 pt-2">
-          {bloqueios.map((b) => (
-            <div key={b.id} className="rounded-2xl border border-slate-800 bg-slate-950 p-3 text-xs flex justify-between items-center">
-              <div>
-                <strong className="text-white block">{b.motivo || 'Bloqueio'}</strong>
-                <span className="text-slate-400 text-[11px]">{b.inicio} até {b.fim}</span>
+                <div className="rounded-2xl bg-slate-50 dark:bg-slate-950/70 p-3.5 flex items-center justify-between gap-3 border border-slate-100 dark:border-slate-800">
+                  <span className="text-xs font-mono text-blue-600 dark:text-amber-400 truncate select-all">{publicLink}</span>
+                  <button
+                    type="button"
+                    onClick={handleCopyLink}
+                    className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 dark:border-slate-800 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-1.5 shrink-0 transition"
+                  >
+                    {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                    {copied ? 'Copiado!' : 'Copiar Link'}
+                  </button>
+                </div>
               </div>
-              <button onClick={() => handleRemoveBloqueio(b.id)} className="text-rose-400 hover:text-rose-300">
-                <Trash2 className="h-4 w-4" />
+
+              {/* Personalização de Marca & Cores */}
+              <div className="border-t border-slate-100 dark:border-slate-800/80 pt-4 space-y-4">
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                  <Palette className="h-4.5 w-4.5 text-blue-500" /> Personalização de Marca & Cores
+                </h4>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Cor Primária</label>
+                    <input
+                      type="color"
+                      value={form.cor_primaria}
+                      onChange={(e) => setForm({ ...form, cor_primaria: e.target.value })}
+                      className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer p-0.5 bg-white dark:bg-slate-950"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Cor Destaque</label>
+                    <input
+                      type="color"
+                      value={form.cor_destaque}
+                      onChange={(e) => setForm({ ...form, cor_destaque: e.target.value })}
+                      className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer p-0.5 bg-white dark:bg-slate-950"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Cor Fundo</label>
+                    <input
+                      type="color"
+                      value={form.cor_fundo}
+                      onChange={(e) => setForm({ ...form, cor_fundo: e.target.value })}
+                      className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer p-0.5 bg-white dark:bg-slate-950"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full btn-animated py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-xs font-black text-white shadow-lg shadow-blue-500/20"
+                >
+                  {loading ? 'Salvando...' : 'Salvar Alterações de Cores e Marca'}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        {/* COLUNA DA DIREITA: Financeiro, Horários, Alertas, WhatsApp */}
+        <div className="space-y-6">
+          
+          {/* Card: Pix e Asaas */}
+          <form onSubmit={handleSavePayments} className={cardClass}>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold shadow-sm">
+                <CreditCard className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-slate-900 dark:text-white">Pix e Asaas</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Receba agendamentos online automaticamente.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 pt-2">
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Ambiente</label>
+                <select value={payments.asaas_environment} onChange={e => setPayments({ ...payments, asaas_environment: e.target.value })} className={selectClass}>
+                  <option value="sandbox">Sandbox (Testes)</option>
+                  <option value="production">Produção (Real)</option>
+                </select>
+              </div>
+              <div className="flex items-end">
+                <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-950/40 w-full px-4 py-3.5 text-xs font-bold text-slate-700 dark:text-slate-200 cursor-pointer">
+                  <input type="checkbox" checked={payments.asaas_enabled} onChange={e => setPayments({ ...payments, asaas_enabled: e.target.checked })} className="h-4.5 w-4.5 accent-emerald-500 rounded" />
+                  Ativar cobrança pelo Asaas
+                </label>
+              </div>
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Tipo da chave Pix</label>
+                <select value={payments.pix_key_type} onChange={e => setPayments({ ...payments, pix_key_type: e.target.value })} className={selectClass}>
+                  <option value="cpf">CPF</option>
+                  <option value="cnpj">CNPJ</option>
+                  <option value="email">E-mail</option>
+                  <option value="telefone">Telefone</option>
+                  <option value="aleatoria">Chave aleatória</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Chave Pix</label>
+                <input value={payments.pix_key} onChange={e => setPayments({ ...payments, pix_key: e.target.value })} className={inputClass} placeholder="Chave para receber o Pix" />
+              </div>
+            </div>
+
+            <div className="space-y-3 pt-2">
+              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Token privado Asaas {payments.asaas_api_key_configured && <span className="normal-case text-emerald-600 dark:text-emerald-400 font-extrabold">(Configurado ✔)</span>}
+                <input type="password" value={payments.asaas_api_key} onChange={e => setPayments({ ...payments, asaas_api_key: e.target.value })} className={`${inputClass} mt-1.5`} placeholder="Deixe em branco para manter o configurado" autoComplete="new-password" />
+              </label>
+              <button type="submit" disabled={savingPayments} className="w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 py-3.5 text-xs font-black text-white shadow-lg shadow-emerald-500/20 transition hover:opacity-95">{savingPayments ? 'Salvando...' : 'Salvar Pix e Asaas'}</button>
+            </div>
+          </form>
+
+          {/* Card: Alerta Pop-up */}
+          <div className={cardClass}>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold shadow-sm">
+                <Bell className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-slate-900 dark:text-white">Alerta de Atendimento Próximo</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Toque sinal sonoro antes do início de cada atendimento.</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+              <select className={selectClass}>
+                <option value="5">5 Minutos antes (Padrão)</option>
+                <option value="10">10 Minutos antes</option>
+                <option value="15">15 Minutos antes</option>
+                <option value="20">20 Minutos antes</option>
+                <option value="30">30 Minutos antes</option>
+                <option value="60">1 Hora antes</option>
+              </select>
+              <button className="w-full sm:w-auto shrink-0 px-6 py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-xs font-black text-slate-950 transition">
+                ✓ Salvar Alerta
               </button>
             </div>
-          ))}
+          </div>
+
+          {/* Card: Horários de Funcionamento */}
+          <div className={cardClass}>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold shadow-sm">
+                <Clock className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-slate-900 dark:text-white">Horários de Funcionamento</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Expediente padrão para reservas na agenda.</p>
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-2 max-h-[300px] overflow-y-auto pr-1 no-scrollbar">
+              {horarios.map((h, idx) => (
+                <div key={idx} className="rounded-2xl border border-slate-100 bg-slate-50/50 p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs dark:border-slate-800 dark:bg-slate-950/40">
+                  <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <input
+                      type="checkbox"
+                      checked={h.ativo}
+                      onChange={(e) => {
+                        const next = [...horarios];
+                        next[idx].ativo = e.target.checked;
+                        setHorarios(next);
+                      }}
+                      className="h-4.5 w-4.5 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="font-extrabold text-slate-800 dark:text-white min-w-[100px]">{h.dia}</span>
+                  </div>
+
+                  {h.ativo ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="time"
+                        value={h.inicio}
+                        onChange={(e) => {
+                          const next = [...horarios];
+                          next[idx].inicio = e.target.value;
+                          setHorarios(next);
+                        }}
+                        className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-2.5 py-1.5 text-xs font-bold text-slate-800 dark:text-white"
+                      />
+                      <span className="text-slate-400 font-medium">até</span>
+                      <input
+                        type="time"
+                        value={h.fim}
+                        onChange={(e) => {
+                          const next = [...horarios];
+                          next[idx].fim = e.target.value;
+                          setHorarios(next);
+                        }}
+                        className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-2.5 py-1.5 text-xs font-bold text-slate-800 dark:text-white"
+                      />
+                    </div>
+                  ) : (
+                    <span className="text-[10px] font-black text-rose-500 dark:text-rose-400 uppercase tracking-wider">Fechado</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Card: Bloqueios / Férias */}
+          <div className={cardClass}>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center font-bold shadow-sm">
+                <ShieldAlert className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-slate-900 dark:text-white">Bloqueios de Horários / Folgas</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Bloqueie agendamentos em datas festivas ou folgas.</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleAddBloqueio} className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
+              <input
+                type="date"
+                value={novoBloqueio.inicio}
+                onChange={(e) => setNovoBloqueio({ ...novoBloqueio, inicio: e.target.value })}
+                required
+                className={`${inputClass} px-3`}
+              />
+              <input
+                type="date"
+                value={novoBloqueio.fim}
+                onChange={(e) => setNovoBloqueio({ ...novoBloqueio, fim: e.target.value })}
+                required
+                className={`${inputClass} px-3`}
+              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={novoBloqueio.motivo}
+                  onChange={(e) => setNovoBloqueio({ ...novoBloqueio, motivo: e.target.value })}
+                  placeholder="Motivo"
+                  className={`${inputClass} px-3 flex-1`}
+                />
+                <button type="submit" className="px-4 py-3 rounded-2xl bg-rose-600 text-xs font-black text-white hover:bg-rose-500 transition shadow-md shadow-rose-500/15">
+                  <Plus className="h-4 w-4" />
+                </button>
+              </div>
+            </form>
+
+            <div className="space-y-2 pt-2 max-h-[200px] overflow-y-auto pr-1 no-scrollbar">
+              {bloqueios.map((b) => (
+                <div key={b.id} className="rounded-2xl border border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-950/40 p-3.5 text-xs flex justify-between items-center">
+                  <div>
+                    <strong className="text-slate-800 dark:text-white block font-bold">{b.motivo || 'Bloqueio'}</strong>
+                    <span className="text-slate-400 dark:text-slate-500 text-[10px] font-bold mt-0.5 block">{b.inicio} até {b.fim}</span>
+                  </div>
+                  <button onClick={() => handleRemoveBloqueio(b.id)} className="text-rose-500 hover:text-rose-400 p-1.5 hover:bg-rose-500/10 rounded-xl transition">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Card: WhatsApp & Endereço */}
+          <div className={cardClass}>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold shadow-sm">
+                <MessageSquare className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-slate-900 dark:text-white">Mensagem no WhatsApp & Endereço</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Mensagens automáticas de confirmação de agendamentos.</p>
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-2">
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Endereço do Estabelecimento</label>
+                <input
+                  type="text"
+                  value={endereco}
+                  onChange={(e) => setEndereco(e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Modelo de Mensagem no WhatsApp</label>
+                <textarea
+                  rows="3"
+                  value={whatsappTemplate}
+                  onChange={(e) => setWhatsappTemplate(e.target.value)}
+                  className={`${inputClass} resize-none h-24 p-4`}
+                />
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
-
-      {/* Card 5: Mensagem no WhatsApp & Endereço */}
-      <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold">
-            <MessageSquare className="h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="text-base font-black text-white">Mensagem no WhatsApp & Endereço</h3>
-            <p className="text-xs text-slate-400">Personalize o texto enviado ao aceitar e confirmar agendamentos</p>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <div>
-            <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">Endereço do Estabelecimento</label>
-            <input
-              type="text"
-              value={endereco}
-              onChange={(e) => setEndereco(e.target.value)}
-              className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs font-bold text-white"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">Modelo de Mensagem no WhatsApp</label>
-            <textarea
-              rows="3"
-              value={whatsappTemplate}
-              onChange={(e) => setWhatsappTemplate(e.target.value)}
-              className="w-full rounded-2xl border border-slate-800 bg-slate-950 p-4 text-xs font-bold text-white resize-none"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Card 6: Agenda Pública & Personalização de Cores */}
-      <form onSubmit={handleSave} className="space-y-6">
-        <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-black text-white flex items-center gap-2">
-                <Globe className="h-5 w-5 text-blue-400" /> Agenda Pública Online
-              </h3>
-              <p className="text-xs text-slate-400 mt-1">Ative ou desative o agendamento público para clientes.</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.agenda_publica_ativa}
-                onChange={(e) => setForm({ ...form, agenda_publica_ativa: e.target.checked })}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            </label>
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Subdomínio / Slug da Agenda</label>
-            <input
-              type="text"
-              value={form.novo_slug}
-              onChange={(e) => setForm({ ...form, novo_slug: e.target.value })}
-              placeholder="patriciabeato"
-              required
-              className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-blue-500"
-            />
-          </div>
-
-          <div className="rounded-2xl bg-slate-950 p-3 flex items-center justify-between gap-2 border border-slate-800">
-            <span className="text-xs font-mono text-amber-400 truncate">{publicLink}</span>
-            <button
-              type="button"
-              onClick={handleCopyLink}
-              className="px-3 py-1.5 rounded-xl bg-slate-800 text-xs font-bold text-slate-200 hover:bg-slate-700 flex items-center gap-1.5 shrink-0"
-            >
-              {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-              {copied ? 'Copiado!' : 'Copiar Link'}
-            </button>
-          </div>
-        </div>
-
-        {/* Card 7: Marca e Cores CSS */}
-        <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-4">
-          <h3 className="text-base font-black text-white flex items-center gap-2">
-            <Palette className="h-5 w-5 text-blue-400" /> Personalização de Marca & Cores
-          </h3>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Cor Primária</label>
-              <input
-                type="color"
-                value={form.cor_primaria}
-                onChange={(e) => setForm({ ...form, cor_primaria: e.target.value })}
-                className="w-full h-10 rounded-xl border-none cursor-pointer"
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Cor Destaque</label>
-              <input
-                type="color"
-                value={form.cor_destaque}
-                onChange={(e) => setForm({ ...form, cor_destaque: e.target.value })}
-                className="w-full h-10 rounded-xl border-none cursor-pointer"
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Cor Fundo</label>
-              <input
-                type="color"
-                value={form.cor_fundo}
-                onChange={(e) => setForm({ ...form, cor_fundo: e.target.value })}
-                className="w-full h-10 rounded-xl border-none cursor-pointer"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full btn-animated py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-xs font-black text-white shadow-lg shadow-blue-500/25"
-          >
-            {loading ? 'Salvando...' : 'Salvar Alterações de Cores e Marca'}
-          </button>
-        </div>
-      </form>
     </div>
   );
 }

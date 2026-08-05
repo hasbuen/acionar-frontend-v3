@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { MapPin, CheckCircle, Check, Moon, Sun, Layers } from 'lucide-react';
 import { ModalAlert, useModalAlert } from '../components/ModalAlert';
 
@@ -167,7 +167,7 @@ export function PublicSchedule({ slug: propSlug }) {
             )}
             <div className="flex flex-col">
               <span className="text-[0.65rem] font-bold uppercase tracking-widest text-slate-400">Agendamento Online</span>
-              <h1 className="text-lg font-extrabold tracking-tight text-white">{tenant.nome_empresa}</h1>
+              <h1 className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">{tenant.nome_empresa}</h1>
             </div>
           </div>
 
@@ -185,7 +185,7 @@ export function PublicSchedule({ slug: propSlug }) {
           <div className="bg-slate-900/60 p-5 rounded-[2.5rem] shadow-sm border border-slate-800 backdrop-blur-md space-y-2">
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-blue-500 shrink-0" />
-              <span className="text-xs font-extrabold uppercase tracking-wider text-slate-400">Localização</span>
+              <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Localização</span>
             </div>
             <p className="text-sm font-semibold text-slate-200">
               Rua da amizade 515 bairro: 14 de novembro
@@ -199,7 +199,7 @@ export function PublicSchedule({ slug: propSlug }) {
             <div className="bg-slate-900/60 p-5 sm:p-6 rounded-[2.5rem] shadow-sm border border-slate-800 backdrop-blur-md space-y-4">
               <div className="flex items-center gap-2.5 border-b border-slate-800/80 pb-3">
                 <div className="h-8 w-8 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center font-black text-sm">1</div>
-                <h2 className="text-base font-extrabold text-white">Escolha o Serviço</h2>
+                <h2 className="text-base font-extrabold text-slate-900 dark:text-white">Escolha o Serviço</h2>
               </div>
 
               <div className="space-y-2.5">
@@ -276,7 +276,7 @@ export function PublicSchedule({ slug: propSlug }) {
             <div className="bg-slate-900/60 p-5 sm:p-6 rounded-[2.5rem] shadow-sm border border-slate-800 backdrop-blur-md space-y-4">
               <div className="flex items-center gap-2.5 border-b border-slate-800/80 pb-3">
                 <div className="h-8 w-8 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center font-black text-sm">2</div>
-                <h2 className="text-base font-extrabold text-white">Data & Horário</h2>
+                <h2 className="text-base font-extrabold text-slate-900 dark:text-white">Data & Horário</h2>
               </div>
 
               <div>
@@ -292,7 +292,7 @@ export function PublicSchedule({ slug: propSlug }) {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-400">Horários Livres</label>
+                <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Horários Livres</label>
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto p-1.5 border border-slate-800/80 rounded-2xl bg-slate-950/40">
                   {!selectedServico ? (
                     <div className="col-span-full py-4 text-xs text-slate-400 text-center font-medium">Por favor, selecione um serviço primeiro.</div>
@@ -332,11 +332,11 @@ export function PublicSchedule({ slug: propSlug }) {
             <div className="bg-slate-900/60 p-5 sm:p-6 rounded-[2.5rem] shadow-sm border border-slate-800 backdrop-blur-md space-y-4">
               <div className="flex items-center gap-2.5 border-b border-slate-800/80 pb-3">
                 <div className="h-8 w-8 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center font-black text-sm">3</div>
-                <h2 className="text-base font-extrabold text-white">Seus Dados de Contato</h2>
+                <h2 className="text-base font-extrabold text-slate-900 dark:text-white">Seus Dados de Contato</h2>
               </div>
 
               <div>
-                <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-1">Seu Nome Completo</label>
+                <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Seu Nome Completo</label>
                 <input
                   type="text"
                   required
@@ -348,7 +348,7 @@ export function PublicSchedule({ slug: propSlug }) {
               </div>
 
               <div>
-                <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-1">Seu WhatsApp</label>
+                <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Seu WhatsApp</label>
                 <input
                   type="tel"
                   required
@@ -360,7 +360,7 @@ export function PublicSchedule({ slug: propSlug }) {
               </div>
 
               <div>
-                <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-1">Observações (Opcional)</label>
+                <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Observações (Opcional)</label>
                 <textarea
                   rows="2"
                   value={form.observacao}
@@ -392,13 +392,13 @@ export function PublicSchedule({ slug: propSlug }) {
 
       {/* MODAL DE SUCESSO */}
       {showSucessoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-fade-in">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/15 backdrop-blur-sm p-4 animate-fade-in">
           <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] w-full max-w-md p-6 sm:p-8 shadow-2xl text-center space-y-5 my-auto animate-scale-in">
             <div className="h-16 w-16 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center mx-auto">
               <Check className="h-8 w-8" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-xl font-extrabold text-white">Agendamento Solicitado! 🎉</h3>
+              <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">Agendamento Solicitado! 🎉</h3>
               <p className="text-xs sm:text-sm text-slate-400 font-medium leading-relaxed">
                 Sua solicitação foi enviada com sucesso! O estabelecimento recebeu seu pedido e enviará a confirmação direta no seu WhatsApp.
               </p>
@@ -415,3 +415,4 @@ export function PublicSchedule({ slug: propSlug }) {
     </div>
   );
 }
+
