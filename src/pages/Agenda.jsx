@@ -706,7 +706,15 @@ export function Agenda() {
 
   async function updateAppointment(item, data, message) {
     try { await apiRequest(`/agendamentos/${item.id}`, 'PUT', data); notify(message); setModal(null); await fetchAgenda(); }
-    catch (error) { notify(error.message || 'Não foi possível atualizar o agendamento.'); }
+    catch (error) {
+      if (error.message && error.message.includes('já foi aceito')) {
+        window.alert(error.message);
+        setModal(null);
+        fetchAgenda();
+      } else {
+        notify(error.message || 'Não foi possível atualizar o agendamento.');
+      }
+    }
   }
 
   async function createAppointment(event) {
