@@ -34,6 +34,7 @@ function normalizeNotificationPayload(raw = {}) {
             icon: raw.icon || DEFAULT_ICON,
             badge: raw.badge || DEFAULT_BADGE,
             vibrate: raw.vibrate || [300, 100, 300, 100, 300],
+            sound: 'default',
             tag: raw.tag || (appointmentId ? `agendamento-${appointmentId}` : 'novo-agendamento'),
             renotify: raw.renotify !== false,
             requireInteraction: raw.requireInteraction !== false,

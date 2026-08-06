@@ -28,8 +28,18 @@ function MainApp() {
   }, []);
 
   useEffect(() => {
+    const hostname = window.location.hostname;
     const path = window.location.pathname;
-    if (path.startsWith('/agendar/')) {
+
+    const parts = hostname.split('.');
+    const isLocalhost = hostname.includes('localhost') || hostname.includes('127.0.0.1');
+    const isMainDomain = hostname === 'acionar.online' || hostname === 'www.acionar.online';
+
+    if (parts.length > 2 && parts[0] !== 'www' && !isLocalhost && !isMainDomain) {
+      // Subdomain routing (e.g. patriciabeato.acionar.online)
+      setPublicSlug(parts[0]);
+    } else if (path.startsWith('/agendar/')) {
+      // Path-based routing fallback (e.g. localhost:3000/agendar/patriciabeato)
       const slug = path.split('/agendar/')[1]?.split('/')[0];
       if (slug) setPublicSlug(slug);
     }

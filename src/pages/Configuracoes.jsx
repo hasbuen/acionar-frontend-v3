@@ -271,7 +271,11 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
     fetchProfissionais();
   }, []);
 
-  const publicLink = `${window.location.origin}/agendar/${form.novo_slug || tenant?.slug || ''}`;
+  const slug = form.novo_slug || tenant?.slug || '';
+  const isProduction = window.location.hostname.includes('acionar.online');
+  const publicLink = isProduction 
+    ? `https://${slug}.acionar.online` 
+    : `${window.location.origin}/agendar/${slug}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(publicLink);
