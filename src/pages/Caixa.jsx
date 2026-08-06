@@ -79,11 +79,6 @@ export function Caixa() {
   };
 
   const handleDeleteEntry = (id) => {
-    // Lançamentos vindos de agendamento não podem ser excluídos pelo caixa
-    if (String(id).startsWith('ag-')) {
-      showAlert({ type: 'warning', title: 'Ação indisponível', message: 'Este lançamento é gerado por um agendamento confirmado. Para removê-lo, cancele o agendamento na tela de Agenda.' });
-      return;
-    }
     showAlert({
       type: 'warning',
       title: 'Excluir lançamento',
@@ -96,11 +91,12 @@ export function Caixa() {
           await apiRequest(`/caixa/${id}`, 'DELETE');
           fetchCaixa();
         } catch (err) {
-          showAlert({ type: 'error', message: 'Erro ao excluir lançamento.' });
+          showAlert({ type: 'error', message: err.message || 'Erro ao excluir lançamento.' });
         }
       }
     });
   };
+
 
   // Abre modal de baixa
   const handleOpenBaixa = (movimentacao) => {
@@ -600,18 +596,19 @@ export function Caixa() {
                             }`}>
                             {m.tipo}
                           </span>
-                          {m.categoria === 'agendamento' && (
+                          {(m.categoria === 'agendamento' || m.origem === 'agendamento') && (
                             <span className="px-2 py-0.5 rounded-lg font-black uppercase tracking-wider bg-sky-500/10 text-sky-600 dark:text-sky-400 text-[9px]">
-                              {m.categoria === 'agendamento' && m.origem === 'agendamento' ? 'Agendamento' : 'Serviço'}
+                              Agendamento
                             </span>
                           )}
-                          {m.categoria === 'material' && (
-                            <span className="px-2 py-0.5 rounded-lg font-black uppercase tracking-wider bg-orange-500/10 text-orange-600 dark:text-orange-400 text-[9px]">
-                              {m.categoria === 'material' ? 'Material' : 'Serviço'}
+                          {(m.categoria === 'material' || m.origem === 'material') && (
+                            <span className="px-2 py-0.5 rounded-lg font-black uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px]">
+                              Insumo / Material
                             </span>
                           )}
                         </div>
                       </td>
+
 
                       {/* 1. Descrição */}
                       <td className="px-4 py-3">
@@ -633,7 +630,7 @@ export function Caixa() {
                             <button
                               onClick={() => handleOpenBaixa(m)}
                               title="Dar Baixa"
-                              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white text-[10px] font-black uppercase tracking-wide transition-all border border-emerald-500/20"
+                              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500 hover:text-white text-[10px] font-black uppercase tracking-wide transition-all border border-amber-500/20"
                             >
                               <BadgeCheck className="h-3 w-3 shrink-0" /> Baixar
                             </button>
@@ -641,20 +638,18 @@ export function Caixa() {
                           {isPago && (
                             <span
                               title="Lançamento já baixado"
-                              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 text-[10px] font-black uppercase tracking-wide cursor-default select-none"
+                              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-black uppercase tracking-wide cursor-default select-none"
                             >
-                              <Check className="h-3 w-3 shrink-0" /> Baixado
+                              <Check className="h-3 w-3 shrink-0" /> Recebido
                             </span>
                           )}
-                          {!(isAgendamentoVirtual && !isPago) && (
-                            <button
-                              onClick={() => handleDeleteEntry(m.id)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition"
-                              title="Excluir"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          )}
+                          <button
+                            onClick={() => handleDeleteEntry(m.id)}
+                            className="p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition"
+                            title="Excluir"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
                       </td>
                     </tr>

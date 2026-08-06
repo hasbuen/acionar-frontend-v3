@@ -1,6 +1,6 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../services/api';
-import { Scissors, Plus, Boxes, Edit, Trash2, Clock, DollarSign, X, ChevronRight } from 'lucide-react';
+import { Scissors, Plus, Boxes, Edit, Trash2, Clock, DollarSign, X, ChevronRight, Check } from 'lucide-react';
 import { ModalAlert, useModalAlert } from '../components/ModalAlert';
 
 export function Servicos({ setActiveTab }) {
@@ -10,7 +10,40 @@ export function Servicos({ setActiveTab }) {
   const [showModalSubservico, setShowModalSubservico] = useState(false);
   const [selectedServicoId, setSelectedServicoId] = useState(null);
   const [editingServico, setEditingServico] = useState(null);
+  const [editingSubservico, setEditingSubservico] = useState(null);
   const { alertState, showAlert, closeAlert } = useModalAlert();
+
+  const handleToggleServicoAtendo = async (servicoId) => {
+    try {
+      const res = await apiRequest(`/servicos/${servicoId}/toggle-atendo`, 'POST');
+      setServicos((prev) =>
+        prev.map((s) => (s.id === servicoId ? { ...s, habilitado_profissional: res.habilitado_profissional } : s))
+      );
+    } catch (err) {
+      showAlert({ type: 'error', message: err.message || 'Erro ao alterar opção Atendo.' });
+    }
+  };
+
+  const handleToggleSubservicoAtendo = async (servicoId, subservicoId) => {
+    try {
+      const res = await apiRequest(`/servicos/subservicos/${subservicoId}/toggle-atendo`, 'POST');
+      setServicos((prev) =>
+        prev.map((s) => {
+          if (s.id !== servicoId) return s;
+          return {
+            ...s,
+            subservicos: (s.subservicos || []).map((sub) =>
+              sub.id === subservicoId ? { ...sub, habilitado_profissional: res.habilitado_profissional } : sub
+            ),
+          };
+        })
+      );
+    } catch (err) {
+      showAlert({ type: 'error', message: err.message || 'Erro ao alterar opção Atendo.' });
+    }
+  };
+
+
 
   const [formServico, setFormServico] = useState({
     nome: '',
@@ -100,32 +133,72 @@ export function Servicos({ setActiveTab }) {
           await apiRequest(`/servicos/${id}`, 'DELETE');
           fetchServicos();
         } catch (err) {
-          showAlert({ type: 'error', message: 'Erro ao excluir serviço.' });
+          showAlert({ type: 'error', message: err.message || 'Erro ao excluir serviço.' });
         }
+
       }
     });
   };
 
-  const handleOpenSubservicoModal = (servicoId) => {
+  const handleOpenSubservicoModal = (servicoId, subservico = null) => {
     setSelectedServicoId(servicoId);
-    setFormSubservico({ nome: '', preco_adicional: '', duracao_adicional_minutos: 15 });
+    if (subservico) {
+      setEditingSubservico(subservico);
+      setFormSubservico({
+        nome: subservico.nome,
+        preco_adicional: subservico.preco_adicional || '',
+        duracao_adicional_minutos: subservico.duracao_adicional_minutos || 15,
+      });
+    } else {
+      setEditingSubservico(null);
+      setFormSubservico({ nome: '', preco_adicional: '', duracao_adicional_minutos: 15 });
+    }
     setShowModalSubservico(true);
   };
 
   const handleSaveSubservico = async (e) => {
     e.preventDefault();
     try {
-      await apiRequest(`/servicos/${selectedServicoId}/subservicos`, 'POST', {
-        ...formSubservico,
-        duracao_adicional_minutos: parseInt(formSubservico.duracao_adicional_minutos, 10),
-        preco_adicional: parseFloat(formSubservico.preco_adicional || 0),
-      });
+      if (editingSubservico) {
+        await apiRequest(`/servicos/${selectedServicoId}/subservicos/${editingSubservico.id}`, 'PUT', {
+          ...formSubservico,
+          duracao_adicional_minutos: parseInt(formSubservico.duracao_adicional_minutos || 0, 10),
+          preco_adicional: parseFloat(formSubservico.preco_adicional || 0),
+        });
+      } else {
+        await apiRequest(`/servicos/${selectedServicoId}/subservicos`, 'POST', {
+          ...formSubservico,
+          duracao_adicional_minutos: parseInt(formSubservico.duracao_adicional_minutos || 0, 10),
+          preco_adicional: parseFloat(formSubservico.preco_adicional || 0),
+        });
+      }
       setShowModalSubservico(false);
       fetchServicos();
     } catch (err) {
-      showAlert({ type: 'error', message: err.message || 'Erro ao adicionar subserviço.' });
+      showAlert({ type: 'error', message: err.message || 'Erro ao salvar subserviço.' });
     }
   };
+
+  const handleDeleteSubservico = (servicoId, subId) => {
+    showAlert({
+      type: 'warning',
+      title: 'Excluir adicional',
+      message: 'Deseja excluir este adicional?',
+      confirmLabel: 'Excluir',
+      cancelLabel: 'Cancelar',
+      onConfirm: async () => {
+        closeAlert();
+        try {
+          await apiRequest(`/servicos/${servicoId}/subservicos/${subId}`, 'DELETE');
+          fetchServicos();
+        } catch (err) {
+          showAlert({ type: 'error', message: err.message || 'Erro ao excluir adicional.' });
+        }
+
+      }
+    });
+  };
+
 
   const handleOpenMaterialModal = (servico, subservico = null) => {
     setMaterialModal({ servico, subservico });
@@ -215,9 +288,24 @@ export function Servicos({ setActiveTab }) {
               className="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-lg backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-900/60 flex flex-col justify-between gap-4 animate-fade-in"
             >
               <div>
-                <div className="flex items-start justify-between">
-                  <h3 className="text-lg font-black text-slate-900 dark:text-white">{s.nome}</h3>
-                  <span className="text-lg font-black text-emerald-400">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="text-lg font-black text-slate-900 dark:text-white">{s.nome}</h3>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleServicoAtendo(s.id)}
+                      className={`mt-1 inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border text-[11px] font-black transition-all ${
+                        s.habilitado_profissional !== false
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                      }`}
+                      title={s.habilitado_profissional !== false ? 'Deshabilitar este serviço para mim' : 'Habilitar este serviço para mim'}
+                    >
+                      {s.habilitado_profissional !== false ? <Check className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+                      <span>{s.habilitado_profissional !== false ? 'Atendo' : 'Habilitar'}</span>
+                    </button>
+                  </div>
+                  <span className="text-lg font-black text-emerald-400 shrink-0">
                     R$ {parseFloat(s.preco).toFixed(2).replace('.', ',')}
                   </span>
                 </div>
@@ -243,28 +331,76 @@ export function Servicos({ setActiveTab }) {
                 </div>
 
                 {s.subservicos && s.subservicos.length > 0 ? (
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     {s.subservicos.map((sub) => (
-                      <div key={sub.id} className="rounded-xl bg-slate-100 dark:bg-slate-950 p-2 text-xs">
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-slate-300">{sub.nome}</span>
-                          <span className="font-bold text-teal-400">+ R$ {parseFloat(sub.preco_adicional || 0).toFixed(2)}</span>
-                        </div>
-                        {sub.produtos && sub.produtos.length > 0 ? (
-                          <div className="mt-1 flex flex-wrap gap-1">
-                            {sub.produtos.map((item) => (
-                              <span key={`${sub.id}-${item.produto_id}`} className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-300">
-                                {item.produto_nome} ×{item.quantidade_usada}
-                              </span>
-                            ))}
+                      <div key={sub.id} className="rounded-xl bg-slate-100 dark:bg-slate-950 p-2.5 text-xs space-y-1.5 border border-slate-200/50 dark:border-slate-800/50">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleSubservicoAtendo(s.id, sub.id)}
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[10px] font-black shrink-0 transition-all ${
+                                sub.habilitado_profissional !== false
+                                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                              }`}
+                              title={sub.habilitado_profissional !== false ? 'Deshabilitar adicional para mim' : 'Habilitar adicional para mim'}
+                            >
+                              {sub.habilitado_profissional !== false ? <Check className="h-2.5 w-2.5" /> : <Plus className="h-2.5 w-2.5" />}
+                              <span>{sub.habilitado_profissional !== false ? 'Atendo' : 'Habilitar'}</span>
+                            </button>
+                            <span className="font-bold text-slate-800 dark:text-slate-200 truncate">{sub.nome}</span>
                           </div>
-                        ) : null}
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="font-bold text-teal-400 mr-1">+ R$ {parseFloat(sub.preco_adicional || 0).toFixed(2)}</span>
+                            <button
+                              onClick={() => handleOpenSubservicoModal(s.id, sub)}
+                              className="text-slate-400 hover:text-blue-400 p-0.5"
+                              title="Editar adicional"
+                            >
+                              <Edit className="h-3 w-3" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteSubservico(s.id, sub.id)}
+                              className="text-slate-400 hover:text-rose-400 p-0.5"
+                              title="Excluir adicional"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
+                        </div>
+
+
+                        {/* Insumos/Produtos do Subserviço */}
+                        <div className="flex items-center justify-between pt-1 border-t border-slate-200/30 dark:border-slate-800/40">
+                          <div className="flex items-center gap-1 overflow-hidden">
+                            <span className="text-[10px] font-extrabold uppercase text-slate-500">Insumos:</span>
+                            {sub.produtos && sub.produtos.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {sub.produtos.map((item) => (
+                                  <span key={`${sub.id}-${item.produto_id}`} className="rounded-full bg-teal-500/10 px-2 py-0.5 text-[10px] font-semibold text-teal-400">
+                                    {item.produto_nome} ×{item.quantidade_usada}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-[10px] italic text-slate-500">Nenhum</span>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => handleOpenMaterialModal(s, sub)}
+                            className="text-[10px] font-bold text-teal-400 hover:underline shrink-0 ml-1"
+                          >
+                            + vincular produto
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
                 ) : (
                   <p className="text-[11px] italic text-slate-500">Nenhum adicional cadastrado.</p>
                 )}
+
               </div>
 
               <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-950/50">
@@ -475,11 +611,14 @@ export function Servicos({ setActiveTab }) {
         >
           <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
-              <h3 className="text-lg font-black text-slate-900 dark:text-white">Novo Subserviço / Adicional</h3>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                {editingSubservico ? 'Editar Subserviço / Adicional' : 'Novo Subserviço / Adicional'}
+              </h3>
               <button onClick={() => setShowModalSubservico(false)} className="text-slate-400 hover:text-slate-900 dark:text-white">
                 <X className="h-5 w-5" />
               </button>
             </div>
+
 
             <form onSubmit={handleSaveSubservico} className="space-y-4">
               <div>
@@ -520,8 +659,9 @@ export function Servicos({ setActiveTab }) {
               <div className="flex items-center justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setShowModalSubservico(false)} className="px-4 py-2 text-xs font-bold text-slate-400">Cancelar</button>
                 <button type="submit" className="px-6 py-3 rounded-2xl bg-teal-600 text-xs font-black text-white shadow-lg shadow-teal-500/25">
-                  Adicionar Subserviço
+                  {editingSubservico ? 'Salvar Adicional' : 'Adicionar Subserviço'}
                 </button>
+
               </div>
             </form>
           </div>

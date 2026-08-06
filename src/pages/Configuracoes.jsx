@@ -297,7 +297,9 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
         const res = await apiRequest('/config/upload-logo', 'POST', { imageBase64: base64 });
         setForm(prev => ({ ...prev, foto_url: res.foto_url }));
         setTenant({ ...tenant, foto_url: res.foto_url });
+        setLogoError(false);
         setMessage('Foto do logotipo carregada e atualizada com sucesso!');
+
       } catch (err) {
         showAlert({ type: 'error', message: err.message || 'Erro ao carregar imagem do logotipo.' });
       } finally {
@@ -627,12 +629,18 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
 
                 <div className="flex flex-col sm:flex-row items-center gap-5 pt-2">
                   <div className="h-24 w-24 rounded-3xl bg-slate-50 border-2 border-dashed border-slate-200 dark:bg-slate-950 dark:border-slate-800 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
-                    {form.foto_url ? (
-                      <img src={form.foto_url} alt="Logotipo" className="h-full w-full object-cover" />
+                    {form.foto_url && !logoError ? (
+                      <img
+                        src={form.foto_url}
+                        alt="Logotipo"
+                        className="h-full w-full object-cover"
+                        onError={() => setLogoError(true)}
+                      />
                     ) : (
                       <ImageIcon className="h-8 w-8 text-slate-400 dark:text-slate-600" />
                     )}
                   </div>
+
 
                   <div className="space-y-3 w-full sm:w-auto flex-1">
                     <input

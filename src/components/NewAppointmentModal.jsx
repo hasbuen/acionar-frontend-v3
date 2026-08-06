@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, Search, UserRound, X } from 'lucide-react';
+import { Calendar, Search, UserRound, X, Smartphone } from 'lucide-react';
 
 const inputClass = 'w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-100 dark:focus:border-blue-500';
 
@@ -7,6 +7,34 @@ export function NewAppointmentModal({ form, setForm, clients, services, onClose,
   const [finderOpen, setFinderOpen] = useState(false);
   const [search, setSearch] = useState('');
   const matches = clients.filter(client => (client.nome || '').toLowerCase().includes(search.toLowerCase()) || (client.whatsapp || '').includes(search)).slice(0, 8);
+
+  const contactsSupported = typeof window !== 'undefined' && typeof navigator !== 'undefined' && 'contacts' in navigator && 'ContactsManager' in window;
+
+  const handleImportContact = async () => {
+    if (!contactsSupported) {
+      alert('Para buscar contatos direto da lista do seu telefone, abra este aplicativo no navegador do seu celular (Android Chrome ou iOS Safari)!');
+      return;
+    }
+    try {
+      const props = ['name', 'tel'];
+      const opts = { multiple: false };
+      const contacts = await navigator.contacts.select(props, opts);
+      if (contacts && contacts.length > 0) {
+        const contact = contacts[0];
+        const rawName = contact.name && contact.name[0] ? contact.name[0] : '';
+        const rawPhone = contact.tel && contact.tel[0] ? contact.tel[0] : '';
+        const cleanPhone = rawPhone.replace(/\D/g, '').replace(/^55/, '');
+        setForm({
+          ...form,
+          cliente_nome: rawName,
+          cliente_whatsapp: cleanPhone,
+          cliente_id: ''
+        });
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const selectClient = client => {
     setForm({ ...form, cliente_id: client.id, cliente_nome: client.nome, cliente_whatsapp: client.whatsapp || '' });
@@ -36,12 +64,19 @@ export function NewAppointmentModal({ form, setForm, clients, services, onClose,
           <div>
             <div className="mb-1.5 flex items-center justify-between">
               <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Cliente</label>
-              <button type="button" onClick={() => setFinderOpen(!finderOpen)} className="inline-flex items-center gap-1.5 rounded-xl border border-blue-500/25 bg-blue-500/10 px-3 py-2 text-[11px] font-black text-blue-600 dark:text-blue-300 hover:bg-blue-500/20">
-                <Search className="h-3.5 w-3.5" />
-                {finderOpen ? 'Digitar nome' : 'Buscar cadastrado'}
-              </button>
+              <div className="flex gap-1.5">
+                <button type="button" onClick={handleImportContact} className="inline-flex items-center gap-1.5 rounded-xl border border-purple-500/25 bg-purple-500/10 px-2.5 py-1.5 text-[10px] font-black text-purple-600 dark:text-purple-300 hover:bg-purple-500/20">
+                  <Smartphone className="h-3.5 w-3.5" />
+                  Importar Agenda
+                </button>
+                <button type="button" onClick={() => setFinderOpen(!finderOpen)} className="inline-flex items-center gap-1.5 rounded-xl border border-blue-500/25 bg-blue-500/10 px-2.5 py-1.5 text-[10px] font-black text-blue-600 dark:text-blue-300 hover:bg-blue-500/20">
+                  <Search className="h-3.5 w-3.5" />
+                  {finderOpen ? 'Digitar nome' : 'Buscar cadastrado'}
+                </button>
+              </div>
             </div>
             <input value={form.cliente_nome} onChange={event => setForm({ ...form, cliente_nome: event.target.value, cliente_id: '' })} className={inputClass} placeholder="Nome do cliente" required />
+
             
             {finderOpen && (
               <div className="mt-2 rounded-2xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 p-3">

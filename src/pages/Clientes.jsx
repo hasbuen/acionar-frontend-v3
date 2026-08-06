@@ -1,6 +1,6 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../services/api';
-import { Users, UserPlus, Search, Phone, History, Edit, Trash2, X, Calendar, MessageSquare } from 'lucide-react';
+import { Users, UserPlus, Search, Phone, History, Edit, Trash2, X, Calendar, MessageSquare, UserCheck } from 'lucide-react';
 import { ModalAlert, useModalAlert } from '../components/ModalAlert';
 
 export function Clientes() {
@@ -11,6 +11,9 @@ export function Clientes() {
   const [editingCliente, setEditingCliente] = useState(null);
   const [historyCliente, setHistoryCliente] = useState(null);
   const [historyAgendamentos, setHistoryAgendamentos] = useState([]);
+  const [profissionais, setProfissionais] = useState([]);
+  const [showTransferModal, setShowTransferModal] = useState(null);
+  const [selectedProfDestId, setSelectedProfDestId] = useState('');
   const { alertState, showAlert, closeAlert } = useModalAlert();
 
   const [form, setForm] = useState({
@@ -22,7 +25,18 @@ export function Clientes() {
 
   useEffect(() => {
     fetchClientes();
+    fetchProfissionais();
   }, []);
+
+  const fetchProfissionais = async () => {
+    try {
+      const res = await apiRequest('/profissionais');
+      setProfissionais(res.profissionais || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
 
   const fetchClientes = async () => {
     setLoading(true);
@@ -80,8 +94,9 @@ export function Clientes() {
           await apiRequest(`/clientes/${id}`, 'DELETE');
           fetchClientes();
         } catch (err) {
-          showAlert({ type: 'error', message: 'Erro ao remover cliente.' });
+          showAlert({ type: 'error', message: err.message || 'Erro ao remover cliente.' });
         }
+
       }
     });
   };
@@ -191,6 +206,16 @@ export function Clientes() {
 
                 <div className="flex items-center gap-1">
                   <button
+                    onClick={() => {
+                      setShowTransferModal(c);
+                      setSelectedProfDestId('');
+                    }}
+                    className="h-8 w-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-purple-400 hover:text-purple-300 flex items-center justify-center"
+                    title="Transferir Cliente"
+                  >
+                    <UserCheck className="h-4 w-4" />
+                  </button>
+                  <button
                     onClick={() => handleViewHistory(c)}
                     className="h-8 w-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center"
                     title="Histórico"
@@ -214,6 +239,8 @@ export function Clientes() {
                 </div>
               </div>
             </div>
+
+
           ))}
         </div>
       )}
@@ -320,7 +347,69 @@ export function Clientes() {
           </div>
         </div>
       )}
+
+      {/* Modal Transferir Cliente */}
+      {showTransferModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/15 p-4 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
+              <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                Transferir Cliente
+              </h3>
+              <button onClick={() => setShowTransferModal(null)} className="text-slate-400 hover:text-slate-900 dark:text-white">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500">
+              Selecione o profissional/auxiliar para o qual deseja transferir o cadastro do cliente <strong>{showTransferModal.nome}</strong>.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">PROFISSIONAL DE DESTINO</label>
+                <select
+                  value={selectedProfDestId}
+                  onChange={(e) => setSelectedProfDestId(e.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                  required
+                >
+                  <option value="">Selecione...</option>
+                  {profissionais.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nome} ({p.cargo === 'proprietario' ? 'Proprietário' : 'Auxiliar'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setShowTransferModal(null)} className="px-4 py-2 text-xs font-bold text-slate-400">Cancelar</button>
+                <button
+                  type="button"
+                  disabled={!selectedProfDestId}
+                  onClick={async () => {
+                    try {
+                      await apiRequest(`/clientes/${showTransferModal.id}/transferir`, 'POST', {
+                        profissional_destino_id: Number(selectedProfDestId),
+                      });
+                      setShowTransferModal(null);
+                      fetchClientes();
+                    } catch (err) {
+                      showAlert({ type: 'error', message: err.message || 'Erro ao transferir cliente.' });
+                    }
+                  }}
+                  className="px-6 py-3 rounded-2xl bg-purple-600 text-xs font-black text-white shadow-lg shadow-purple-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Transferir Cadastro
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
 
