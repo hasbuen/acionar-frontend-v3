@@ -21,8 +21,9 @@ export async function apiRequest(endpoint, method = 'GET', data = null, headers 
   const result = await response.json();
 
   if (!response.ok) {
-    throw new Error(result.error || 'Request failed.');
+    throw new Error(result.message || result.error || 'Request failed.');
   }
 
   return result;
 }
+
