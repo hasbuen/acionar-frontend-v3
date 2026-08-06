@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import Chart from 'react-apexcharts';
 import { apiRequest } from '../services/api';
 import { gsap } from 'gsap';
 import { PaymentModal } from '../components/PaymentModal';
+import { useAuth } from '../context/AuthContext';
 import { NewAppointmentModal } from '../components/NewAppointmentModal';
 import {
   Activity, AlertCircle, ArrowRightLeft, Banknote, Calendar, CalendarDays, Check, CheckCircle, ChevronDown, ChevronUp, Clock, CreditCard, DollarSign,
@@ -510,6 +511,7 @@ function OnlinePaymentModal({ item, valor, onClose, notify }) {
 }
 
 export function Agenda() {
+  const { user, tenant, socket } = useAuth();
   const [agendamentos, setAgendamentos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('hoje');
@@ -531,6 +533,8 @@ export function Agenda() {
   
   const [statViewMode, setStatViewMode] = useState('valores');
   const [statChartType, setStatChartType] = useState('bar');
+
+
 
   useEffect(() => {
     apiRequest('/config/messages')
@@ -631,8 +635,8 @@ export function Agenda() {
     data: [stats.solicitados, stats.confirmados, stats.concluidos, stats.cancelados]
   }];
 
-  async function fetchAgenda() {
-    setLoading(true);
+  async function fetchAgenda(silent = false) {
+    if (!silent) setLoading(true);
     try {
       let query = '';
       if (activeFilter === 'hoje') {
@@ -643,11 +647,38 @@ export function Agenda() {
       const result = await apiRequest(`/agendamentos${query}`);
       setAgendamentos(result.agendamentos || []);
       fetchTodosAgendamentos();
-    } catch (error) { notify(error.message || 'Não foi possível carregar a agenda.'); }
-    finally { setLoading(false); }
+    } catch (error) { 
+      if (!silent) notify(error.message || 'Não foi possível carregar a agenda.'); 
+    }
+    finally { 
+      if (!silent) setLoading(false); 
+    }
   }
 
-  useEffect(() => { fetchAgenda(); }, [activeFilter]);
+  useEffect(() => {
+    fetchAgenda(false);
+
+    // Auto-update dashboard in real-time every 8 seconds (schedules sync)
+    const intervalId = setInterval(() => {
+      fetchAgenda(true);
+    }, 8000);
+
+    let handleSocketUpdate;
+    if (socket) {
+      handleSocketUpdate = (data) => {
+        console.log('[SOCKET] Appointments changed:', data);
+        fetchAgenda(true);
+      };
+      socket.on('appointments-changed', handleSocketUpdate);
+    }
+
+    return () => {
+      clearInterval(intervalId);
+      if (socket && handleSocketUpdate) {
+        socket.off('appointments-changed', handleSocketUpdate);
+      }
+    };
+  }, [activeFilter, socket]);
 
   async function openCreate() {
     try {

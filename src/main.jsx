@@ -33,9 +33,9 @@ function MainApp() {
 
     const parts = hostname.split('.');
     const isLocalhost = hostname.includes('localhost') || hostname.includes('127.0.0.1');
-    const isMainDomain = hostname === 'acionar.online' || hostname === 'www.acionar.online';
+    const isSubdomainOfAcionar = hostname.endsWith('.acionar.online') && parts.length > 2 && parts[0] !== 'www';
 
-    if (parts.length > 2 && parts[0] !== 'www' && !isLocalhost && !isMainDomain) {
+    if (isSubdomainOfAcionar && !isLocalhost) {
       // Subdomain routing (e.g. patriciabeato.acionar.online)
       setPublicSlug(parts[0]);
     } else if (path.startsWith('/agendar/')) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import {
   Calendar, Users, Scissors, Boxes, DollarSign, Clock,
@@ -20,11 +20,104 @@ const NAV_ITEMS = [
 ];
 
 export function Navbar({ activeTab, setActiveTab }) {
-  const { user, tenant, logout } = useAuth();
+  const { user, tenant, logout, socket } = useAuth();
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'));
   const publicUrl = `/agendar/${tenant?.slug || ''}`;
   const { alertState, showAlert, closeAlert } = useModalAlert();
+
+  const [notificacoes, setNotificacoes] = useState([]);
+  const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
+  const prevNotificationsRef = useRef([]);
+
+  const loadNotificacoes = async () => {
+    if (!user) return;
+    try {
+      const res = await apiRequest('/notifications');
+      const novas = res.notifications || [];
+
+      // Se houver histórico anterior e uma nova não lida, emite o alerta sonoro
+      const prev = prevNotificationsRef.current;
+      if (prev && prev.length > 0) {
+        const hasNewUnread = novas.some(n => !n.lida && !prev.some(p => p.id === n.id));
+        if (hasNewUnread) {
+          try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.15);
+          } catch (e) {
+            console.warn('Erro ao reproduzir som de notificação:', e);
+          }
+        }
+      }
+
+      prevNotificationsRef.current = novas;
+      setNotificacoes(novas);
+    } catch (err) {
+      console.warn('Erro ao buscar notificações do banco:', err);
+    }
+  };
+
+  useEffect(() => {
+    loadNotificacoes();
+
+    if (socket) {
+      const handleNotificationsChanged = (data) => {
+        console.log('[SOCKET] Notifications changed event received:', data);
+        loadNotificacoes();
+      };
+      socket.on('notifications-changed', handleNotificationsChanged);
+
+      return () => {
+        socket.off('notifications-changed', handleNotificationsChanged);
+      };
+    }
+  }, [user, socket]);
+
+  useEffect(() => {
+    if (!user) return;
+    // Polling redundante a cada 30 segundos como fallback
+    const interval = setInterval(() => {
+      loadNotificacoes();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [user]);
+
+  const hasUnread = notificacoes.some(n => !n.lida);
+
+  const handleOpenDropdown = () => {
+    setShowNotificationsDropdown(!showNotificationsDropdown);
+  };
+
+  const handleMarkAsRead = async (id) => {
+    try {
+      await apiRequest(`/notifications/${id}/read`, 'PUT');
+      setNotificacoes(prev => prev.map(n => n.id === id ? { ...n, lida: true } : n));
+      // Sincroniza o ref
+      prevNotificationsRef.current = prevNotificationsRef.current.map(n => n.id === id ? { ...n, lida: true } : n);
+    } catch (err) {
+      console.error('Erro ao marcar notificação como lida:', err);
+    }
+  };
+
+  const handleClearAll = async () => {
+    try {
+      await apiRequest('/notifications', 'DELETE');
+      setNotificacoes([]);
+      prevNotificationsRef.current = [];
+      setShowNotificationsDropdown(false);
+    } catch (err) {
+      console.error('Erro ao limpar notificações:', err);
+    }
+  };
 
   const handleLogout = () => {
     showAlert({
@@ -116,13 +209,68 @@ export function Navbar({ activeTab, setActiveTab }) {
                 <HelpCircle className="h-5 w-5" />
               </button>
 
-              <button
-                aria-label="Notificações"
-                className="relative flex h-9 w-9 items-center justify-center rounded-xl text-slate-600 dark:text-slate-300 transition-all hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-              >
-                <Bell className="h-5 w-5" />
-                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-rose-500 border-2 border-white dark:border-slate-950"></span>
-              </button>
+              <div className="relative font-sans">
+                <button
+                  aria-label="Notificações"
+                  onClick={handleOpenDropdown}
+                  className="relative flex h-9 w-9 items-center justify-center rounded-xl text-slate-600 dark:text-slate-300 transition-all hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                >
+                  <Bell className="h-5 w-5" />
+                  {hasUnread && (
+                    <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-rose-500 border-2 border-white dark:border-slate-950 animate-pulse"></span>
+                  )}
+                </button>
+
+                {showNotificationsDropdown && (
+                  <div className="fixed inset-x-4 top-16 sm:absolute sm:right-0 sm:left-auto sm:top-12 sm:w-80 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-800 dark:bg-slate-900 z-50 animate-fade-in">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2 dark:border-slate-800 mb-3">
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Notificações</span>
+                      {notificacoes.length > 0 && (
+                        <button onClick={handleClearAll} className="text-[10px] font-extrabold text-rose-500 hover:text-rose-600 transition-colors uppercase">
+                          Limpar
+                        </button>
+                      )}
+                    </div>
+                    <div className="max-h-60 overflow-y-auto space-y-2.5 pr-1 no-scrollbar">
+                      {notificacoes.length === 0 ? (
+                        <div className="py-8 text-center text-xs font-semibold text-slate-400">
+                          Sem novas notificações.
+                        </div>
+                      ) : (
+                        notificacoes.map(n => {
+                          const formattedTime = new Date(n.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                          return (
+                            <div
+                              key={n.id}
+                              onClick={() => !n.lida && handleMarkAsRead(n.id)}
+                              className={`flex flex-col gap-0.5 rounded-xl p-2.5 border transition-all cursor-pointer ${
+                                n.lida 
+                                  ? 'bg-slate-50/20 dark:bg-slate-900/10 border-slate-100 dark:border-slate-800 opacity-60' 
+                                  : 'bg-blue-500/5 dark:bg-blue-500/10 border-blue-100 dark:border-blue-900/50 hover:bg-blue-500/10 dark:hover:bg-blue-500/20'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-[9px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                                  {n.titulo}
+                                </span>
+                                {!n.lida && (
+                                  <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse"></span>
+                                )}
+                              </div>
+                              <span className="text-[11.5px] font-bold leading-normal text-slate-700 dark:text-slate-200 mt-0.5">
+                                {n.mensagem}
+                              </span>
+                              <span className="text-[9px] font-extrabold text-slate-400 text-right mt-1">
+                                {formattedTime}
+                              </span>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <button
                 aria-label="Alternar Tema"

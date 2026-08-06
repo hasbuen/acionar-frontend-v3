@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapPin, CheckCircle, Check, Moon, Sun, Layers } from 'lucide-react';
 import { ModalAlert, useModalAlert } from '../components/ModalAlert';
 
@@ -70,7 +70,12 @@ export function PublicSchedule({ slug: propSlug }) {
   };
 
   const generateTimeSlots = () => {
-    const slots = [
+    const now = new Date();
+    const currH = now.getHours();
+    const currM = now.getMinutes();
+    const currentMinutes = currH * 60 + currM;
+
+    const baseSlots = [
       { time: '08:00', available: true },
       { time: '08:40', available: true },
       { time: '09:20', available: true },
@@ -89,6 +94,18 @@ export function PublicSchedule({ slug: propSlug }) {
       { time: '20:00', available: true },
       { time: '20:40', available: true },
     ];
+
+    const slots = baseSlots.map(slot => {
+      const [slotH, slotM] = slot.time.split(':').map(Number);
+      const slotMinutes = slotH * 60 + slotM;
+
+      // Se for hoje e o horário já passou, marca como indisponível
+      if (selectedDate === todayISO && slotMinutes <= currentMinutes) {
+        return { ...slot, available: false };
+      }
+      return slot;
+    });
+
     setTimeSlots(slots);
   };
 

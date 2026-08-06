@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { io } from 'socket.io-client';
 import { apiRequest } from '../services/api';
 
 const AuthContext = createContext(null);
@@ -7,6 +8,41 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [tenant, setTenant] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [socket, setSocket] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('acionar_v3_token');
+    if (token && user) {
+      const newSocket = io(window.location.origin, {
+        path: '/api/socket.io',
+        auth: { token },
+        transports: ['websocket', 'polling']
+      });
+
+      setSocket(newSocket);
+
+      newSocket.on('connect', () => {
+        console.log('[SOCKET] Connected to real-time server');
+      });
+
+      newSocket.on('disconnect', (reason) => {
+        console.log('[SOCKET] Disconnected from server:', reason);
+      });
+
+      newSocket.on('connect_error', (err) => {
+        console.warn('[SOCKET] Connection error:', err.message);
+      });
+
+      return () => {
+        newSocket.disconnect();
+      };
+    } else {
+      if (socket) {
+        socket.disconnect();
+      }
+      setSocket(null);
+    }
+  }, [user]);
 
   useEffect(() => {
     async function loadSession() {
@@ -58,7 +94,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, tenant, setTenant, loading, login, registerTenant, logout }}>
+    <AuthContext.Provider value={{ user, tenant, setTenant, loading, login, registerTenant, logout, socket }}>
       {children}
     </AuthContext.Provider>
   );
