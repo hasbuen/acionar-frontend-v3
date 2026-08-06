@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import Chart from 'react-apexcharts';
 import { apiRequest } from '../services/api';
 import { gsap } from 'gsap';
 import { PaymentModal } from '../components/PaymentModal';
@@ -519,9 +520,13 @@ export function Agenda() {
   const [clientSearch, setClientSearch] = useState('');
   const [form, setForm] = useState({ cliente_id: '', cliente_nome: '', cliente_whatsapp: '', servico_id: '', data_hora: `${new Date().toISOString().slice(0, 10)}T18:40`, observacao: '' });
   const [todosAgendamentos, setTodosAgendamentos] = useState([]);
+  
   const [statsOpen, setStatsOpen] = useState(false);
   const [deleteModalItem, setDeleteModalItem] = useState(null);
   const [msgConfig, setMsgConfig] = useState(null);
+  
+  const [statViewMode, setStatViewMode] = useState('valores');
+  const [statChartType, setStatChartType] = useState('bar');
 
   useEffect(() => {
     apiRequest('/config/messages')
@@ -537,19 +542,9 @@ export function Agenda() {
 
     let template = '';
     if (isManut) {
-      template = msgConfig?.template_manutencao || `Olá, *{cliente}*! 👋
-
-Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está agendada para o dia *{data}* às *{hora}*.
-
-📍 *Endereço*: {endereco}`;
+      template = msgConfig?.template_manutencao || `Olá, *{cliente}*! 👋\n\nPassando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está agendada para o dia *{data}* às *{hora}*.\n\n📍 *Endereço*: {endereco}`;
     } else {
-      template = msgConfig?.template_confirmacao || `📍 *Endereço*: {endereco}
-
-Por gentileza, informe se concorda com este horário ou se prefere realizar alguma alteração.
-
-📌 *Lembrete importante*: Pedimos a gentileza de chegar com **15 minutos de antecedência**.
-
-Agradecemos a preferência e aguardamos você!😊`;
+      template = msgConfig?.template_confirmacao || `📍 *Endereço*: {endereco}\n\nPor gentileza, informe se concorda com este horário ou se prefere realizar alguma alteração.\n\n📌 *Lembrete importante*: Pedimos a gentileza de chegar com **15 minutos de antecedência**.\n\nAgradecemos a preferência e aguardamos você!😊`;
     }
 
     return template
@@ -612,6 +607,25 @@ Agradecemos a preferência e aguardamos você!😊`;
 
     return { solicitados, confirmados, concluidos, cancelados };
   }, [todosAgendamentos]);
+  
+  const chartOptions = {
+    chart: { fontFamily: 'inherit', toolbar: { show: false }, zoom: { enabled: false }, background: 'transparent' },
+    colors: ['#d97706', '#2563eb', '#10b981', '#e11d48'],
+    plotOptions: { bar: { borderRadius: 6, distributed: true, columnWidth: '45%' } },
+    dataLabels: { enabled: statChartType === 'bar', style: { colors: ['#fff'], fontSize: '12px', fontWeight: 'bold' }, offsetY: -20 },
+    xaxis: { categories: ['Solicitados', 'Confirmados', 'Atendidos', 'Cancelados'], labels: { style: { colors: '#64748b', fontWeight: 600 } }, axisBorder: { show: false }, axisTicks: { show: false } },
+    yaxis: { labels: { style: { colors: '#64748b', fontWeight: 600 } } },
+    grid: { borderColor: 'rgba(148, 163, 184, 0.1)', strokeDashArray: 4 },
+    stroke: { curve: 'smooth', width: statChartType === 'bar' ? 0 : 3 },
+    fill: { type: statChartType === 'area' ? 'gradient' : 'solid', opacity: statChartType === 'area' ? 0.4 : 1, gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.1, stops: [0, 90, 100] } },
+    legend: { show: false },
+    tooltip: { theme: 'dark' }
+  };
+
+  const chartSeries = [{
+    name: 'Agendamentos',
+    data: [stats.solicitados, stats.confirmados, stats.concluidos, stats.cancelados]
+  }];
 
   async function fetchAgenda() {
     setLoading(true);
@@ -737,27 +751,52 @@ Agradecemos a preferência e aguardamos você!😊`;
 
         {statsOpen && (
           <div className="border-t border-slate-100 dark:border-slate-800/60 p-5 bg-slate-50/20 dark:bg-slate-950/10">
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 w-full">
-              <div className="stat-card rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-white dark:bg-slate-950/40 p-4 shadow-sm flex flex-col justify-between">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400">Solicitados</span>
-                <span className="mt-1.5 text-2xl font-black text-slate-900 dark:text-white">{stats.solicitados}</span>
-              </div>
+            
+            {/* CONTROLES DE VISUALIZAÇÃO */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-200/50 dark:border-slate-800/50">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Formato de Exibição</span>
+              <div className="flex items-center gap-2">
+                
+                {statViewMode === 'grafico' && (
+                  <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-200/50 dark:bg-slate-800/80 mr-2">
+                    <button onClick={() => setStatChartType('bar')} className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${statChartType === 'bar' ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>Coluna</button>
+                    <button onClick={() => setStatChartType('line')} className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${statChartType === 'line' ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>Linha</button>
+                    <button onClick={() => setStatChartType('area')} className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${statChartType === 'area' ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>Área</button>
+                  </div>
+                )}
 
-              <div className="stat-card rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-white dark:bg-slate-950/40 p-4 shadow-sm flex flex-col justify-between">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400">Confirmados</span>
-                <span className="mt-1.5 text-2xl font-black text-slate-900 dark:text-white">{stats.confirmados}</span>
-              </div>
-
-              <div className="stat-card rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-white dark:bg-slate-950/40 p-4 shadow-sm flex flex-col justify-between">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Atendidos</span>
-                <span className="mt-1.5 text-2xl font-black text-slate-900 dark:text-white">{stats.concluidos}</span>
-              </div>
-
-              <div className="stat-card rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-white dark:bg-slate-950/40 p-4 shadow-sm flex flex-col justify-between">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-rose-600 dark:text-rose-400">Cancelados</span>
-                <span className="mt-1.5 text-2xl font-black text-slate-900 dark:text-white">{stats.cancelados}</span>
+                <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-200/50 dark:bg-slate-800/80">
+                  <button onClick={() => setStatViewMode('valores')} className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${statViewMode === 'valores' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>Valores</button>
+                  <button onClick={() => setStatViewMode('grafico')} className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${statViewMode === 'grafico' ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>Gráfico</button>
+                </div>
               </div>
             </div>
+
+            {/* CONTEÚDO (VALORES OU GRÁFICO) */}
+            {statViewMode === 'valores' ? (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 w-full">
+                <div className="stat-card rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-white dark:bg-slate-950/40 p-4 shadow-sm flex flex-col justify-between">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400">Solicitados</span>
+                  <span className="mt-1.5 text-2xl font-black text-slate-900 dark:text-white">{stats.solicitados}</span>
+                </div>
+                <div className="stat-card rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-white dark:bg-slate-950/40 p-4 shadow-sm flex flex-col justify-between">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400">Confirmados</span>
+                  <span className="mt-1.5 text-2xl font-black text-slate-900 dark:text-white">{stats.confirmados}</span>
+                </div>
+                <div className="stat-card rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-white dark:bg-slate-950/40 p-4 shadow-sm flex flex-col justify-between">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Atendidos</span>
+                  <span className="mt-1.5 text-2xl font-black text-slate-900 dark:text-white">{stats.concluidos}</span>
+                </div>
+                <div className="stat-card rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-white dark:bg-slate-950/40 p-4 shadow-sm flex flex-col justify-between">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-rose-600 dark:text-rose-400">Cancelados</span>
+                  <span className="mt-1.5 text-2xl font-black text-slate-900 dark:text-white">{stats.cancelados}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="w-full h-[250px]">
+                <Chart options={chartOptions} series={chartSeries} type={statChartType} height="100%" />
+              </div>
+            )}
           </div>
         )}
       </div>
