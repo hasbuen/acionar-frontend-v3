@@ -434,7 +434,9 @@ function OnlinePaymentModal({ item, valor, onClose, notify }) {
 
   const { pixKey, paymentLink } = paymentData;
 
-  const whatsappMessage = `Olá ${item.cliente_nome || ''}! Segue o link seguro para pagamento do seu atendimento (${item.servico_nome || 'Atendimento'}) no valor de R$ ${valorFinal}:\n\n${paymentLink}\n\nVocê pode escolher pagar via Pix ou Cartão.`;
+  const whatsappMessage = paymentLink
+    ? `Olá ${item.cliente_nome || ''}! Segue o link seguro para pagamento do seu atendimento (${item.servico_nome || 'Atendimento'}) no valor de R$ ${valorFinal}:\n\n${paymentLink}\n\nVocê pode escolher pagar via Pix ou Cartão.`
+    : `Olá ${item.cliente_nome || ''}! Segue a chave Pix Copia e Cola para pagamento do seu atendimento (${item.servico_nome || 'Atendimento'}) no valor de R$ ${valorFinal}:\n\n${pixKey}`;
 
   return (
     <Modal
@@ -477,14 +479,16 @@ function OnlinePaymentModal({ item, valor, onClose, notify }) {
             {copied ? 'Chave Pix Copiada!' : 'Copiar Chave Pix (Copia e Cola)'}
           </button>
 
-          <button
-            type="button"
-            onClick={() => copyToClipboard(paymentLink, 'Link de Pagamento')}
-            className="btn-animated flex w-full items-center justify-center gap-2 rounded-2xl border border-blue-200 bg-blue-50/50 hover:bg-blue-100/50 dark:border-blue-900/50 dark:bg-blue-950/30 py-3.5 text-xs font-extrabold text-blue-600 dark:text-blue-400"
-          >
-            <Link className="h-4 w-4 text-blue-500" />
-            Copiar Link Checkout (Pix / Cartão)
-          </button>
+          {paymentLink && (
+            <button
+              type="button"
+              onClick={() => copyToClipboard(paymentLink, 'Link de Pagamento')}
+              className="btn-animated flex w-full items-center justify-center gap-2 rounded-2xl border border-blue-200 bg-blue-50/50 hover:bg-blue-100/50 dark:border-blue-900/50 dark:bg-blue-950/30 py-3.5 text-xs font-extrabold text-blue-600 dark:text-blue-400"
+            >
+              <Link className="h-4 w-4 text-blue-500" />
+              Copiar Link Checkout (Pix / Cartão)
+            </button>
+          )}
 
           {item.cliente_whatsapp && (
             <a
