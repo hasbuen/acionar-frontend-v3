@@ -795,8 +795,9 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
               </div>
             </div>
 
-            <div className="space-y-2 pt-2 max-h-[300px] overflow-y-auto pr-1 no-scrollbar">
+            <div className="space-y-2 pt-2">
               {horarios.map((h, idx) => (
+
                 <div key={idx} className="rounded-2xl border border-slate-100 bg-slate-50/50 p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs dark:border-slate-800 dark:bg-slate-950/40">
                   <div className="flex items-center gap-3 w-full sm:w-auto">
                     <input
