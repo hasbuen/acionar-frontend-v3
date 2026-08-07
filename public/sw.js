@@ -98,24 +98,29 @@ self.addEventListener('notificationclick', (event) => {
 
     event.waitUntil((async () => {
         if (action === 'confirm_whatsapp') {
-            // 1. Confirmar o agendamento no banco de dados em segundo plano via backend API
+            // 1. Confirmar o agendamento no banco em segundo plano (fire-and-forget sem travar a thread de popup)
             if (confirmUrl) {
-                try {
-                    await fetch(confirmUrl, { method: 'POST' });
-                } catch (e) {
-                    console.warn('[SW CONFIRM ERROR]', e);
-                }
+                fetch(confirmUrl, { method: 'POST' }).catch(e => console.warn('[SW CONFIRM ERROR]', e));
             }
 
-            // 2. Disparar abertura direta do WhatsApp Web/App com a mensagem configurada
-            if (whatsapp) {
-                const msgText = `Olá *${clienteNome}*, seu agendamento para *${servicoNome}* no dia *${dataHoraFormatted}* foi *CONFIRMADO* com sucesso! 🚀`;
-                const waUrl = `https://api.whatsapp.com/send?phone=${whatsapp}&text=${encodeURIComponent(msgText)}`;
-                return clients.openWindow ? clients.openWindow(waUrl) : undefined;
+            // 2. ABRIR O WHATSAPP IMEDIATAMENTE sem await prévio para não perder o token de gesto do usuário
+            const msgText = `Olá *${clienteNome}*, seu agendamento para *${servicoNome}* no dia *${dataHoraFormatted}* foi *CONFIRMADO* com sucesso! 🚀`;
+            const cleanNum = whatsapp ? String(whatsapp).replace(/\D/g, '') : '';
+            const waUrl = cleanNum 
+                ? `https://api.whatsapp.com/send?phone=${cleanNum}&text=${encodeURIComponent(msgText)}`
+                : targetUrl.href;
+
+            if (clients.openWindow) {
+                try {
+                    await clients.openWindow(waUrl);
+                    return;
+                } catch (eErr) {
+                    console.warn('[SW OPEN WINDOW WARN]', eErr);
+                }
             }
         }
 
-        // Se clicou na notificação ou no botão "Ver na Agenda"
+        // Se clicou na notificação padrão ou no botão "Ver na Agenda"
         const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
         const existingClient = windowClients.find(client => {
             const clientUrl = new URL(client.url);
@@ -129,6 +134,8 @@ self.addEventListener('notificationclick', (event) => {
             return existingClient.focus();
         }
 
-        return clients.openWindow ? clients.openWindow(targetUrl.href) : undefined;
+        if (clients.openWindow) {
+            return clients.openWindow(targetUrl.href);
+        }
     })());
 });
