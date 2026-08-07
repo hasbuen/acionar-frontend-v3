@@ -43,8 +43,7 @@ function normalizeNotificationPayload(raw = {}) {
                 url: notificationUrl,
                 agendamento_id: appointmentId
             },
-            actions: raw.actions || [
-                { action: 'confirm_whatsapp', title: '✅ Confirmar & WhatsApp' },
+            actions: [
                 { action: 'open_agenda', title: '📅 Ver na Agenda' }
             ]
         }
@@ -60,7 +59,6 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  // Pass-through fetch with network-first strategy
   if (e.request.method !== 'GET' || e.request.url.includes('/api/')) return;
   e.respondWith(
     fetch(e.request).catch(() => caches.match(e.request))
@@ -87,42 +85,18 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-    const action = event.action;
     const data = event.notification.data || {};
     const targetUrl = new URL(data.url || DEFAULT_URL, self.registration.scope);
 
-    // Botão "Confirmar & WhatsApp" ou clique no corpo da notificação
-    const isConfirmAction = action === 'confirm_whatsapp' || (data.whatsapp && action !== 'open_agenda');
-
     event.waitUntil((async () => {
-        if (isConfirmAction) {
-            // Construir a URL da página de confirmação (dentro da própria PWA)
-            // A página ConfirmarAgendamento.jsx faz tudo:
-            // 1. Chama o backend para confirmar + cadastrar cliente
-            // 2. Busca o template de mensagem das configurações
-            // 3. Redireciona para wa.me com a mensagem formatada
-            const confirmPageUrl = new URL('/confirmar-agendamento', self.registration.scope);
-            confirmPageUrl.searchParams.set('slug', data.tenantSlug || '');
-            confirmPageUrl.searchParams.set('id', data.agendamentoId || '');
-            confirmPageUrl.searchParams.set('phone', data.whatsapp || '');
-            confirmPageUrl.searchParams.set('nome', data.clienteNome || 'Cliente');
-            confirmPageUrl.searchParams.set('servico', data.servicoNome || 'Serviço');
-            confirmPageUrl.searchParams.set('dataHora', data.dataHoraFormatted || '');
-
-            if (clients.openWindow) {
-                return clients.openWindow(confirmPageUrl.href);
-            }
-        }
-
-        // Botão "Ver na Agenda" ou clique padrão
         const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
         const existingClient = windowClients.find(client => {
             const clientUrl = new URL(client.url);
-            return clientUrl.origin === targetUrl.origin && clientUrl.pathname === targetUrl.pathname;
+            return clientUrl.origin === targetUrl.origin;
         });
 
         if (existingClient) {
-            if ('navigate' in existingClient && existingClient.url !== targetUrl.href) {
+            if ('navigate' in existingClient) {
                 await existingClient.navigate(targetUrl.href);
             }
             return existingClient.focus();
