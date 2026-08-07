@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, CheckCircle, Check, Moon, Sun, Layers, ArrowLeft, ArrowRight, Scissors, Boxes } from 'lucide-react';
+import { MapPin, CheckCircle, Check, Moon, Sun, Layers, ArrowLeft, ArrowRight, Scissors, Boxes, Home, Building, Sparkles, UserCheck } from 'lucide-react';
 import { ModalAlert, useModalAlert } from '../components/ModalAlert';
 
 export function PublicSchedule({ slug: propSlug }) {
@@ -7,6 +7,7 @@ export function PublicSchedule({ slug: propSlug }) {
   const [tenant, setTenant] = useState(null);
   const [servicos, setServicos] = useState([]);
   const [subservicos, setSubservicos] = useState([]);
+  const [profissionais, setProfissionais] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -16,6 +17,8 @@ export function PublicSchedule({ slug: propSlug }) {
   // Selected State
   const [selectedServico, setSelectedServico] = useState(null);
   const [selectedSubservico, setSelectedSubservico] = useState(null);
+  const [selectedProfissional, setSelectedProfissional] = useState(null);
+  const [tipoAtendimento, setTipoAtendimento] = useState('salao'); // 'salao' | 'domicilio'
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedTime, setSelectedTime] = useState('');
   const [timeSlots, setTimeSlots] = useState([]);
@@ -25,6 +28,13 @@ export function PublicSchedule({ slug: propSlug }) {
     cliente_nome: '',
     cliente_whatsapp: '',
     observacao: '',
+  });
+
+  const [formEndereco, setFormEndereco] = useState({
+    rua: '',
+    numero: '',
+    bairro: '',
+    complemento: '',
   });
 
   // Modal Sucesso
@@ -58,6 +68,14 @@ export function PublicSchedule({ slug: propSlug }) {
       const resS = await fetch(`/api/public/tenant/${slug}/servicos`);
       const dataS = await resS.json();
       setServicos(dataS.servicos || []);
+
+      try {
+        const resP = await fetch(`/api/public/tenant/${slug}/profissionais`);
+        const dataP = await resP.json();
+        setProfissionais(dataP.profissionais || []);
+      } catch (pErr) {
+        console.warn('Erro ao carregar profissionais públicos:', pErr);
+      }
     } catch (err) {
       setError(err.message || 'Erro ao carregar dados do agendamento.');
     } finally {
@@ -135,9 +153,17 @@ export function PublicSchedule({ slug: propSlug }) {
       return;
     }
 
+    if (tipoAtendimento === 'domicilio' && (!formEndereco.rua || !formEndereco.numero || !formEndereco.bairro)) {
+      showAlert({ type: 'warning', title: 'Endereço Incompleto', message: 'Por favor, informe a Rua, Número e Bairro para o atendimento a domicílio.' });
+      return;
+    }
+
     setSubmitting(true);
     try {
       const dataHoraIso = new Date(`${selectedDate}T${selectedTime}:00`).toISOString();
+      const enderecoFormatado = tipoAtendimento === 'domicilio'
+        ? `${formEndereco.rua}, ${formEndereco.numero} - ${formEndereco.bairro}${formEndereco.complemento ? ` (${formEndereco.complemento})` : ''}`
+        : null;
 
       const res = await fetch(`/api/public/tenant/${slug}/agendamentos`, {
         method: 'POST',
@@ -146,6 +172,9 @@ export function PublicSchedule({ slug: propSlug }) {
           ...form,
           servico_id: selectedServico.id,
           subservico_id: selectedSubservico?.id || null,
+          profissional_id: selectedProfissional?.id || null,
+          tipo_atendimento: tipoAtendimento,
+          endereco_externo: enderecoFormatado,
           data_hora: dataHoraIso,
         }),
       });
@@ -286,8 +315,121 @@ export function PublicSchedule({ slug: propSlug }) {
             <div className="step-enter space-y-5">
               <div className="text-center mb-6">
                 <h2 className="text-2xl font-extrabold" style={{ color: 'var(--color-text-primary)' }}>O que você deseja fazer?</h2>
-                <p className="text-sm opacity-80 mt-1" style={{ color: 'var(--color-text-secondary)' }}>Selecione o serviço ideal para você.</p>
+                <p className="text-sm opacity-80 mt-1" style={{ color: 'var(--color-text-secondary)' }}>Selecione o serviço e as opções de atendimento.</p>
               </div>
+
+              {/* SELETOR DE PROFISSIONAL */}
+              {profissionais && profissionais.length > 0 && (
+                <div className="bg-white/5 p-4 rounded-3xl border border-white/5 space-y-2 mb-4">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
+                    <UserCheck className="h-3.5 w-3.5 text-indigo-400" /> Escolha o Profissional:
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedProfissional(null)}
+                      className={`p-3 rounded-2xl border text-left flex items-center gap-3 transition-all ${
+                        !selectedProfissional ? 'border-active bg-white/10 shadow-md' : 'border-white/10 bg-white/5 opacity-70 hover:opacity-100'
+                      }`}
+                    >
+                      <div className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center text-xs font-black text-white shrink-0">
+                        <Sparkles className="h-4 w-4 text-amber-300" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <span className="text-xs font-extrabold text-white block truncate">Qualquer Profissional</span>
+                        <span className="text-[10px] opacity-60 block truncate" style={{ color: 'var(--color-text-secondary)' }}>Sem preferência</span>
+                      </div>
+                    </button>
+                    {profissionais.map((p) => {
+                      const isPSelected = selectedProfissional?.id === p.id;
+                      const atendeDom = p.aceita_atendimento_externo === true || String(p.aceita_atendimento_externo) === 'true';
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedProfissional(p);
+                            if (!atendeDom && tipoAtendimento === 'domicilio') {
+                              setTipoAtendimento('salao');
+                            }
+                          }}
+                          className={`p-3 rounded-2xl border text-left flex items-center gap-3 transition-all ${
+                            isPSelected ? 'border-active bg-white/10 shadow-md' : 'border-white/10 bg-white/5 opacity-70 hover:opacity-100'
+                          }`}
+                        >
+                          {p.foto_url ? (
+                            <img src={p.foto_url} alt={p.nome} className="h-9 w-9 rounded-full object-cover border border-white/10 shrink-0" />
+                          ) : (
+                            <div className="h-9 w-9 rounded-full bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-xs font-black shrink-0">
+                              {p.nome[0]}
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <h4 className="text-xs font-extrabold text-white truncate">{p.nome}</h4>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              {p.cargo && <span className="text-[10px] opacity-60 truncate">{p.cargo}</span>}
+                              {atendeDom && (
+                                <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-full shrink-0">
+                                  Atende Domicílio
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* SELETOR DE LOCAL DE ATENDIMENTO */}
+              {(selectedProfissional
+                ? (selectedProfissional.aceita_atendimento_externo === true || String(selectedProfissional.aceita_atendimento_externo) === 'true')
+                : profissionais.some(p => p.aceita_atendimento_externo === true || String(p.aceita_atendimento_externo) === 'true')
+              ) && (
+                <div className="bg-white/5 p-4 rounded-3xl border border-white/5 space-y-2 mb-4">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5 text-emerald-400" /> Onde você deseja ser atendido?
+                  </label>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setTipoAtendimento('salao')}
+                      className={`p-3.5 rounded-2xl border text-left flex items-center gap-3 transition-all ${
+                        tipoAtendimento === 'salao'
+                          ? 'border-active bg-white/10 shadow-md'
+                          : 'border-white/10 bg-white/5 opacity-70 hover:opacity-100'
+                      }`}
+                    >
+                      <div className="h-9 w-9 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
+                        <Building className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-xs font-black text-white truncate">No Estabelecimento</h4>
+                        <p className="text-[10px] opacity-70 truncate" style={{ color: 'var(--color-text-secondary)' }}>Atendimento presencial</p>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setTipoAtendimento('domicilio')}
+                      className={`p-3.5 rounded-2xl border text-left flex items-center gap-3 transition-all ${
+                        tipoAtendimento === 'domicilio'
+                          ? 'border-active bg-white/10 shadow-md'
+                          : 'border-white/10 bg-white/5 opacity-70 hover:opacity-100'
+                      }`}
+                    >
+                      <div className="h-9 w-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                        <Home className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-xs font-black text-white truncate">Atendimento Domicílio</h4>
+                        <p className="text-[10px] opacity-70 truncate" style={{ color: 'var(--color-text-secondary)' }}>No seu endereço</p>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="grid gap-3">
                 {servicos.map((s) => {
@@ -523,6 +665,63 @@ export function PublicSchedule({ slug: propSlug }) {
                     className="w-full rounded-2xl bg-black/20 border border-white/10 px-4 py-3.5 text-base placeholder:opacity-50 focus:outline-none focus:border-white/30 transition-colors font-medium shadow-inner"
                   />
                 </div>
+
+                {/* ENDEREÇO DE ATENDIMENTO DOMICILIAR */}
+                {tipoAtendimento === 'domicilio' && (
+                  <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-3">
+                    <div className="flex items-center gap-2 text-emerald-400">
+                      <Home className="h-4 w-4 shrink-0" />
+                      <h4 className="text-xs font-black uppercase tracking-wider">Endereço para Atendimento Domiciliar</h4>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="sm:col-span-2">
+                        <label className="block text-[10px] font-bold uppercase tracking-wider opacity-80 mb-1" style={{ color: 'var(--color-text-secondary)' }}>Rua / Logradouro *</label>
+                        <input
+                          type="text"
+                          required={tipoAtendimento === 'domicilio'}
+                          value={formEndereco.rua}
+                          onChange={(e) => setFormEndereco({ ...formEndereco, rua: e.target.value })}
+                          placeholder="Ex: Av. Paulista"
+                          className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider opacity-80 mb-1" style={{ color: 'var(--color-text-secondary)' }}>Número *</label>
+                        <input
+                          type="text"
+                          required={tipoAtendimento === 'domicilio'}
+                          value={formEndereco.numero}
+                          onChange={(e) => setFormEndereco({ ...formEndereco, numero: e.target.value })}
+                          placeholder="Ex: 1000"
+                          className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider opacity-80 mb-1" style={{ color: 'var(--color-text-secondary)' }}>Bairro *</label>
+                        <input
+                          type="text"
+                          required={tipoAtendimento === 'domicilio'}
+                          value={formEndereco.bairro}
+                          onChange={(e) => setFormEndereco({ ...formEndereco, bairro: e.target.value })}
+                          placeholder="Ex: Bela Vista"
+                          className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider opacity-80 mb-1" style={{ color: 'var(--color-text-secondary)' }}>Complemento / Referência</label>
+                        <input
+                          type="text"
+                          value={formEndereco.complemento}
+                          onChange={(e) => setFormEndereco({ ...formEndereco, complemento: e.target.value })}
+                          placeholder="Ex: Apto 42, Bloco B"
+                          className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-widest opacity-80 mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>Observações (Opcional)</label>
