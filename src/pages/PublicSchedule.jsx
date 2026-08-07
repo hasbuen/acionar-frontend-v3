@@ -149,7 +149,21 @@ export function PublicSchedule({ slug: propSlug }) {
 
   useEffect(() => {
     if (slug) {
-      fetchTenantPublicData();
+      fetchTenantPublicData(false);
+
+      // Sincronização em tempo real das configurações do proprietário (a cada 4 segundos)
+      const syncInterval = setInterval(() => {
+        fetchTenantPublicData(true);
+      }, 4000);
+
+      // Sincronizar instantaneamente quando o usuário retornar à aba
+      const handleFocus = () => fetchTenantPublicData(true);
+      window.addEventListener('focus', handleFocus);
+
+      return () => {
+        clearInterval(syncInterval);
+        window.removeEventListener('focus', handleFocus);
+      };
     }
   }, [slug]);
 
@@ -159,9 +173,9 @@ export function PublicSchedule({ slug: propSlug }) {
     }
   }, [selectedServico, selectedDate]);
 
-  const fetchTenantPublicData = async () => {
-    setLoading(true);
-    setError('');
+  const fetchTenantPublicData = async (silent = false) => {
+    if (!silent) setLoading(true);
+    if (!silent) setError('');
     try {
       const resT = await fetch(`/api/public/tenant/${slug}`);
       if (!resT.ok) throw new Error('Estabelecimento não encontrado ou fora do ar.');
@@ -180,9 +194,9 @@ export function PublicSchedule({ slug: propSlug }) {
         console.warn('Erro ao carregar profissionais públicos:', pErr);
       }
     } catch (err) {
-      setError(err.message || 'Erro ao carregar dados do agendamento.');
+      if (!silent) setError(err.message || 'Erro ao carregar dados do agendamento.');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
