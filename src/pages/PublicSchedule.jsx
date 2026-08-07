@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, CheckCircle, Check, Moon, Sun, Layers, ArrowLeft, ArrowRight, Scissors, Boxes, Home, Building, Sparkles, UserCheck } from 'lucide-react';
+import { MapPin, CheckCircle, Check, Moon, Sun, Layers, ArrowLeft, ArrowRight, Scissors, Boxes, Home, Building, Sparkles, UserCheck, Navigation, Search, Loader2 } from 'lucide-react';
 import { ModalAlert, useModalAlert } from '../components/ModalAlert';
 
 export function PublicSchedule({ slug: propSlug }) {
@@ -37,6 +37,10 @@ export function PublicSchedule({ slug: propSlug }) {
     complemento: '',
   });
 
+  const [cepInput, setCepInput] = useState('');
+  const [loadingCep, setLoadingCep] = useState(false);
+  const [loadingGps, setLoadingGps] = useState(false);
+
   // Modal Sucesso
   const [showSucessoModal, setShowSucessoModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -53,8 +57,76 @@ export function PublicSchedule({ slug: propSlug }) {
     if (tipoAtendimento === 'domicilio') {
       return profissionais.filter(p => p.aceita_atendimento_externo === true || String(p.aceita_atendimento_externo) === 'true');
     }
-    return profissionais;
+    return [];
   }, [profissionais, tipoAtendimento]);
+
+  // Busca Endereço por ViaCEP API
+  const handleBuscarCep = async (overrideCep) => {
+    const targetCep = overrideCep || cepInput;
+    const cleanCep = targetCep.replace(/\D/g, '');
+    if (cleanCep.length !== 8) {
+      showAlert({ type: 'warning', title: 'CEP Inválido', message: 'Digite um CEP válido com 8 dígitos.' });
+      return;
+    }
+    setLoadingCep(true);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await res.json();
+      if (data.erro) {
+        showAlert({ type: 'error', title: 'CEP não encontrado', message: 'Não foi possível encontrar o endereço para o CEP informado.' });
+      } else {
+        setFormEndereco(prev => ({
+          ...prev,
+          rua: data.logradouro || prev.rua,
+          bairro: data.bairro || prev.bairro,
+          complemento: data.complemento || prev.complemento,
+        }));
+        showAlert({ type: 'success', title: 'Endereço Encontrado!', message: `${data.logradouro}, ${data.bairro}` });
+      }
+    } catch (e) {
+      showAlert({ type: 'error', title: 'Erro', message: 'Erro ao consultar serviço de CEP.' });
+    } finally {
+      setLoadingCep(false);
+    }
+  };
+
+  // Obter Localização via GPS do Navegador
+  const handleObterGps = () => {
+    if (!navigator.geolocation) {
+      showAlert({ type: 'info', title: 'GPS', message: 'Geolocalização não é suportada por este navegador.' });
+      return;
+    }
+    setLoadingGps(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+          const data = await res.json();
+          if (data && data.address) {
+            const addr = data.address;
+            const rua = addr.road || addr.street || addr.pedestrian || '';
+            const bairro = addr.suburb || addr.neighbourhood || addr.city_district || '';
+            setFormEndereco(prev => ({
+              ...prev,
+              rua: rua || prev.rua,
+              bairro: bairro || prev.bairro,
+            }));
+            showAlert({ type: 'success', title: 'Localização Capturada!', message: `Localizado próximo a: ${rua || 'Sua região'}. Por favor, confirme o número e complemento.` });
+          }
+        } catch (e) {
+          showAlert({ type: 'info', title: 'GPS Capturado', message: 'Coordenadas capturadas com sucesso. Preencha o nome da rua e número.' });
+        } finally {
+          setLoadingGps(false);
+        }
+      },
+      (err) => {
+        setLoadingGps(false);
+        showAlert({ type: 'warning', title: 'Permissão de GPS', message: 'Não foi possível obter sua localização. Utilize a busca por CEP ou preencha manualmente.' });
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
+  };
 
   useEffect(() => {
     if (slug) {
@@ -446,14 +518,14 @@ export function PublicSchedule({ slug: propSlug }) {
                             )}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <h4 className="font-extrabold text-base truncate" style={{ color: 'var(--color-text-primary)' }}>{s.nome}</h4>
-                            <p className="text-xs opacity-90 flex items-center gap-2 mt-1" style={{ color: 'var(--color-text-secondary)' }}>
-                              <span>{s.duracao_minutos} min</span>
-                              {s.descricao && <span className="truncate">• {s.descricao}</span>}
+                            <h4 className="font-extrabold text-sm sm:text-base leading-snug whitespace-normal break-words" style={{ color: 'var(--color-text-primary)' }}>{s.nome}</h4>
+                            <p className="text-xs opacity-90 flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+                              <span className="font-bold text-[11px] px-1.5 py-0.5 rounded bg-white/10">{s.duracao_minutos} min</span>
+                              {s.descricao && <span className="whitespace-normal break-words text-[11px]">{s.descricao}</span>}
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4 shrink-0">
+                        <div className="flex items-center gap-3 shrink-0">
                           <span className="font-black text-sm" style={{ color: 'var(--color-highlight)' }}>
                             R$ {parseFloat(s.preco).toFixed(2)}
                           </span>
@@ -504,7 +576,7 @@ export function PublicSchedule({ slug: propSlug }) {
                                       )}
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                      <h6 className="text-sm font-extrabold truncate" style={{ color: 'var(--color-text-primary)' }}>{sub.nome}</h6>
+                                      <h6 className="text-xs sm:text-sm font-extrabold leading-snug whitespace-normal break-words" style={{ color: 'var(--color-text-primary)' }}>{sub.nome}</h6>
                                       {sub.duracao_adicional_minutos && parseInt(sub.duracao_adicional_minutos, 10) > 0 && (
                                         <p className="text-[10px] opacity-80 mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
                                           +{sub.duracao_adicional_minutos} minutos adicionais
@@ -657,10 +729,53 @@ export function PublicSchedule({ slug: propSlug }) {
                 {/* ENDEREÇO DE ATENDIMENTO DOMICILIAR */}
                 {tipoAtendimento === 'domicilio' && (
                   <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-3">
-                    <div className="flex items-center gap-2 text-emerald-400">
-                      <Home className="h-4 w-4 shrink-0" />
-                      <h4 className="text-xs font-black uppercase tracking-wider">Endereço para Atendimento Domiciliar</h4>
+                    <div className="flex items-center justify-between gap-2 flex-wrap text-emerald-400">
+                      <div className="flex items-center gap-2">
+                        <Home className="h-4 w-4 shrink-0" />
+                        <h4 className="text-xs font-black uppercase tracking-wider">Endereço para Atendimento Domiciliar</h4>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleObterGps}
+                        disabled={loadingGps}
+                        className="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5 hover:bg-emerald-500/30 transition shadow-sm"
+                      >
+                        <Navigation className={`h-3.5 w-3.5 ${loadingGps ? 'animate-spin' : ''}`} />
+                        <span>{loadingGps ? 'Obtendo GPS...' : '📍 Usar Meu GPS'}</span>
+                      </button>
                     </div>
+
+                    {/* BUSCA POR CEP (ViaCEP) */}
+                    <div className="p-3 rounded-xl bg-black/20 border border-white/5 space-y-2">
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-300">
+                        🔍 Preenchimento Rápido por CEP (ViaCEP)
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={cepInput}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setCepInput(val);
+                            if (val.replace(/\D/g, '').length === 8) {
+                              handleBuscarCep(val);
+                            }
+                          }}
+                          placeholder="Ex: 01001-000"
+                          maxLength={9}
+                          className="flex-1 rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleBuscarCep()}
+                          disabled={loadingCep}
+                          className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 transition shadow"
+                        >
+                          {loadingCep ? 'Buscando...' : 'Buscar CEP'}
+                        </button>
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="sm:col-span-2">
                         <label className="block text-[10px] font-bold uppercase tracking-wider opacity-80 mb-1" style={{ color: 'var(--color-text-secondary)' }}>Rua / Logradouro *</label>
