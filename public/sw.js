@@ -43,7 +43,10 @@ function normalizeNotificationPayload(raw = {}) {
                 url: notificationUrl,
                 agendamento_id: appointmentId
             },
-            actions: [{ action: 'open', title: 'Abrir agenda' }]
+            actions: raw.actions || [
+                { action: 'confirm_whatsapp', title: '✅ Confirmar & WhatsApp' },
+                { action: 'open_agenda', title: '📅 Ver na Agenda' }
+            ]
         }
     };
 }
@@ -84,9 +87,35 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-    const targetUrl = new URL(event.notification.data?.url || DEFAULT_URL, self.registration.scope);
+    const action = event.action;
+    const data = event.notification.data || {};
+    const confirmUrl = data.confirmUrl;
+    const whatsapp = data.whatsapp;
+    const clienteNome = data.clienteNome || 'Cliente';
+    const servicoNome = data.servicoNome || 'Serviço';
+    const dataHoraFormatted = data.dataHoraFormatted || '';
+    const targetUrl = new URL(data.url || DEFAULT_URL, self.registration.scope);
 
     event.waitUntil((async () => {
+        if (action === 'confirm_whatsapp') {
+            // 1. Confirmar o agendamento no banco de dados em segundo plano via backend API
+            if (confirmUrl) {
+                try {
+                    await fetch(confirmUrl, { method: 'POST' });
+                } catch (e) {
+                    console.warn('[SW CONFIRM ERROR]', e);
+                }
+            }
+
+            // 2. Disparar abertura direta do WhatsApp Web/App com a mensagem configurada
+            if (whatsapp) {
+                const msgText = `Olá *${clienteNome}*, seu agendamento para *${servicoNome}* no dia *${dataHoraFormatted}* foi *CONFIRMADO* com sucesso! 🚀`;
+                const waUrl = `https://api.whatsapp.com/send?phone=${whatsapp}&text=${encodeURIComponent(msgText)}`;
+                return clients.openWindow ? clients.openWindow(waUrl) : undefined;
+            }
+        }
+
+        // Se clicou na notificação ou no botão "Ver na Agenda"
         const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
         const existingClient = windowClients.find(client => {
             const clientUrl = new URL(client.url);
