@@ -117,27 +117,21 @@ self.addEventListener('notificationclick', (event) => {
             ? `https://api.whatsapp.com/send?phone=${cleanNum}&text=${encodeURIComponent(msgText)}`
             : targetUrl.href;
 
-        // 3. EXECUTAR clients.openWindow(waUrl) NO PRIMEIRO TICK DA PROMISE (preserva o token de gesto do usuário no Android/iOS)
+        // 3. Notificar a janela da PWA para disparar a abertura do WhatsApp via esquema nativo
         event.waitUntil((async () => {
-            let windowOpened = false;
+            const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+            if (windowClients && windowClients.length > 0) {
+                for (const c of windowClients) {
+                    c.postMessage({ type: 'OPEN_WHATSAPP', url: waUrl });
+                }
+                return windowClients[0].focus();
+            }
 
             if (clients.openWindow) {
                 try {
-                    const client = await clients.openWindow(waUrl);
-                    if (client) windowOpened = true;
+                    await clients.openWindow(waUrl);
                 } catch (e) {
                     console.warn('[SW OPEN WINDOW WARN]', e);
-                }
-            }
-
-            // Fallback se openWindow não abrir (ex: PWA instalada bloqueando popup externo)
-            if (!windowOpened) {
-                const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
-                if (windowClients && windowClients.length > 0) {
-                    for (const c of windowClients) {
-                        c.postMessage({ type: 'OPEN_WHATSAPP', url: waUrl });
-                    }
-                    windowClients[0].focus();
                 }
             }
         })());
