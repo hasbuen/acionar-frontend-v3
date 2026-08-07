@@ -50,12 +50,14 @@ export function Servicos({ setActiveTab }) {
     descricao: '',
     duracao_minutos: 60,
     preco: '',
+    foto_url: '',
   });
 
   const [formSubservico, setFormSubservico] = useState({
     nome: '',
     preco_adicional: '',
     duracao_adicional_minutos: 15,
+    foto_url: '',
   });
   const [produtosDisponiveis, setProdutosDisponiveis] = useState([]);
   const [materialModal, setMaterialModal] = useState(null);
@@ -81,6 +83,26 @@ export function Servicos({ setActiveTab }) {
     }
   };
 
+  const handleImageUpload = async (e, type, callback) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = async () => {
+      const base64 = reader.result;
+      try {
+        const res = await apiRequest('/config/upload-image', 'POST', {
+          type,
+          imageBase64: base64
+        });
+        callback(res.foto_url);
+      } catch (err) {
+        showAlert({ type: 'error', message: err.message || 'Erro ao enviar foto.' });
+      }
+    };
+  };
+
   const handleOpenServicoModal = (servico = null) => {
     if (servico) {
       setEditingServico(servico);
@@ -89,10 +111,11 @@ export function Servicos({ setActiveTab }) {
         descricao: servico.descricao || '',
         duracao_minutos: servico.duracao_minutos || 60,
         preco: servico.preco || '',
+        foto_url: servico.foto_url || '',
       });
     } else {
       setEditingServico(null);
-      setFormServico({ nome: '', descricao: '', duracao_minutos: 60, preco: '' });
+      setFormServico({ nome: '', descricao: '', duracao_minutos: 60, preco: '', foto_url: '' });
     }
     setShowModalServico(true);
   };
@@ -148,10 +171,11 @@ export function Servicos({ setActiveTab }) {
         nome: subservico.nome,
         preco_adicional: subservico.preco_adicional || '',
         duracao_adicional_minutos: subservico.duracao_adicional_minutos || 15,
+        foto_url: subservico.foto_url || '',
       });
     } else {
       setEditingSubservico(null);
-      setFormSubservico({ nome: '', preco_adicional: '', duracao_adicional_minutos: 15 });
+      setFormSubservico({ nome: '', preco_adicional: '', duracao_adicional_minutos: 15, foto_url: '' });
     }
     setShowModalSubservico(true);
   };
@@ -462,6 +486,33 @@ export function Servicos({ setActiveTab }) {
             </div>
 
             <form onSubmit={handleSaveServico} className="space-y-4">
+              <div className="flex flex-col items-center gap-3 pb-2 border-b border-slate-100 dark:border-slate-800">
+                <div className="relative group h-24 w-24 rounded-2xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-center overflow-hidden">
+                  {formServico.foto_url ? (
+                    <img src={formServico.foto_url} alt="Serviço" className="h-full w-full object-cover" />
+                  ) : (
+                    <Scissors className="h-8 w-8 text-slate-400" />
+                  )}
+                  <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[10px] font-black text-white cursor-pointer uppercase tracking-wider">
+                    Alterar
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={(e) => handleImageUpload(e, 'servicos', (url) => setFormServico(prev => ({ ...prev, foto_url: url })))}
+                      className="hidden" 
+                    />
+                  </label>
+                </div>
+                {formServico.foto_url && (
+                  <button 
+                    type="button" 
+                    onClick={() => setFormServico(prev => ({ ...prev, foto_url: '' }))}
+                    className="text-[10px] font-black uppercase text-red-500 hover:text-red-600 transition"
+                  >
+                    Remover Foto
+                  </button>
+                )}
+              </div>
               <div>
                 <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">NOME DO SERVIÇO</label>
                 <input
@@ -621,6 +672,33 @@ export function Servicos({ setActiveTab }) {
 
 
             <form onSubmit={handleSaveSubservico} className="space-y-4">
+              <div className="flex flex-col items-center gap-3 pb-2 border-b border-slate-100 dark:border-slate-800">
+                <div className="relative group h-20 w-20 rounded-2xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-center overflow-hidden">
+                  {formSubservico.foto_url ? (
+                    <img src={formSubservico.foto_url} alt="Subserviço" className="h-full w-full object-cover" />
+                  ) : (
+                    <Boxes className="h-6 w-6 text-slate-400" />
+                  )}
+                  <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[10px] font-black text-white cursor-pointer uppercase tracking-wider">
+                    Alterar
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={(e) => handleImageUpload(e, 'subservicos', (url) => setFormSubservico(prev => ({ ...prev, foto_url: url })))}
+                      className="hidden" 
+                    />
+                  </label>
+                </div>
+                {formSubservico.foto_url && (
+                  <button 
+                    type="button" 
+                    onClick={() => setFormSubservico(prev => ({ ...prev, foto_url: '' }))}
+                    className="text-[10px] font-black uppercase text-red-500 hover:text-red-600 transition"
+                  >
+                    Remover Foto
+                  </button>
+                )}
+              </div>
               <div>
                 <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">NOME DO ADICIONAL</label>
                 <input

@@ -508,7 +508,17 @@ export function Estoque() {
                           const file = e.target.files?.[0]; 
                           if (!file) return; 
                           const reader = new FileReader(); 
-                          reader.onload = () => setForm(prev => ({ ...prev, imagem_url: reader.result })); 
+                          reader.onload = async () => { 
+                            try {
+                              const res = await apiRequest('/config/upload-image', 'POST', {
+                                type: 'produtos',
+                                imageBase64: reader.result
+                              });
+                              setForm(prev => ({ ...prev, imagem_url: res.foto_url })); 
+                            } catch (err) {
+                              showAlert({ type: 'error', message: err.message || 'Erro ao enviar foto.' });
+                            }
+                          }; 
                           reader.readAsDataURL(file); 
                         }} 
                         className="mt-1 block w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-4 py-3 text-xs font-semibold text-slate-700 dark:text-slate-300 file:mr-3 file:rounded-xl file:border-0 file:bg-blue-600 file:px-3 file:py-2 file:text-xs file:font-black file:text-white" 
