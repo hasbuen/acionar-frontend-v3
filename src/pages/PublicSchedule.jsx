@@ -48,6 +48,14 @@ export function PublicSchedule({ slug: propSlug }) {
 
   const todayISO = new Date().toISOString().split('T')[0];
 
+  const isDispositivoMovel = React.useMemo(() => {
+    if (typeof window === 'undefined') return true;
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera || '';
+    const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile|CriOS/i.test(userAgent);
+    const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    return isMobileUA || (hasTouch && window.innerWidth < 1024);
+  }, []);
+
   const temAtendimentoDomicilio = (profissionais || []).some(
     p => p.aceita_atendimento_externo === true || String(p.aceita_atendimento_externo) === 'true'
   );
@@ -879,11 +887,24 @@ export function PublicSchedule({ slug: propSlug }) {
                       <button
                         type="button"
                         onClick={handleObterGps}
-                        disabled={loadingGps}
-                        style={{ backgroundColor: 'rgba(var(--color-primary-rgb), 0.2)', borderColor: 'rgba(var(--color-primary-rgb), 0.4)', color: 'var(--color-text-primary)' }}
-                        className="px-3 py-1.5 rounded-xl border text-xs font-extrabold flex items-center gap-2 transition hover:brightness-110 shadow-sm"
+                        disabled={loadingGps || !isDispositivoMovel}
+                        title={
+                          !isDispositivoMovel
+                            ? 'GPS disponível apenas em dispositivos móveis (celulares/tablets). Por favor, utilize a busca por CEP.'
+                            : 'Obter localização exata via GPS do dispositivo'
+                        }
+                        style={
+                          isDispositivoMovel
+                            ? { backgroundColor: 'rgba(var(--color-primary-rgb), 0.2)', borderColor: 'rgba(var(--color-primary-rgb), 0.4)', color: 'var(--color-text-primary)' }
+                            : {}
+                        }
+                        className={`px-3 py-1.5 rounded-xl border text-xs font-extrabold flex items-center gap-2 transition shadow-sm ${
+                          !isDispositivoMovel
+                            ? 'opacity-40 cursor-not-allowed bg-white/5 border-white/10 text-white/40'
+                            : 'hover:brightness-110'
+                        }`}
                       >
-                        <LocateFixed className={`h-4 w-4 ${loadingGps ? 'animate-spin' : ''}`} style={{ color: 'var(--color-highlight)' }} />
+                        <LocateFixed className={`h-4 w-4 ${loadingGps ? 'animate-spin' : ''}`} style={isDispositivoMovel ? { color: 'var(--color-highlight)' } : {}} />
                         <span>{loadingGps ? 'Obtendo GPS...' : 'Usar Meu GPS'}</span>
                       </button>
                     </div>
