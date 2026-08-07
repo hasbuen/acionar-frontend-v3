@@ -236,6 +236,8 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
     cor_primaria: '#0d9488',
     cor_destaque: '#f59e0b',
     cor_fundo: '#0f172a',
+    cor_texto_principal: '#ffffff',
+    cor_texto_secundario: '#94a3b8',
     novo_slug: '',
   });
 
@@ -248,6 +250,8 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
         cor_primaria: tenant.cor_primaria || '#0d9488',
         cor_destaque: tenant.cor_destaque || '#f59e0b',
         cor_fundo: tenant.cor_fundo || '#0f172a',
+        cor_texto_principal: tenant.cor_texto_principal || '#ffffff',
+        cor_texto_secundario: tenant.cor_texto_secundario || '#94a3b8',
         novo_slug: tenant.slug || '',
       });
     }
@@ -605,6 +609,26 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
                       type="color"
                       value={form.cor_fundo}
                       onChange={(e) => setForm({ ...form, cor_fundo: e.target.value })}
+                      className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer p-0.5 bg-white dark:bg-slate-950"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 mt-3">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Cor Texto Principal</label>
+                    <input
+                      type="color"
+                      value={form.cor_texto_principal}
+                      onChange={(e) => setForm({ ...form, cor_texto_principal: e.target.value })}
+                      className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer p-0.5 bg-white dark:bg-slate-950"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Cor Texto Secundário</label>
+                    <input
+                      type="color"
+                      value={form.cor_texto_secundario}
+                      onChange={(e) => setForm({ ...form, cor_texto_secundario: e.target.value })}
                       className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer p-0.5 bg-white dark:bg-slate-950"
                     />
                   </div>

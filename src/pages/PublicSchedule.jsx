@@ -186,6 +186,8 @@ export function PublicSchedule({ slug: propSlug }) {
   const primaryColor = tenant.cor_primaria || '#2563eb';
   const highlightColor = tenant.cor_destaque || '#f59e0b';
   const bgColor = tenant.cor_fundo || '#020617';
+  const textPrimary = tenant.cor_texto_principal || '#ffffff';
+  const textSecondary = tenant.cor_texto_secundario || '#94a3b8';
 
   // Helper para lidar com opacidade de HEX
   const hexToRgb = (hex) => {
@@ -198,12 +200,14 @@ export function PublicSchedule({ slug: propSlug }) {
     '--color-primary-rgb': hexToRgb(primaryColor),
     '--color-highlight': highlightColor,
     '--color-bg': bgColor,
+    '--color-text-primary': textPrimary,
+    '--color-text-secondary': textSecondary,
   };
 
   return (
     <div 
       className="min-h-[100dvh] flex flex-col justify-between font-sans transition-colors duration-500" 
-      style={{ backgroundColor: 'var(--color-bg)', color: '#f1f5f9', ...customStyles }}
+      style={{ backgroundColor: 'var(--color-bg)', color: 'var(--color-text-primary)', ...customStyles }}
     >
       <style>{`
         .step-enter { animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
@@ -239,8 +243,8 @@ export function PublicSchedule({ slug: propSlug }) {
               </div>
             )}
             <div className="flex flex-col">
-              <span className="text-[0.65rem] font-bold uppercase tracking-widest opacity-60">Agendamento Online</span>
-              <h1 className="text-xl font-extrabold tracking-tight text-white">{tenant.nome_empresa}</h1>
+              <span className="text-[0.65rem] font-bold uppercase tracking-widest opacity-60" style={{ color: 'var(--color-text-secondary)' }}>Agendamento Online</span>
+              <h1 className="text-xl font-extrabold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{tenant.nome_empresa}</h1>
             </div>
           </div>
         </div>
@@ -281,8 +285,8 @@ export function PublicSchedule({ slug: propSlug }) {
           {currentStep === 1 && (
             <div className="step-enter space-y-5">
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-extrabold text-white">O que você deseja fazer?</h2>
-                <p className="text-sm opacity-60 mt-1">Selecione o serviço ideal para você.</p>
+                <h2 className="text-2xl font-extrabold" style={{ color: 'var(--color-text-primary)' }}>O que você deseja fazer?</h2>
+                <p className="text-sm opacity-80 mt-1" style={{ color: 'var(--color-text-secondary)' }}>Selecione o serviço ideal para você.</p>
               </div>
 
               <div className="grid gap-3">
@@ -297,8 +301,8 @@ export function PublicSchedule({ slug: propSlug }) {
                       }`}
                     >
                       <div className="min-w-0 flex-1">
-                        <h4 className="font-extrabold text-white text-base truncate">{s.nome}</h4>
-                        <p className="text-xs opacity-60 flex items-center gap-2 mt-1">
+                        <h4 className="font-extrabold text-base truncate" style={{ color: 'var(--color-text-primary)' }}>{s.nome}</h4>
+                        <p className="text-xs opacity-90 flex items-center gap-2 mt-1" style={{ color: 'var(--color-text-secondary)' }}>
                           <span>{s.duracao_minutos} min</span>
                           {s.descricao && <span>• {s.descricao}</span>}
                         </p>
@@ -322,7 +326,7 @@ export function PublicSchedule({ slug: propSlug }) {
               {/* Subserviços */}
               {selectedServico && subservicos.length > 0 && (
                 <div className="step-enter pt-4 mt-2 border-t border-white/5">
-                  <h3 className="text-sm font-extrabold text-white mb-3 flex items-center gap-2">
+                  <h3 className="text-sm font-extrabold mb-3 flex items-center gap-2" style={{ color: 'var(--color-text-primary)' }}>
                     <Layers className="h-4 w-4" style={{ color: 'var(--color-primary)' }}/>
                     Adicionar Variação (Opcional)
                   </h3>
@@ -338,7 +342,7 @@ export function PublicSchedule({ slug: propSlug }) {
                           }`}
                         >
                           <div className="min-w-0">
-                            <h5 className="text-sm font-bold text-white truncate">{sub.nome}</h5>
+                            <h5 className="text-sm font-bold truncate" style={{ color: 'var(--color-text-primary)' }}>{sub.nome}</h5>
                           </div>
                           <div className="text-right shrink-0">
                             <span className="block text-xs font-extrabold" style={{ color: 'var(--color-highlight)' }}>
@@ -358,54 +362,80 @@ export function PublicSchedule({ slug: propSlug }) {
           {currentStep === 2 && (
             <div className="step-enter space-y-6">
                <div className="text-center mb-6">
-                <h2 className="text-2xl font-extrabold text-white">Quando será?</h2>
-                <p className="text-sm opacity-60 mt-1">Escolha a melhor data e horário.</p>
+                <h2 className="text-2xl font-extrabold" style={{ color: 'var(--color-text-primary)' }}>Quando será?</h2>
+                <p className="text-sm opacity-80 mt-1" style={{ color: 'var(--color-text-secondary)' }}>Escolha a melhor data e horário.</p>
               </div>
 
               <div className="bg-white/5 p-5 rounded-3xl border border-white/5 space-y-5">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest opacity-50 mb-2">Selecione o Dia</label>
+                  <label className="block text-xs font-bold uppercase tracking-widest opacity-80 mb-2" style={{ color: 'var(--color-text-secondary)' }}>Selecione o Dia</label>
                   <input
                     type="date"
                     min={todayISO}
                     value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
+                    onChange={(e) => {
+                      const newDate = e.target.value;
+                      if (newDate < todayISO) {
+                        setSelectedDate(todayISO);
+                        setSelectedTime('');
+                      } else {
+                        setSelectedDate(newDate);
+                        setSelectedTime('');
+                      }
+                    }}
                     required
                     className="w-full rounded-2xl bg-black/20 border border-white/10 px-4 py-3.5 text-base text-white focus:outline-none focus:border-white/30 transition-colors font-medium shadow-inner color-scheme-dark"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-xs font-bold uppercase tracking-widest opacity-50 mb-2">Horários Livres</label>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 max-h-56 overflow-y-auto p-2 border border-white/5 rounded-2xl bg-black/20 shadow-inner">
-                    {timeSlots.map((slot) => {
-                      const isSelected = selectedTime === slot.time;
-                      return slot.available ? (
-                        <button
-                          key={slot.time}
-                          type="button"
-                          onClick={() => setSelectedTime(slot.time)}
-                          className={`px-2 py-3 rounded-xl text-sm text-center font-extrabold transition-all border ${
-                            isSelected
-                              ? 'text-white border-transparent scale-105'
-                              : 'border-white/10 text-white/70 hover:bg-white/10'
-                          }`}
-                          style={{ background: isSelected ? 'var(--color-primary)' : 'transparent', boxShadow: isSelected ? '0 8px 20px -5px rgba(var(--color-primary-rgb), 0.5)' : 'none' }}
-                        >
-                          {slot.time}
-                        </button>
-                      ) : (
-                        <button
-                          key={slot.time}
-                          type="button"
-                          disabled
-                          className="px-2 py-3 rounded-xl border border-white/5 bg-white/5 text-white/30 font-semibold text-sm text-center line-through cursor-not-allowed"
-                        >
-                          {slot.time}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <label className="block text-xs font-bold uppercase tracking-widest opacity-80 mb-2" style={{ color: 'var(--color-text-secondary)' }}>Horários Livres</label>
+                  
+                  {timeSlots.every(slot => !slot.available) ? (
+                    <div className="p-4 border border-white/5 rounded-2xl bg-black/20 text-center space-y-2 shadow-inner">
+                      <div className="h-10 w-10 mx-auto rounded-full bg-white/5 flex items-center justify-center mb-2">
+                        <Moon className="h-5 w-5 opacity-50" style={{ color: 'var(--color-text-secondary)' }} />
+                      </div>
+                      <p className="text-sm font-extrabold" style={{ color: 'var(--color-text-primary)' }}>Expediente Encerrado</p>
+                      <p className="text-xs opacity-70" style={{ color: 'var(--color-text-secondary)' }}>
+                        Não há mais horários disponíveis para esta data. Por favor, selecione o próximo dia útil.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 max-h-56 overflow-y-auto p-2 border border-white/5 rounded-2xl bg-black/20 shadow-inner">
+                      {timeSlots.map((slot) => {
+                        const isSelected = selectedTime === slot.time;
+                        return slot.available ? (
+                          <button
+                            key={slot.time}
+                            type="button"
+                            onClick={() => setSelectedTime(slot.time)}
+                            className={`px-2 py-3 rounded-xl text-sm text-center font-extrabold transition-all border ${
+                              isSelected
+                                ? 'border-transparent scale-105 text-white'
+                                : 'border-white/10 hover:bg-white/10'
+                            }`}
+                            style={{ 
+                              background: isSelected ? 'var(--color-primary)' : 'transparent', 
+                              boxShadow: isSelected ? '0 8px 20px -5px rgba(var(--color-primary-rgb), 0.5)' : 'none',
+                              color: isSelected ? '#ffffff' : 'var(--color-text-primary)'
+                            }}
+                          >
+                            {slot.time}
+                          </button>
+                        ) : (
+                          <button
+                            key={slot.time}
+                            type="button"
+                            disabled
+                            className="px-2 py-3 rounded-xl border border-white/5 bg-white/5 text-white/30 font-semibold text-sm text-center line-through cursor-not-allowed"
+                          >
+                            {slot.time}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -415,43 +445,46 @@ export function PublicSchedule({ slug: propSlug }) {
           {currentStep === 3 && (
             <div className="step-enter space-y-6">
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-extrabold text-white">Quase lá!</h2>
-                <p className="text-sm opacity-60 mt-1">Preencha seus dados para finalizar.</p>
+                <h2 className="text-2xl font-extrabold" style={{ color: 'var(--color-text-primary)' }}>Quase lá!</h2>
+                <p className="text-sm opacity-80 mt-1" style={{ color: 'var(--color-text-secondary)' }}>Preencha seus dados para finalizar.</p>
               </div>
 
               <form id="agendamento-form" onSubmit={handleSubmitAgendamento} className="bg-white/5 p-5 sm:p-6 rounded-3xl border border-white/5 space-y-4 shadow-lg">
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-widest opacity-50 mb-1.5">Seu Nome Completo</label>
+                  <label className="block text-[11px] font-bold uppercase tracking-widest opacity-80 mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>Seu Nome Completo</label>
                   <input
                     type="text"
                     required
                     value={form.cliente_nome}
                     onChange={(e) => setForm({ ...form, cliente_nome: e.target.value })}
                     placeholder="Ex: Maria Oliveira"
-                    className="w-full rounded-2xl bg-black/20 border border-white/10 px-4 py-3.5 text-base text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-colors font-medium shadow-inner"
+                    style={{ color: 'var(--color-text-primary)' }}
+                    className="w-full rounded-2xl bg-black/20 border border-white/10 px-4 py-3.5 text-base placeholder:opacity-50 focus:outline-none focus:border-white/30 transition-colors font-medium shadow-inner"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-widest opacity-50 mb-1.5">Seu WhatsApp</label>
+                  <label className="block text-[11px] font-bold uppercase tracking-widest opacity-80 mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>Seu WhatsApp</label>
                   <input
                     type="tel"
                     required
                     value={form.cliente_whatsapp}
                     onChange={(e) => setForm({ ...form, cliente_whatsapp: e.target.value })}
                     placeholder="(11) 99999-9999"
-                    className="w-full rounded-2xl bg-black/20 border border-white/10 px-4 py-3.5 text-base text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-colors font-medium shadow-inner"
+                    style={{ color: 'var(--color-text-primary)' }}
+                    className="w-full rounded-2xl bg-black/20 border border-white/10 px-4 py-3.5 text-base placeholder:opacity-50 focus:outline-none focus:border-white/30 transition-colors font-medium shadow-inner"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-widest opacity-50 mb-1.5">Observações (Opcional)</label>
+                  <label className="block text-[11px] font-bold uppercase tracking-widest opacity-80 mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>Observações (Opcional)</label>
                   <textarea
                     rows="2"
                     value={form.observacao}
                     onChange={(e) => setForm({ ...form, observacao: e.target.value })}
                     placeholder="Ex: Primeira vez no espaço..."
-                    className="w-full rounded-2xl bg-black/20 border border-white/10 px-4 py-3 text-base text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-colors font-medium shadow-inner resize-none"
+                    style={{ color: 'var(--color-text-primary)' }}
+                    className="w-full rounded-2xl bg-black/20 border border-white/10 px-4 py-3 text-base placeholder:opacity-50 focus:outline-none focus:border-white/30 transition-colors font-medium shadow-inner resize-none"
                   />
                 </div>
               </form>
@@ -501,7 +534,10 @@ export function PublicSchedule({ slug: propSlug }) {
       {/* MODAL DE SUCESSO */}
       {showSucessoModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-md p-4" style={{ animation: 'fadeUp 0.3s ease-out' }}>
-          <div className="bg-slate-900 border border-white/10 rounded-[2.5rem] w-full max-w-sm p-8 shadow-2xl text-center space-y-6 relative overflow-hidden">
+          <div 
+            className="border border-white/10 rounded-[2.5rem] w-full max-w-sm p-8 shadow-2xl text-center space-y-6 relative overflow-hidden"
+            style={{ background: 'var(--color-bg)' }}
+          >
             <div className="absolute top-0 left-0 w-full h-2" style={{ background: 'var(--color-primary)' }}></div>
             <div 
               className="h-20 w-20 rounded-full flex items-center justify-center mx-auto shadow-2xl"
@@ -510,8 +546,8 @@ export function PublicSchedule({ slug: propSlug }) {
               <Check className="h-10 w-10" />
             </div>
             <div className="space-y-3">
-              <h3 className="text-2xl font-black text-white">Prontinho! 🎉</h3>
-              <p className="text-sm opacity-60 font-medium leading-relaxed">
+              <h3 className="text-2xl font-black" style={{ color: 'var(--color-text-primary)' }}>Prontinho! 🎉</h3>
+              <p className="text-sm opacity-80 font-medium leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
                 Sua solicitação foi enviada. O estabelecimento analisará seu pedido e você receberá o retorno no WhatsApp.
               </p>
             </div>
