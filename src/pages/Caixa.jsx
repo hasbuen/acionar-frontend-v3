@@ -786,6 +786,10 @@ export function Caixa() {
                     </tr>
                   );
                 })}
+              </tbody>
+            </table>
+          </div>
+        )}
 
       {showBaixaModal && baixaTarget && createPortal(
         <div className="fixed inset-0 z-[999999] h-screen w-screen flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
@@ -1376,10 +1380,6 @@ export function Caixa() {
         </div>,
         document.body
       )}
-              </tbody>
-            </table>
-          </div>
-        )}
       </div>
     </div>
   );
