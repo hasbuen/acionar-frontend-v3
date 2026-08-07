@@ -90,60 +90,103 @@ export function PublicSchedule({ slug: propSlug }) {
     }
   };
 
-  // Obter Localização via GPS do Navegador, capturar altitude/longitude e fazer busca por CEP automaticamente
+  // Obter Localização via GPS do Navegador com alta precisão (maximumAge: 0, zoom=18) e fallback multi-provedor
   const handleObterGps = () => {
     if (!navigator.geolocation) {
-      showAlert({ type: 'info', title: 'GPS', message: 'Geolocalização não é suportada por este navegador.' });
+      showAlert({ type: 'info', title: 'GPS Não Suportado', message: 'Geolocalização não é suportada neste navegador.' });
       return;
     }
     setLoadingGps(true);
+
+    const geoOptions = {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0 // Força leitura fresca em tempo real sem usar cache antigo
+    };
+
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        const { latitude, longitude, altitude } = position.coords;
-        console.log(`[GPS DETECTED] Latitude: ${latitude}, Longitude: ${longitude}, Altitude: ${altitude || 'N/A'}`);
+        const { latitude, longitude, accuracy, altitude } = position.coords;
+        console.log(`[GPS LIVE] Lat: ${latitude}, Lon: ${longitude}, Acc: ${accuracy}m, Alt: ${altitude || 'N/A'}`);
+
+        let cepEncontrado = null;
+        let ruaEncontrada = '';
+        let bairroEncontrado = '';
 
         try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
-          const data = await res.json();
-          if (data && data.address) {
-            const addr = data.address;
-            const cepEncontrado = addr.postcode ? addr.postcode.replace(/\D/g, '') : null;
-            const rua = addr.road || addr.street || addr.pedestrian || '';
-            const bairro = addr.suburb || addr.neighbourhood || addr.city_district || '';
+          // 1. Tentar OSM Nominatim com Nível de Zoom 18 (Nível de Rua/Edifício)
+          const resNom = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1&accept-language=pt-BR`
+          );
+          const dataNom = await resNom.json();
 
-            if (cepEncontrado && cepEncontrado.length === 8) {
-              const cepFormatado = cepEncontrado.replace(/^(\d{5})(\d{3})$/, '$1-$2');
-              setCepInput(cepFormatado);
-              await handleBuscarCep(cepFormatado);
-              showAlert({
-                type: 'success',
-                title: '📍 Localização Capturada!',
-                message: `CEP identificado (${cepFormatado}). Endereço preenchido automaticamente! Por favor, informe o número do imóvel.`
-              });
-            } else {
-              setFormEndereco(prev => ({
-                ...prev,
-                rua: rua || prev.rua,
-                bairro: bairro || prev.bairro,
-              }));
-              showAlert({
-                type: 'success',
-                title: '📍 Localização Capturada!',
-                message: `Endereço aproximado: ${rua || 'Sua região'}. Por favor, confirme o número e complemento.`
-              });
-            }
+          if (dataNom && dataNom.address) {
+            const addr = dataNom.address;
+            if (addr.postcode) cepEncontrado = addr.postcode.replace(/\D/g, '');
+            ruaEncontrada = addr.road || addr.street || addr.pedestrian || addr.footway || '';
+            bairroEncontrado = addr.suburb || addr.neighbourhood || addr.city_district || addr.residential || '';
           }
-        } catch (e) {
-          showAlert({ type: 'info', title: 'GPS Capturado', message: 'Coordenadas obtidas. Preencha seu CEP ou endereço manualmente.' });
-        } finally {
-          setLoadingGps(false);
+        } catch (errNom) {
+          console.warn('[GPS NOMINATIM WARN]', errNom);
         }
+
+        // 2. Se o CEP não veio do Nominatim, tentar BigDataCloud
+        if (!cepEncontrado || cepEncontrado.length !== 8) {
+          try {
+            const resBdc = await fetch(
+              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=pt`
+            );
+            const dataBdc = await resBdc.json();
+            if (dataBdc) {
+              if (dataBdc.postcode) cepEncontrado = dataBdc.postcode.replace(/\D/g, '');
+              if (!ruaEncontrada && dataBdc.locality) ruaEncontrada = dataBdc.locality;
+              if (!bairroEncontrado && dataBdc.city) bairroEncontrado = dataBdc.city;
+            }
+          } catch (errBdc) {
+            console.warn('[GPS BIGDATACLOUD WARN]', errBdc);
+          }
+        }
+
+        // 3. Se um CEP válido de 8 dígitos foi identificado, consulta via ViaCEP para garantia de exatidão no Brasil
+        if (cepEncontrado && cepEncontrado.length === 8) {
+          const cepFormatado = cepEncontrado.replace(/^(\d{5})(\d{3})$/, '$1-$2');
+          setCepInput(cepFormatado);
+          await handleBuscarCep(cepFormatado);
+          showAlert({
+            type: 'success',
+            title: '📍 Localização por GPS Identificada!',
+            message: `CEP ${cepFormatado} obtido com sucesso! Endereço preenchido automaticamente. Por favor, confirme o número do imóvel.`
+          });
+        } else if (ruaEncontrada || bairroEncontrado) {
+          setFormEndereco(prev => ({
+            ...prev,
+            rua: ruaEncontrada || prev.rua,
+            bairro: bairroEncontrado || prev.bairro,
+          }));
+          showAlert({
+            type: 'success',
+            title: '📍 Localização por GPS Obtida!',
+            message: `Próximo a: ${ruaEncontrada || 'Sua localização'} ${bairroEncontrado ? `(${bairroEncontrado})` : ''}. Por favor, confirme a rua, número e CEP.`
+          });
+        } else {
+          showAlert({
+            type: 'warning',
+            title: '📍 Precisão de Localização',
+            message: `Coordenadas obtidas (precisão ~${Math.round(accuracy)}m). Para garantia de endereço exato, digite seu CEP no campo abaixo.`
+          });
+        }
+        setLoadingGps(false);
       },
       (err) => {
         setLoadingGps(false);
-        showAlert({ type: 'warning', title: 'Permissão de GPS', message: 'Não foi possível obter sua localização por GPS. Utilize a busca por CEP.' });
+        console.error('[GPS ERROR]', err);
+        showAlert({
+          type: 'warning',
+          title: 'Permissão de GPS',
+          message: 'Não foi possível ler seu sinal de GPS. Por favor, digite seu CEP no campo abaixo.'
+        });
       },
-      { timeout: 10000, enableHighAccuracy: true }
+      geoOptions
     );
   };
 
