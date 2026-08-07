@@ -11,6 +11,21 @@ import {
   WalletCards, Wrench, X, Zap
 } from 'lucide-react';
 
+// Extrai a observação legível do campo que pode conter JSON interno com dados temporários do cliente
+function getDisplayObservacao(obs) {
+  if (!obs) return '';
+  if (typeof obs === 'string' && obs.trim().startsWith('{')) {
+    try {
+      const parsed = JSON.parse(obs);
+      if (parsed && parsed.temp_cliente_nome !== undefined) return parsed.observacao_cliente || '';
+    } catch (e) {}
+  }
+  if (typeof obs === 'object' && obs !== null && obs.temp_cliente_nome !== undefined) {
+    return obs.observacao_cliente || '';
+  }
+  return obs;
+}
+
 const filters = [
   ['todos', 'Todos'], ['hoje', 'Hoje'], ['solicitacoes', 'Solicitações'],
   ['agendado', 'Confirmados'], ['em_atendimento', 'Em Atendimento'],
@@ -209,9 +224,10 @@ function DetailsModal({ item, onClose, onUpdateStatus, onOpenMaintenance, onEdit
           <span className="font-semibold text-slate-500 dark:text-slate-400">Valor total</span>
           <strong className="text-emerald-600 dark:text-emerald-400 font-black text-base">R$ {Number(item.valor_total || 0).toFixed(2)}</strong>
         </div>
-        {item.observacao && (
+        
+        {getDisplayObservacao(item.observacao) && (
           <div className="rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/60 dark:border-slate-800/50 p-3.5 italic text-slate-700 dark:text-slate-300 text-xs">
-            “{item.observacao}”
+            “{getDisplayObservacao(item.observacao)}”
           </div>
         )}
 
@@ -293,7 +309,7 @@ function DetailsModal({ item, onClose, onUpdateStatus, onOpenMaintenance, onEdit
 }
 
 function NotesModal({ item, onClose, onSave }) {
-  const [text, setText] = useState(item.observacao || '');
+  const [text, setText] = useState(() => getDisplayObservacao(item.observacao));
   const [saving, setSaving] = useState(false);
   const [newBadgeText, setNewBadgeText] = useState('');
 
@@ -1034,7 +1050,7 @@ export function Agenda() {
                       <ActionButton kind="notes" label="Registrar observação" onClick={() => setModal({ type: 'notes', item })}>
                         <div className="relative flex items-center justify-center">
                           <MessageSquare className="h-4 w-4" />
-                          {item.observacao && (
+                          {getDisplayObservacao(item.observacao) && (
                             <span className="absolute -top-1.5 -right-1.5 flex h-3 w-3">
                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                               <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500 shadow-sm shadow-amber-500/50"></span>
