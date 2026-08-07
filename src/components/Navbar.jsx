@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { ModalAlert, useModalAlert } from './ModalAlert';
 import { useAuth } from '../context/AuthContext';
+import { apiRequest } from '../services/api';
 
 const NAV_ITEMS = [
   { id: 'agenda', label: 'Agenda', icon: Calendar },
