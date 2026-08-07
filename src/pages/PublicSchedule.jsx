@@ -98,9 +98,9 @@ export function PublicSchedule({ slug: propSlug }) {
         zoomControl: true
       });
 
-      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap'
+      window.L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        attribution: '© Google Maps'
       }).addTo(map);
 
       const customIcon = window.L.divIcon({
@@ -1311,9 +1311,9 @@ function FullscreenMapModal({ onClose, markerPos, onLocationSelected }) {
       zoomControl: true
     });
 
-    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap'
+    window.L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+      maxZoom: 20,
+      attribution: '© Google Maps'
     }).addTo(map);
 
     const customIcon = window.L.divIcon({
