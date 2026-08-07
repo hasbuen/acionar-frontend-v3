@@ -292,69 +292,89 @@ export function PublicSchedule({ slug: propSlug }) {
               <div className="grid gap-3">
                 {servicos.map((s) => {
                   const isSelected = selectedServico?.id === s.id;
+                  const hasSubservices = s.subservicos && s.subservicos.length > 0;
                   return (
                     <div
                       key={s.id}
                       onClick={() => handleSelectServico(s)}
-                      className={`p-4 rounded-3xl border border-white/5 cursor-pointer flex items-center justify-between gap-4 transition-all duration-200 bg-white/5 hover:bg-white/10 ${
-                        isSelected ? 'border-active scale-[1.02]' : ''
+                      className={`p-4 rounded-3xl border border-white/5 cursor-pointer flex flex-col gap-2 transition-all duration-300 bg-white/5 hover:bg-white/10 ${
+                        isSelected ? 'border-active scale-[1.01]' : ''
                       }`}
                     >
-                      <div className="min-w-0 flex-1">
-                        <h4 className="font-extrabold text-base truncate" style={{ color: 'var(--color-text-primary)' }}>{s.nome}</h4>
-                        <p className="text-xs opacity-90 flex items-center gap-2 mt-1" style={{ color: 'var(--color-text-secondary)' }}>
-                          <span>{s.duracao_minutos} min</span>
-                          {s.descricao && <span>• {s.descricao}</span>}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-4 shrink-0">
-                        <span className="font-black text-sm" style={{ color: 'var(--color-highlight)' }}>
-                          R$ {parseFloat(s.preco).toFixed(2)}
-                        </span>
-                        <div 
-                          className={`h-6 w-6 rounded-full flex items-center justify-center transition-colors border-2 ${isSelected ? 'border-transparent text-white' : 'border-white/20'}`}
-                          style={{ background: isSelected ? 'var(--color-primary)' : 'transparent' }}
-                        >
-                          {isSelected && <Check className="h-3.5 w-3.5" />}
+                      <div className="flex items-center justify-between gap-4 w-full">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-extrabold text-base truncate" style={{ color: 'var(--color-text-primary)' }}>{s.nome}</h4>
+                          <p className="text-xs opacity-90 flex items-center gap-2 mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+                            <span>{s.duracao_minutos} min</span>
+                            {s.descricao && <span>• {s.descricao}</span>}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-4 shrink-0">
+                          <span className="font-black text-sm" style={{ color: 'var(--color-highlight)' }}>
+                            R$ {parseFloat(s.preco).toFixed(2)}
+                          </span>
+                          <div 
+                            className={`h-6 w-6 rounded-full flex items-center justify-center transition-colors border-2 ${isSelected ? 'border-transparent text-white' : 'border-white/20'}`}
+                            style={{ background: isSelected ? 'var(--color-primary)' : 'transparent' }}
+                          >
+                            {isSelected && <Check className="h-3.5 w-3.5" />}
+                          </div>
                         </div>
                       </div>
+
+                      {/* Efeito Acordeão Expansível de Subserviços */}
+                      {hasSubservices && (
+                        <div 
+                          className={`overflow-hidden transition-all duration-500 ease-in-out ${
+                            isSelected ? 'max-h-[600px] opacity-100 mt-4 pt-4 border-t border-white/5' : 'max-h-0 opacity-0 pointer-events-none'
+                          }`}
+                        >
+                          <h5 className="text-[10px] font-black uppercase tracking-wider mb-3 text-slate-400 flex items-center gap-1.5">
+                            <Layers className="h-3.5 w-3.5 text-blue-400" /> Selecione uma Variação (Opcional):
+                          </h5>
+                          <div className="grid grid-cols-1 gap-2.5">
+                            {s.subservicos.map((sub) => {
+                              const isSubSelected = selectedSubservico?.id === sub.id;
+                              return (
+                                <div
+                                  key={sub.id}
+                                  onClick={(e) => {
+                                    e.stopPropagation(); // Evita recarregar/resetar a seleção do serviço pai
+                                    setSelectedSubservico(isSubSelected ? null : sub);
+                                  }}
+                                  className={`p-3.5 rounded-2xl border border-white/5 cursor-pointer flex items-center justify-between gap-3 transition-all bg-white/5 hover:bg-white/10 ${
+                                    isSubSelected ? 'border-active bg-white/10' : ''
+                                  }`}
+                                >
+                                  <div className="min-w-0 flex-1">
+                                    <h6 className="text-sm font-extrabold truncate" style={{ color: 'var(--color-text-primary)' }}>{sub.nome}</h6>
+                                    {sub.duracao_adicional && parseFloat(sub.duracao_adicional) > 0 && (
+                                      <p className="text-[10px] opacity-80 mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+                                        +{sub.duracao_adicional} minutos adicionais
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div className="text-right shrink-0 flex items-center gap-3">
+                                    <span className="block text-xs font-black" style={{ color: 'var(--color-highlight)' }}>
+                                      {parseFloat(sub.preco_adicional || 0) > 0 ? `+ R$ ${parseFloat(sub.preco_adicional).toFixed(2)}` : 'Incluso'}
+                                    </span>
+                                    <div 
+                                      className={`h-4.5 w-4.5 rounded-full flex items-center justify-center transition-colors border ${isSubSelected ? 'border-transparent text-white' : 'border-white/20'}`}
+                                      style={{ background: isSubSelected ? 'var(--color-primary)' : 'transparent' }}
+                                    >
+                                      {isSubSelected && <Check className="h-2.5 w-2.5" />}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
               </div>
-
-              {/* Subserviços */}
-              {selectedServico && subservicos.length > 0 && (
-                <div className="step-enter pt-4 mt-2 border-t border-white/5">
-                  <h3 className="text-sm font-extrabold mb-3 flex items-center gap-2" style={{ color: 'var(--color-text-primary)' }}>
-                    <Layers className="h-4 w-4" style={{ color: 'var(--color-primary)' }}/>
-                    Adicionar Variação (Opcional)
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {subservicos.map((sub) => {
-                      const isSubSelected = selectedSubservico?.id === sub.id;
-                      return (
-                        <div
-                          key={sub.id}
-                          onClick={() => setSelectedSubservico(isSubSelected ? null : sub)}
-                          className={`p-3.5 rounded-2xl border border-white/5 cursor-pointer flex items-center justify-between gap-2 transition-all bg-white/5 hover:bg-white/10 ${
-                            isSubSelected ? 'border-active' : ''
-                          }`}
-                        >
-                          <div className="min-w-0">
-                            <h5 className="text-sm font-bold truncate" style={{ color: 'var(--color-text-primary)' }}>{sub.nome}</h5>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <span className="block text-xs font-extrabold" style={{ color: 'var(--color-highlight)' }}>
-                              {parseFloat(sub.preco_adicional || 0) > 0 ? `+ R$ ${parseFloat(sub.preco_adicional).toFixed(2)}` : 'Incluso'}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
