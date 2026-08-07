@@ -4,7 +4,7 @@ import { apiRequest } from '../services/api';
 import {
   Plus, Wallet, Clock, ArrowDownRight, CheckCircle2, Trash2, X, List, Check,
   Hourglass, BarChart3, DollarSign, PieChart, Activity, Calendar, ArrowUpRight,
-  CreditCard, Banknote, QrCode, BadgeCheck
+  CreditCard, Banknote, QrCode, BadgeCheck, User, Package, FileText, Building2, Phone, UserPlus
 } from 'lucide-react';
 import { ModalAlert, useModalAlert } from '../components/ModalAlert';
 
@@ -25,6 +25,11 @@ export function Caixa() {
   });
 
   const [showModal, setShowModal] = useState(false);
+  const [activeTabModal, setActiveTabModal] = useState('avulso'); // 'avulso' | 'cliente' | 'produto' | 'conta'
+  const [clienteModo, setClienteModo] = useState('existente'); // 'existente' | 'novo'
+  const [novoCliente, setNovoCliente] = useState({ nome: '', whatsapp: '' });
+  const [contaSubTipo, setContaSubTipo] = useState('luz');
+
   const [form, setForm] = useState({
     tipo: 'entrada',
     descricao: '',
@@ -34,7 +39,7 @@ export function Caixa() {
     categoria: 'outros',
     cliente_id: '',
     produto_id: '',
-    quantidade_produto: '',
+    quantidade_produto: 1,
     valor_unitario: ''
   });
   const [clientes, setClientes] = useState([]);
@@ -137,16 +142,66 @@ export function Caixa() {
     }));
   };
 
+  const handleOpenNovaMovimentacao = () => {
+    setActiveTabModal('avulso');
+    setClienteModo('existente');
+    setNovoCliente({ nome: '', whatsapp: '' });
+    setForm({
+      tipo: 'entrada',
+      descricao: '',
+      valor: '',
+      forma_pagamento: 'pix',
+      status: 'pago',
+      categoria: 'outros',
+      cliente_id: '',
+      produto_id: '',
+      quantidade_produto: 1,
+      valor_unitario: ''
+    });
+    setShowModal(true);
+  };
+
   const handleCreateEntry = async (e) => {
     e.preventDefault();
     try {
+      let finalClienteId = form.cliente_id;
+
+      // Se estiver na aba cliente e cadastrando novo cliente
+      if (activeTabModal === 'cliente' && clienteModo === 'novo' && novoCliente.nome) {
+        try {
+          const cRes = await apiRequest('/clientes', 'POST', {
+            nome: novoCliente.nome,
+            whatsapp: novoCliente.whatsapp || undefined,
+          });
+          if (cRes && cRes.cliente) {
+            finalClienteId = cRes.cliente.id;
+            fetchAuxiliaryData();
+          }
+        } catch (cErr) {
+          console.warn('Não foi possível salvar novo cliente:', cErr);
+        }
+      }
+
+      let payloadCategoria = form.categoria;
+      if (activeTabModal === 'avulso') {
+        payloadCategoria = 'outros';
+      } else if (activeTabModal === 'cliente') {
+        payloadCategoria = 'cliente';
+      } else if (activeTabModal === 'produto') {
+        payloadCategoria = form.tipo === 'saida' ? 'compra_mercadoria' : 'venda_produto';
+      } else if (activeTabModal === 'conta') {
+        payloadCategoria = contaSubTipo || 'conta';
+      }
+
       await apiRequest('/caixa', 'POST', {
         ...form,
+        categoria: payloadCategoria,
         valor: parseFloat(form.valor),
-        cliente_id: form.cliente_id ? parseInt(form.cliente_id, 10) : undefined,
+        cliente_id: finalClienteId ? parseInt(finalClienteId, 10) : undefined,
         produto_id: form.produto_id ? parseInt(form.produto_id, 10) : undefined,
         quantidade_produto: form.quantidade_produto ? parseInt(form.quantidade_produto, 10) : undefined,
       });
+
       setShowModal(false);
       fetchCaixa();
     } catch (err) {
@@ -264,21 +319,7 @@ export function Caixa() {
         </div>
 
         <button
-          onClick={() => {
-            setForm({
-              tipo: 'entrada',
-              descricao: '',
-              valor: '',
-              forma_pagamento: 'pix',
-              status: 'pago',
-              categoria: 'outros',
-              cliente_id: '',
-              produto_id: '',
-              quantidade_produto: '',
-              valor_unitario: ''
-            });
-            setShowModal(true);
-          }}
+          onClick={handleOpenNovaMovimentacao}
           className="btn-animated inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-3.5 text-xs font-black text-white shadow-lg shadow-emerald-500/25 transition hover:opacity-90 w-full sm:w-auto shrink-0"
         >
           <Plus className="h-4 w-4" /> Nova Movimentação
@@ -745,192 +786,6 @@ export function Caixa() {
                     </tr>
                   );
                 })}
-                  {showModal && createPortal(
-        <div className="fixed inset-0 z-[999999] h-screen w-screen flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <h3 className="text-lg font-black text-slate-900 dark:text-white">Nova Movimentação</h3>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-800 dark:hover:text-white p-1 rounded-lg">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateEntry} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1 no-scrollbar">
-              <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">TIPO DE LANÇAMENTO</label>
-                <select
-                  value={form.tipo}
-                  onChange={(e) => {
-                    const type = e.target.value;
-                    setForm({
-                      ...form,
-                      tipo: type,
-                      categoria: 'outros',
-                      produto_id: '',
-                      quantidade_produto: '',
-                      valor_unitario: '',
-                      descricao: '',
-                      valor: ''
-                    });
-                  }}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
-                >
-                  <option value="entrada">Entrada (+)</option>
-                  <option value="saida">Saída (-)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">CATEGORIA</label>
-                <select
-                  value={form.categoria}
-                  onChange={(e) => {
-                    const cat = e.target.value;
-                    setForm({
-                      ...form,
-                      categoria: cat,
-                      produto_id: '',
-                      quantidade_produto: '',
-                      valor_unitario: '',
-                      descricao: '',
-                      valor: ''
-                    });
-                  }}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
-                >
-                  {form.tipo === 'entrada' ? (
-                    <>
-                      <option value="outros">Outros / Avulso</option>
-                      <option value="servico">Serviço / Atendimento</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="outros">Outros / Avulso</option>
-                      <option value="compra_mercadoria">Compra de Mercadoria (Estoque)</option>
-                      <option value="despesas">Despesas Gerais</option>
-                    </>
-                  )}
-                </select>
-              </div>
-
-              {/* Se for Compra de Mercadoria */}
-              {form.tipo === 'saida' && form.categoria === 'compra_mercadoria' && (
-                <>
-                  <div>
-                    <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">SELECIONE O PRODUTO</label>
-                    <select
-                      value={form.produto_id}
-                      onChange={(e) => handleProductChange(e.target.value)}
-                      required
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
-                    >
-                      <option value="">-- Selecione o produto --</option>
-                      {produtos.map(p => (
-                        <option key={p.id} value={p.id}>{p.nome} (Qtd atual: {p.quantidade})</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">QUANTIDADE</label>
-                      <input
-                        type="number"
-                        min="1"
-                        value={form.quantidade_produto}
-                        onChange={(e) => handleQtyChange(e.target.value)}
-                        required
-                        placeholder="Ex: 5"
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">CUSTO UNITÁRIO (R$)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={form.valor_unitario}
-                        onChange={(e) => handleUnitPriceChange(e.target.value)}
-                        required
-                        placeholder="0.00"
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* Vincular Cliente (Opcional) */}
-              {form.categoria !== 'compra_mercadoria' && (
-                <div>
-                  <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">VINCULAR CLIENTE (OPCIONAL)</label>
-                  <select
-                    value={form.cliente_id}
-                    onChange={(e) => setForm({ ...form, cliente_id: e.target.value })}
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
-                  >
-                    <option value="">-- Selecione o cliente --</option>
-                    {clientes.map(c => (
-                      <option key={c.id} value={c.id}>{c.nome} ({c.whatsapp || 'Sem whatsapp'})</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">STATUS</label>
-                <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
-                  <option value="pago">Pago / Recebido</option>
-                  <option value="pendente">Pendente / A Receber</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">DESCRIÇÃO</label>
-                <input
-                  type="text"
-                  value={form.descricao}
-                  onChange={(e) => setForm({ ...form, descricao: e.target.value })}
-                  placeholder="ex: Pagamento de Atendimento"
-                  required
-                  disabled={form.categoria === 'compra_mercadoria'}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 disabled:opacity-75 disabled:cursor-not-allowed"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">VALOR TOTAL (R$)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={form.valor}
-                  onChange={(e) => setForm({ ...form, valor: e.target.value })}
-                  placeholder="0.00"
-                  required
-                  disabled={form.categoria === 'compra_mercadoria'}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 disabled:opacity-75 disabled:cursor-not-allowed"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">FORMA DE PAGAMENTO</label>
-                <select value={form.forma_pagamento} onChange={(e) => setForm({ ...form, forma_pagamento: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
-                  <option value="pix">PIX</option>
-                  <option value="cartao_credito">Cartão de Crédito</option>
-                  <option value="cartao_debito">Cartão de Débito</option>
-                  <option value="dinheiro">Dinheiro</option>
-                </select>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition">Cancelar</button>
-                <button type="submit" className="px-5 py-2.5 rounded-2xl bg-emerald-600 text-xs font-black text-white hover:bg-emerald-500 transition shadow-md shadow-emerald-500/10">Lançar no Caixa</button>
-              </div>
-            </form>
-          </div>
-        </div>,
-        document.body
-      )}
 
       {showBaixaModal && baixaTarget && createPortal(
         <div className="fixed inset-0 z-[999999] h-screen w-screen flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
@@ -1004,6 +859,519 @@ export function Caixa() {
                 )}
               </button>
             </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {showModal && createPortal(
+        <div className="fixed inset-0 z-[999999] h-screen w-screen flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100 animate-fade-in">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 block">NOVO LANÇAMENTO</span>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">Fluxo de Caixa</h3>
+              </div>
+              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-800 dark:hover:text-white p-1 rounded-lg">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* SELETOR DE ABAS / MODO DE LANÇAMENTO */}
+            <div className="grid grid-cols-4 gap-1 rounded-2xl bg-slate-100 dark:bg-slate-950 p-1 border border-slate-200 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTabModal('avulso');
+                  setForm(prev => ({ ...prev, tipo: 'entrada', categoria: 'outros', descricao: '', valor: '' }));
+                }}
+                className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl text-[11px] font-black transition-all ${
+                  activeTabModal === 'avulso'
+                    ? 'bg-emerald-600 text-white shadow-md'
+                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                }`}
+              >
+                <DollarSign className="h-4 w-4 mb-0.5" />
+                Avulso
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTabModal('cliente');
+                  setForm(prev => ({ ...prev, tipo: 'entrada', categoria: 'cliente', descricao: '', valor: '' }));
+                }}
+                className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl text-[11px] font-black transition-all ${
+                  activeTabModal === 'cliente'
+                    ? 'bg-emerald-600 text-white shadow-md'
+                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                }`}
+              >
+                <User className="h-4 w-4 mb-0.5" />
+                Cliente
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTabModal('produto');
+                  setForm(prev => ({ ...prev, tipo: 'saida', categoria: 'compra_mercadoria', produto_id: '', quantidade_produto: 1, valor_unitario: '', descricao: '', valor: '' }));
+                }}
+                className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl text-[11px] font-black transition-all ${
+                  activeTabModal === 'produto'
+                    ? 'bg-emerald-600 text-white shadow-md'
+                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                }`}
+              >
+                <Package className="h-4 w-4 mb-0.5" />
+                Produto
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTabModal('conta');
+                  setContaSubTipo('luz');
+                  setForm(prev => ({ ...prev, tipo: 'saida', categoria: 'conta', descricao: 'Conta de Luz / Energia', valor: '' }));
+                }}
+                className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl text-[11px] font-black transition-all ${
+                  activeTabModal === 'conta'
+                    ? 'bg-emerald-600 text-white shadow-md'
+                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                }`}
+              >
+                <FileText className="h-4 w-4 mb-0.5" />
+                Conta
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateEntry} className="space-y-4 max-h-[65vh] overflow-y-auto pr-1 no-scrollbar pt-1">
+              
+              {/* ================= ABA 1: AVULSO ================= */}
+              {activeTabModal === 'avulso' && (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">TIPO</label>
+                      <select
+                        value={form.tipo}
+                        onChange={(e) => setForm({ ...form, tipo: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      >
+                        <option value="entrada">Entrada (+)</option>
+                        <option value="saida">Saída (-)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">SITUAÇÃO</label>
+                      <select
+                        value={form.status}
+                        onChange={(e) => setForm({ ...form, status: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      >
+                        <option value="pago">Pago (Concluído)</option>
+                        <option value="pendente">Pendente ({form.tipo === 'entrada' ? 'A Receber' : 'A Pagar'})</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">DESCRIÇÃO</label>
+                    <input
+                      type="text"
+                      value={form.descricao}
+                      onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+                      placeholder="Ex: Recebimento avulso, Dica, Reparo técnico"
+                      required
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">VALOR (R$)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={form.valor}
+                        onChange={(e) => setForm({ ...form, valor: e.target.value })}
+                        placeholder="0.00"
+                        required
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">FORMA DE PAGAMENTO</label>
+                      <select
+                        value={form.forma_pagamento}
+                        onChange={(e) => setForm({ ...form, forma_pagamento: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      >
+                        <option value="pix">PIX</option>
+                        <option value="cartao_credito">Cartão de Crédito</option>
+                        <option value="cartao_debito">Cartão de Débito</option>
+                        <option value="dinheiro">Dinheiro</option>
+                      </select>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* ================= ABA 2: CLIENTE ================= */}
+              {activeTabModal === 'cliente' && (
+                <>
+                  <div className="flex items-center gap-2 p-1 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setClienteModo('existente')}
+                      className={`flex-1 py-1.5 rounded-lg font-bold transition ${clienteModo === 'existente' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500'}`}
+                    >
+                      Cliente Cadastrado
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setClienteModo('novo')}
+                      className={`flex-1 py-1.5 rounded-lg font-bold transition ${clienteModo === 'novo' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500'}`}
+                    >
+                      + Novo / Importar Telefone
+                    </button>
+                  </div>
+
+                  {clienteModo === 'existente' ? (
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">SELECIONE O CLIENTE</label>
+                      <select
+                        value={form.cliente_id}
+                        onChange={(e) => {
+                          const cId = e.target.value;
+                          const found = clientes.find(c => c.id === parseInt(cId, 10));
+                          setForm({
+                            ...form,
+                            cliente_id: cId,
+                            descricao: found ? `Lançamento para ${found.nome}` : form.descricao
+                          });
+                        }}
+                        required
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      >
+                        <option value="">-- Selecione o cliente --</option>
+                        {clientes.map(c => (
+                          <option key={c.id} value={c.id}>{c.nome} ({c.whatsapp || 'Sem whatsapp'})</option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 p-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/5">
+                      <div>
+                        <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">NOME DO CLIENTE</label>
+                        <input
+                          type="text"
+                          value={novoCliente.nome}
+                          onChange={(e) => {
+                            setNovoCliente({ ...novoCliente, nome: e.target.value });
+                            setForm(prev => ({ ...prev, descricao: `Lançamento para ${e.target.value}` }));
+                          }}
+                          placeholder="Ex: Carlos Silva"
+                          required
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">WHATSAPP / TELEFONE (OPCIONAL)</label>
+                        <input
+                          type="tel"
+                          value={novoCliente.whatsapp}
+                          onChange={(e) => setNovoCliente({ ...novoCliente, whatsapp: e.target.value })}
+                          placeholder="(11) 99999-9999"
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">TIPO DE LANÇAMENTO</label>
+                      <select
+                        value={form.tipo}
+                        onChange={(e) => setForm({ ...form, tipo: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      >
+                        <option value="entrada">Entrada (+)</option>
+                        <option value="saida">Saída (-)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">SITUAÇÃO</label>
+                      <select
+                        value={form.status}
+                        onChange={(e) => setForm({ ...form, status: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      >
+                        <option value="pago">Pago (Concluído)</option>
+                        <option value="pendente">Pendente ({form.tipo === 'entrada' ? 'A Receber' : 'A Pagar'})</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">DESCRIÇÃO DO LANÇAMENTO</label>
+                    <input
+                      type="text"
+                      value={form.descricao}
+                      onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+                      placeholder="Ex: Pagamento direto de cliente"
+                      required
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">VALOR (R$)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={form.valor}
+                        onChange={(e) => setForm({ ...form, valor: e.target.value })}
+                        placeholder="0.00"
+                        required
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">FORMA DE PAGAMENTO</label>
+                      <select
+                        value={form.forma_pagamento}
+                        onChange={(e) => setForm({ ...form, forma_pagamento: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      >
+                        <option value="pix">PIX</option>
+                        <option value="cartao_credito">Cartão de Crédito</option>
+                        <option value="cartao_debito">Cartão de Débito</option>
+                        <option value="dinheiro">Dinheiro</option>
+                      </select>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* ================= ABA 3: PRODUTO ================= */}
+              {activeTabModal === 'produto' && (
+                <>
+                  <div>
+                    <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">OPERAÇÃO DE PRODUTO</label>
+                    <select
+                      value={form.tipo}
+                      onChange={(e) => {
+                        const t = e.target.value;
+                        setForm({
+                          ...form,
+                          tipo: t,
+                          categoria: t === 'saida' ? 'compra_mercadoria' : 'venda_produto'
+                        });
+                      }}
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                    >
+                      <option value="saida">Compra de Estoque (Saída de Caixa -)</option>
+                      <option value="entrada">Venda de Produto (Entrada de Caixa +)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">SELECIONE O PRODUTO</label>
+                    <select
+                      value={form.produto_id}
+                      onChange={(e) => handleProductChange(e.target.value)}
+                      required
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                    >
+                      <option value="">-- Selecione um produto --</option>
+                      {produtos.map(p => (
+                        <option key={p.id} value={p.id}>{p.nome} (Estoque: {p.quantidade} un)</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">QUANTIDADE</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={form.quantidade_produto}
+                        onChange={(e) => handleQtyChange(e.target.value)}
+                        required
+                        placeholder="1"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">VALOR UNITÁRIO (R$)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={form.valor_unitario}
+                        onChange={(e) => handleUnitPriceChange(e.target.value)}
+                        required
+                        placeholder="0.00"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">VALOR TOTAL (R$)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={form.valor}
+                      onChange={(e) => setForm({ ...form, valor: e.target.value })}
+                      placeholder="0.00"
+                      required
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">SITUAÇÃO</label>
+                      <select
+                        value={form.status}
+                        onChange={(e) => setForm({ ...form, status: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      >
+                        <option value="pago">Pago (Concluído)</option>
+                        <option value="pendente">Pendente ({form.tipo === 'entrada' ? 'A Receber' : 'A Pagar'})</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">FORMA DE PAGAMENTO</label>
+                      <select
+                        value={form.forma_pagamento}
+                        onChange={(e) => setForm({ ...form, forma_pagamento: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      >
+                        <option value="pix">PIX</option>
+                        <option value="cartao_credito">Cartão de Crédito</option>
+                        <option value="cartao_debito">Cartão de Débito</option>
+                        <option value="dinheiro">Dinheiro</option>
+                      </select>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* ================= ABA 4: CONTA / EMPRÉSTIMO ================= */}
+              {activeTabModal === 'conta' && (
+                <>
+                  <div>
+                    <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">TIPO DE CONTA / DESPESA</label>
+                    <select
+                      value={contaSubTipo}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setContaSubTipo(val);
+                        let autoDesc = '';
+                        let autoTipo = 'saida';
+                        if (val === 'luz') autoDesc = 'Conta de Luz / Energia';
+                        else if (val === 'agua') autoDesc = 'Conta de Água';
+                        else if (val === 'aluguel') autoDesc = 'Aluguel do Espaço';
+                        else if (val === 'internet') autoDesc = 'Internet / Telefone';
+                        else if (val === 'emprestimo') { autoDesc = 'Empréstimo'; autoTipo = 'saida'; }
+                        else autoDesc = 'Outras Despesas';
+
+                        setForm(prev => ({
+                          ...prev,
+                          tipo: autoTipo,
+                          descricao: autoDesc
+                        }));
+                      }}
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                    >
+                      <option value="luz">Conta de Luz / Energia</option>
+                      <option value="agua">Conta de Água</option>
+                      <option value="aluguel">Aluguel do Estabelecimento</option>
+                      <option value="internet">Internet / Telefonia</option>
+                      <option value="emprestimo">Empréstimo (Realizado / Recebido)</option>
+                      <option value="outros_gastos">Outras Despesas Operacionais</option>
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">TIPO DE MOVIMENTAÇÃO</label>
+                      <select
+                        value={form.tipo}
+                        onChange={(e) => setForm({ ...form, tipo: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      >
+                        <option value="saida">Saída (- Pagamento)</option>
+                        <option value="entrada">Entrada (+ Recebimento / Reembolso)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">SITUAÇÃO</label>
+                      <select
+                        value={form.status}
+                        onChange={(e) => setForm({ ...form, status: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      >
+                        <option value="pago">Pago (Concluído)</option>
+                        <option value="pendente">Pendente ({form.tipo === 'saida' ? 'A Pagar' : 'A Receber'})</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">DESCRIÇÃO DA CONTA</label>
+                    <input
+                      type="text"
+                      value={form.descricao}
+                      onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+                      placeholder="Ex: Conta de Luz referente a este mês"
+                      required
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">VALOR (R$)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={form.valor}
+                        onChange={(e) => setForm({ ...form, valor: e.target.value })}
+                        placeholder="0.00"
+                        required
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">FORMA DE PAGAMENTO</label>
+                      <select
+                        value={form.forma_pagamento}
+                        onChange={(e) => setForm({ ...form, forma_pagamento: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      >
+                        <option value="pix">PIX</option>
+                        <option value="cartao_credito">Cartão de Crédito</option>
+                        <option value="cartao_debito">Cartão de Débito</option>
+                        <option value="dinheiro">Dinheiro</option>
+                      </select>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition">Cancelar</button>
+                <button type="submit" className="px-6 py-3 rounded-2xl bg-emerald-600 text-xs font-black text-white hover:bg-emerald-500 transition shadow-lg shadow-emerald-500/20">
+                  Lançar no Caixa
+                </button>
+              </div>
+            </form>
           </div>
         </div>,
         document.body
