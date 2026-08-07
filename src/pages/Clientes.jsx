@@ -19,7 +19,6 @@ export function Clientes() {
   const [form, setForm] = useState({
     nome: '',
     whatsapp: '',
-    email: '',
     observacoes: '',
   });
 
@@ -56,12 +55,11 @@ export function Clientes() {
       setForm({
         nome: cliente.nome,
         whatsapp: cliente.whatsapp || '',
-        email: cliente.email || '',
         observacoes: cliente.observacoes || '',
       });
     } else {
       setEditingCliente(null);
-      setForm({ nome: '', whatsapp: '', email: '', observacoes: '' });
+      setForm({ nome: '', whatsapp: '', observacoes: '' });
     }
     setShowModal(true);
   };
@@ -111,10 +109,31 @@ export function Clientes() {
     }
   };
 
+  const isContactPickerSupported = 'contacts' in navigator && 'ContactsManager' in window;
+
+  const handleImportContact = async () => {
+    if (!isContactPickerSupported) {
+      showAlert({ type: 'info', title: 'Não suportado', message: 'Este recurso não é suportado neste navegador. Use Chrome no Android.' });
+      return;
+    }
+    try {
+      const contacts = await navigator.contacts.select(['name', 'tel'], { multiple: false });
+      if (contacts && contacts.length > 0) {
+        const contact = contacts[0];
+        const name = contact.name?.[0] || '';
+        const phone = (contact.tel?.[0] || '').replace(/\D/g, '');
+        setForm(prev => ({ ...prev, nome: name || prev.nome, whatsapp: phone || prev.whatsapp }));
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.error('[CONTACT PICKER ERROR]', err);
+      }
+    }
+  };
+
   const filteredClientes = clientes.filter(c =>
     c.nome?.toLowerCase().includes(search.toLowerCase()) ||
-    c.whatsapp?.includes(search) ||
-    c.email?.toLowerCase().includes(search.toLowerCase())
+    c.whatsapp?.includes(search)
   );
 
   return (
@@ -149,7 +168,7 @@ export function Clientes() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar cliente por nome, WhatsApp ou e-mail..."
+          placeholder="Buscar cliente por nome ou WhatsApp..."
           className="w-full rounded-2xl border border-slate-200 bg-white/80 pl-11 pr-4 py-3.5 text-xs font-bold text-slate-900 shadow-sm outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-900/80 dark:text-white"
         />
       </div>
@@ -180,9 +199,7 @@ export function Clientes() {
                       <Phone className="h-3 w-3 text-emerald-400" /> {c.whatsapp}
                     </p>
                   )}
-                  {c.email && (
-                    <p className="text-xs text-slate-400 truncate">{c.email}</p>
-                  )}
+
                 </div>
               </div>
 
@@ -259,6 +276,16 @@ export function Clientes() {
             </div>
 
             <form onSubmit={handleSaveCliente} className="space-y-4">
+              {isContactPickerSupported && (
+                <button 
+                  type="button"
+                  onClick={handleImportContact}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-blue-500/40 bg-blue-500/5 hover:bg-blue-500/10 text-blue-400 py-3 text-xs font-bold transition"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Importar da Lista Telefônica
+                </button>
+              )}
               <div>
                 <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">NOME COMPLETO</label>
                 <input
@@ -282,16 +309,7 @@ export function Clientes() {
                 />
               </div>
 
-              <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">E-MAIL</label>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder="fernanda@gmail.com"
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
-                />
-              </div>
+
 
               <div>
                 <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">OBSERVAÇÕES / PREFERÊNCIAS</label>

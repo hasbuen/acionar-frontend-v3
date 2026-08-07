@@ -232,7 +232,7 @@ export function Navbar({ activeTab, setActiveTab }) {
                         </button>
                       )}
                     </div>
-                    <div className="max-h-60 overflow-y-auto space-y-2.5 pr-1 no-scrollbar">
+                    <div className="max-h-[50vh] overflow-y-auto space-y-2.5 pr-1 no-scrollbar overscroll-contain [-webkit-overflow-scrolling:touch]">
                       {notificacoes.length === 0 ? (
                         <div className="py-8 text-center text-xs font-semibold text-slate-400">
                           Sem novas notificações.
