@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, CheckCircle, Check, Moon, Sun, Layers, ArrowLeft, ArrowRight, Scissors, Boxes, Home, Building, Sparkles, UserCheck, Navigation, Search, Loader2 } from 'lucide-react';
+import { MapPin, CheckCircle, Check, Moon, Sun, Layers, ArrowLeft, ArrowRight, Scissors, Boxes, Home, Building, Sparkles, UserCheck, Navigation, Search, Loader2, Map, LocateFixed } from 'lucide-react';
 import { ModalAlert, useModalAlert } from '../components/ModalAlert';
 
 export function PublicSchedule({ slug: propSlug }) {
@@ -90,7 +90,7 @@ export function PublicSchedule({ slug: propSlug }) {
     }
   };
 
-  // Obter Localização via GPS do Navegador
+  // Obter Localização via GPS do Navegador, capturar altitude/longitude e fazer busca por CEP automaticamente
   const handleObterGps = () => {
     if (!navigator.geolocation) {
       showAlert({ type: 'info', title: 'GPS', message: 'Geolocalização não é suportada por este navegador.' });
@@ -99,30 +99,49 @@ export function PublicSchedule({ slug: propSlug }) {
     setLoadingGps(true);
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        const { latitude, longitude } = position.coords;
+        const { latitude, longitude, altitude } = position.coords;
+        console.log(`[GPS DETECTED] Latitude: ${latitude}, Longitude: ${longitude}, Altitude: ${altitude || 'N/A'}`);
+
         try {
           const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
           const data = await res.json();
           if (data && data.address) {
             const addr = data.address;
+            const cepEncontrado = addr.postcode ? addr.postcode.replace(/\D/g, '') : null;
             const rua = addr.road || addr.street || addr.pedestrian || '';
             const bairro = addr.suburb || addr.neighbourhood || addr.city_district || '';
-            setFormEndereco(prev => ({
-              ...prev,
-              rua: rua || prev.rua,
-              bairro: bairro || prev.bairro,
-            }));
-            showAlert({ type: 'success', title: 'Localização Capturada!', message: `Localizado próximo a: ${rua || 'Sua região'}. Por favor, confirme o número e complemento.` });
+
+            if (cepEncontrado && cepEncontrado.length === 8) {
+              const cepFormatado = cepEncontrado.replace(/^(\d{5})(\d{3})$/, '$1-$2');
+              setCepInput(cepFormatado);
+              await handleBuscarCep(cepFormatado);
+              showAlert({
+                type: 'success',
+                title: '📍 Localização Capturada!',
+                message: `CEP identificado (${cepFormatado}). Endereço preenchido automaticamente! Por favor, informe o número do imóvel.`
+              });
+            } else {
+              setFormEndereco(prev => ({
+                ...prev,
+                rua: rua || prev.rua,
+                bairro: bairro || prev.bairro,
+              }));
+              showAlert({
+                type: 'success',
+                title: '📍 Localização Capturada!',
+                message: `Endereço aproximado: ${rua || 'Sua região'}. Por favor, confirme o número e complemento.`
+              });
+            }
           }
         } catch (e) {
-          showAlert({ type: 'info', title: 'GPS Capturado', message: 'Coordenadas capturadas com sucesso. Preencha o nome da rua e número.' });
+          showAlert({ type: 'info', title: 'GPS Capturado', message: 'Coordenadas obtidas. Preencha seu CEP ou endereço manualmente.' });
         } finally {
           setLoadingGps(false);
         }
       },
       (err) => {
         setLoadingGps(false);
-        showAlert({ type: 'warning', title: 'Permissão de GPS', message: 'Não foi possível obter sua localização. Utilize a busca por CEP ou preencha manualmente.' });
+        showAlert({ type: 'warning', title: 'Permissão de GPS', message: 'Não foi possível obter sua localização por GPS. Utilize a busca por CEP.' });
       },
       { timeout: 10000, enableHighAccuracy: true }
     );
@@ -728,54 +747,64 @@ export function PublicSchedule({ slug: propSlug }) {
 
                 {/* ENDEREÇO DE ATENDIMENTO DOMICILIAR */}
                 {tipoAtendimento === 'domicilio' && (
-                  <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-3">
-                    <div className="flex items-center justify-between gap-2 flex-wrap text-emerald-400">
-                      <div className="flex items-center gap-2">
-                        <Home className="h-4 w-4 shrink-0" />
+                  <div className="p-4 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 space-y-4">
+                    
+                    {/* CABEÇALHO DO ENDEREÇO + BOTÃO GPS COM ÍCONE DE MAPA */}
+                    <div className="flex items-center justify-between gap-3 flex-wrap border-b border-emerald-500/20 pb-3">
+                      <div className="flex items-center gap-2 text-emerald-400">
+                        <Map className="h-4 w-4 shrink-0 text-emerald-400" />
                         <h4 className="text-xs font-black uppercase tracking-wider">Endereço para Atendimento Domiciliar</h4>
                       </div>
                       <button
                         type="button"
                         onClick={handleObterGps}
                         disabled={loadingGps}
-                        className="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5 hover:bg-emerald-500/30 transition shadow-sm"
+                        className="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-extrabold flex items-center gap-2 hover:bg-emerald-500/30 transition shadow-sm"
                       >
-                        <Navigation className={`h-3.5 w-3.5 ${loadingGps ? 'animate-spin' : ''}`} />
-                        <span>{loadingGps ? 'Obtendo GPS...' : '📍 Usar Meu GPS'}</span>
+                        <LocateFixed className={`h-4 w-4 text-emerald-400 ${loadingGps ? 'animate-spin' : ''}`} />
+                        <span>{loadingGps ? 'Obtendo GPS...' : 'Usar Meu GPS'}</span>
                       </button>
                     </div>
 
-                    {/* BUSCA POR CEP (ViaCEP) */}
-                    <div className="p-3 rounded-xl bg-black/20 border border-white/5 space-y-2">
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-300">
-                        🔍 Preenchimento Rápido por CEP (ViaCEP)
+                    {/* CAMPO CEP E BOTÃO BUSCAR ENCAIXADOS NO GRID */}
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-300 mb-1">
+                        CEP (Busca Automática ViaCEP)
                       </label>
-                      <div className="flex gap-2">
+                      <div className="flex items-center gap-2">
                         <input
                           type="text"
                           value={cepInput}
                           onChange={(e) => {
-                            const val = e.target.value;
-                            setCepInput(val);
-                            if (val.replace(/\D/g, '').length === 8) {
-                              handleBuscarCep(val);
+                            let val = e.target.value.replace(/\D/g, '');
+                            if (val.length > 8) val = val.slice(0, 8);
+                            const formatted = val.replace(/^(\d{5})(\d)/, '$1-$2');
+                            setCepInput(formatted);
+                            if (val.length === 8) {
+                              handleBuscarCep(formatted);
                             }
                           }}
-                          placeholder="Ex: 01001-000"
+                          placeholder="00000-000"
                           maxLength={9}
-                          className="flex-1 rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
+                          className="flex-1 rounded-xl bg-black/40 border border-white/10 px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-emerald-500 font-medium tracking-wide shadow-inner"
                         />
                         <button
                           type="button"
                           onClick={() => handleBuscarCep()}
                           disabled={loadingCep}
-                          className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 transition shadow"
+                          className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold flex items-center gap-1.5 transition shadow shrink-0"
                         >
-                          {loadingCep ? 'Buscando...' : 'Buscar CEP'}
+                          {loadingCep ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Search className="h-3.5 w-3.5" />
+                          )}
+                          <span>{loadingCep ? 'Buscando...' : 'Buscar CEP'}</span>
                         </button>
                       </div>
                     </div>
 
+                    {/* LOGRADOURO E NÚMERO */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="sm:col-span-2">
                         <label className="block text-[10px] font-bold uppercase tracking-wider opacity-80 mb-1" style={{ color: 'var(--color-text-secondary)' }}>Rua / Logradouro *</label>
@@ -785,7 +814,7 @@ export function PublicSchedule({ slug: propSlug }) {
                           value={formEndereco.rua}
                           onChange={(e) => setFormEndereco({ ...formEndereco, rua: e.target.value })}
                           placeholder="Ex: Av. Paulista"
-                          className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
+                          className="w-full rounded-xl bg-black/30 border border-white/10 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
                         />
                       </div>
                       <div>
@@ -796,10 +825,12 @@ export function PublicSchedule({ slug: propSlug }) {
                           value={formEndereco.numero}
                           onChange={(e) => setFormEndereco({ ...formEndereco, numero: e.target.value })}
                           placeholder="Ex: 1000"
-                          className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
+                          className="w-full rounded-xl bg-black/30 border border-white/10 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
                         />
                       </div>
                     </div>
+
+                    {/* BAIRRO E COMPLEMENTO */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-[10px] font-bold uppercase tracking-wider opacity-80 mb-1" style={{ color: 'var(--color-text-secondary)' }}>Bairro *</label>
@@ -809,7 +840,7 @@ export function PublicSchedule({ slug: propSlug }) {
                           value={formEndereco.bairro}
                           onChange={(e) => setFormEndereco({ ...formEndereco, bairro: e.target.value })}
                           placeholder="Ex: Bela Vista"
-                          className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
+                          className="w-full rounded-xl bg-black/30 border border-white/10 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
                         />
                       </div>
                       <div>
@@ -819,7 +850,7 @@ export function PublicSchedule({ slug: propSlug }) {
                           value={formEndereco.complemento}
                           onChange={(e) => setFormEndereco({ ...formEndereco, complemento: e.target.value })}
                           placeholder="Ex: Apto 42, Bloco B"
-                          className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
+                          className="w-full rounded-xl bg-black/30 border border-white/10 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
                         />
                       </div>
                     </div>
