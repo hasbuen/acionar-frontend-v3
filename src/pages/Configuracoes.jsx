@@ -519,180 +519,194 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
 
 
           {/* Card: Agenda Pública & Personalização */}
-          <form onSubmit={handleSave} className="space-y-6">
+          {user?.cargo === 'auxiliar' ? (
             <div className={cardClass}>
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3">
-                <div>
-                  <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
-                    <Globe className="h-5 w-5 text-blue-500 dark:text-blue-400" /> Agenda Pública Online?
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Permita que seus clientes agendem horários sozinhos.</p>
+              <div className="flex flex-col items-center justify-center text-center py-12 px-4">
+                <div className="h-16 w-16 rounded-3xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 flex items-center justify-center mb-4 shadow-inner">
+                  <Globe className="h-8 w-8" />
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={form.agenda_publica_ativa}
-                    onChange={(e) => setForm({ ...form, agenda_publica_ativa: e.target.checked })}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-500 dark:bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-
-              <div className="space-y-4 pt-2">
-                <div>
-                  <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Subdomínio da Agenda</label>
-                  <input
-                    type="text"
-                    value={form.novo_slug}
-                    onChange={(e) => setForm({ ...form, novo_slug: e.target.value })}
-                    placeholder="patriciabeato"
-                    required
-                    className={inputClass}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Nome da Agenda Acionar</label>
-                  <input
-                    type="text"
-                    value={form.nome_empresa}
-                    onChange={(e) => setForm({ ...form, nome_empresa: e.target.value })}
-                    placeholder="Ex: Meu Espaço de Beleza"
-                    required={form.agenda_publica_ativa}
-                    disabled={!form.agenda_publica_ativa}
-                    className={`${inputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
-                  />
-                </div>
-
-                <div className="rounded-2xl bg-slate-50 dark:bg-slate-950/70 p-3.5 flex items-center justify-between gap-3 border border-slate-100 dark:border-slate-800">
-                  <span className="text-xs font-mono text-blue-600 dark:text-amber-400 truncate select-all">{publicLink}</span>
-                  <button
-                    type="button"
-                    onClick={handleCopyLink}
-                    className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 dark:border-slate-800 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-1.5 shrink-0 transition"
-                  >
-                    {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
-                    {copied ? 'Copiado!' : 'Copiar Link'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Personalização de Marca & Cores */}
-              <div className="border-t border-slate-100 dark:border-slate-800/80 pt-4 space-y-4">
-                <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                  <Palette className="h-4.5 w-4.5 text-blue-500" /> Personalização de Marca & Cores
-                </h4>
-
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Cor Primária</label>
-                    <input
-                      type="color"
-                      value={form.cor_primaria}
-                      onChange={(e) => setForm({ ...form, cor_primaria: e.target.value })}
-                      className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer p-0.5 bg-white dark:bg-slate-950"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Cor Destaque</label>
-                    <input
-                      type="color"
-                      value={form.cor_destaque}
-                      onChange={(e) => setForm({ ...form, cor_destaque: e.target.value })}
-                      className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer p-0.5 bg-white dark:bg-slate-950"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Cor Fundo</label>
-                    <input
-                      type="color"
-                      value={form.cor_fundo}
-                      onChange={(e) => setForm({ ...form, cor_fundo: e.target.value })}
-                      className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer p-0.5 bg-white dark:bg-slate-950"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3 mt-3">
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Cor Texto Principal</label>
-                    <input
-                      type="color"
-                      value={form.cor_texto_principal}
-                      onChange={(e) => setForm({ ...form, cor_texto_principal: e.target.value })}
-                      className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer p-0.5 bg-white dark:bg-slate-950"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Cor Texto Secundário</label>
-                    <input
-                      type="color"
-                      value={form.cor_texto_secundario}
-                      onChange={(e) => setForm({ ...form, cor_texto_secundario: e.target.value })}
-                      className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer p-0.5 bg-white dark:bg-slate-950"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full btn-animated py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-xs font-black text-white shadow-lg shadow-blue-500/20"
-                >
-                  {loading ? 'Salvando...' : 'Salvar Alterações de Cores e Marca'}
-                </button>
-              </div>
-
-              {/* Card: Logotipo da Empresa */}
-              <div className={cardClass}>
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-2xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold shadow-sm">
-                    <ImageIcon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-black text-slate-900 dark:text-white">Foto do Logotipo</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Carregue a marca que seus clientes verão na agenda.</p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-center gap-5 pt-2">
-                  <div className="h-24 w-24 rounded-3xl bg-slate-50 border-2 border-dashed border-slate-200 dark:bg-slate-950 dark:border-slate-800 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
-                    {form.foto_url && !logoError ? (
-                      <img
-                        src={form.foto_url}
-                        alt="Logotipo"
-                        className="h-full w-full object-cover"
-                        onError={() => setLogoError(true)}
-                      />
-                    ) : (
-                      <ImageIcon className="h-8 w-8 text-slate-400 dark:text-slate-600" />
-                    )}
-                  </div>
-
-
-                  <div className="space-y-3 w-full sm:w-auto flex-1">
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileChange}
-                      accept="image/*"
-                      className="hidden"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploadingLogo}
-                      className="btn-animated inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-600 px-5 py-3 text-xs font-black text-white shadow-lg shadow-teal-500/20 w-full sm:w-auto"
-                    >
-                      <Upload className="h-4 w-4" />
-                      {uploadingLogo ? 'Enviando imagem...' : 'Escolher Foto / Logotipo'}
-                    </button>
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">Formatos aceitos: PNG, JPG, JPEG, WEBP. Armazenado na VPS.</p>
-                  </div>
-                </div>
+                <h3 className="text-base font-black text-slate-900 dark:text-white">Agenda Pública Online</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mt-2">
+                  Apenas proprietários e administradores podem configurar ou personalizar cores e logotipo da agenda pública online.
+                </p>
               </div>
             </div>
-          </form>
+          ) : (
+            <form onSubmit={handleSave} className="space-y-6">
+              <div className={cardClass}>
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3">
+                  <div>
+                    <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                      <Globe className="h-5 w-5 text-blue-500 dark:text-blue-400" /> Agenda Pública Online?
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Permita que seus clientes agendem horários sozinhos.</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.agenda_publica_ativa}
+                      onChange={(e) => setForm({ ...form, agenda_publica_ativa: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-500 dark:bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                <div className="space-y-4 pt-2">
+                  <div>
+                    <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Subdomínio da Agenda</label>
+                    <input
+                      type="text"
+                      value={form.novo_slug}
+                      onChange={(e) => setForm({ ...form, novo_slug: e.target.value })}
+                      placeholder="patriciabeato"
+                      required
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Nome da Agenda Acionar</label>
+                    <input
+                      type="text"
+                      value={form.nome_empresa}
+                      onChange={(e) => setForm({ ...form, nome_empresa: e.target.value })}
+                      placeholder="Ex: Meu Espaço de Beleza"
+                      required={form.agenda_publica_ativa}
+                      disabled={!form.agenda_publica_ativa}
+                      className={`${inputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                    />
+                  </div>
+
+                  <div className="rounded-2xl bg-slate-50 dark:bg-slate-950/70 p-3.5 flex items-center justify-between gap-3 border border-slate-100 dark:border-slate-800">
+                    <span className="text-xs font-mono text-blue-600 dark:text-amber-400 truncate select-all">{publicLink}</span>
+                    <button
+                      type="button"
+                      onClick={handleCopyLink}
+                      className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 dark:border-slate-800 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-1.5 shrink-0 transition"
+                    >
+                      {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                      {copied ? 'Copiado!' : 'Copiar Link'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Personalização de Marca & Cores */}
+                <div className="border-t border-slate-100 dark:border-slate-800/80 pt-4 space-y-4">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                    <Palette className="h-4.5 w-4.5 text-blue-500" /> Personalização de Marca & Cores
+                  </h4>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Cor Primária</label>
+                      <input
+                        type="color"
+                        value={form.cor_primaria}
+                        onChange={(e) => setForm({ ...form, cor_primaria: e.target.value })}
+                        className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer p-0.5 bg-white dark:bg-slate-950"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Cor Destaque</label>
+                      <input
+                        type="color"
+                        value={form.cor_destaque}
+                        onChange={(e) => setForm({ ...form, cor_destaque: e.target.value })}
+                        className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer p-0.5 bg-white dark:bg-slate-950"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Cor Fundo</label>
+                      <input
+                        type="color"
+                        value={form.cor_fundo}
+                        onChange={(e) => setForm({ ...form, cor_fundo: e.target.value })}
+                        className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer p-0.5 bg-white dark:bg-slate-950"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 mt-3">
+                    <div>
+                      <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Cor Texto Principal</label>
+                      <input
+                        type="color"
+                        value={form.cor_texto_principal}
+                        onChange={(e) => setForm({ ...form, cor_texto_principal: e.target.value })}
+                        className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer p-0.5 bg-white dark:bg-slate-950"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Cor Texto Secundário</label>
+                      <input
+                        type="color"
+                        value={form.cor_texto_secundario}
+                        onChange={(e) => setForm({ ...form, cor_texto_secundario: e.target.value })}
+                        className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer p-0.5 bg-white dark:bg-slate-950"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full btn-animated py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-xs font-black text-white shadow-lg shadow-blue-500/20"
+                  >
+                    {loading ? 'Salvando...' : 'Salvar Alterações de Cores e Marca'}
+                  </button>
+                </div>
+
+                {/* Card: Logotipo da Empresa */}
+                <div className={cardClass}>
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-2xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold shadow-sm">
+                      <ImageIcon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-black text-slate-900 dark:text-white">Foto do Logotipo</h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Carregue a marca que seus clientes verão na agenda.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center gap-5 pt-2">
+                    <div className="h-24 w-24 rounded-3xl bg-slate-50 border-2 border-dashed border-slate-200 dark:bg-slate-950 dark:border-slate-800 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
+                      {form.foto_url && !logoError ? (
+                        <img
+                          src={form.foto_url}
+                          alt="Logotipo"
+                          className="h-full w-full object-cover"
+                          onError={() => setLogoError(true)}
+                        />
+                      ) : (
+                        <ImageIcon className="h-8 w-8 text-slate-400 dark:text-slate-600" />
+                      )}
+                    </div>
+
+
+                    <div className="space-y-3 w-full sm:w-auto flex-1">
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        accept="image/*"
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploadingLogo}
+                        className="btn-animated inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-600 px-5 py-3 text-xs font-black text-white shadow-lg shadow-teal-500/20 w-full sm:w-auto"
+                      >
+                        <Upload className="h-4 w-4" />
+                        {uploadingLogo ? 'Enviando imagem...' : 'Escolher Foto / Logotipo'}
+                      </button>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">Formatos aceitos: PNG, JPG, JPEG, WEBP. Armazenado na VPS.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </form>
+          )}
         </div>
 
         {/* COLUNA DA DIREITA: Financeiro, Horários, Alertas, WhatsApp */}
