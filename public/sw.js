@@ -98,22 +98,31 @@ self.addEventListener('notificationclick', (event) => {
 
     event.waitUntil((async () => {
         if (action === 'confirm_whatsapp') {
-            // 1. Confirmar o agendamento no banco em segundo plano (fire-and-forget sem travar a thread de popup)
+            // 1. Confirmar o agendamento no banco em segundo plano (fire-and-forget)
             if (confirmUrl) {
                 fetch(confirmUrl, { method: 'POST' }).catch(e => console.warn('[SW CONFIRM ERROR]', e));
             }
 
-            // 2. ABRIR O WHATSAPP IMEDIATAMENTE sem await prévio para não perder o token de gesto do usuário
+            // 2. Montar o texto e link do WhatsApp
             const msgText = `Olá *${clienteNome}*, seu agendamento para *${servicoNome}* no dia *${dataHoraFormatted}* foi *CONFIRMADO* com sucesso! 🚀`;
             const cleanNum = whatsapp ? String(whatsapp).replace(/\D/g, '') : '';
             const waUrl = cleanNum 
                 ? `https://api.whatsapp.com/send?phone=${cleanNum}&text=${encodeURIComponent(msgText)}`
                 : targetUrl.href;
 
+            // 3. Procurar se a janela da PWA já está aberta para enviar postMessage de redirecionamento direto
+            const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+            if (windowClients && windowClients.length > 0) {
+                for (const client of windowClients) {
+                    client.postMessage({ type: 'OPEN_WHATSAPP', url: waUrl });
+                }
+                return windowClients[0].focus();
+            }
+
+            // 4. Se o app estiver fechado, abrir diretamente o link do WhatsApp
             if (clients.openWindow) {
                 try {
-                    await clients.openWindow(waUrl);
-                    return;
+                    return await clients.openWindow(waUrl);
                 } catch (eErr) {
                     console.warn('[SW OPEN WINDOW WARN]', eErr);
                 }

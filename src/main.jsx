@@ -45,10 +45,19 @@ function MainApp() {
     }
   }, []);
 
-  // Register PWA Service Worker
+  // Register PWA Service Worker & listen for WhatsApp redirect triggers
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW registration failed:', err));
+
+      const handleSwMessage = (event) => {
+        if (event.data?.type === 'OPEN_WHATSAPP' && event.data?.url) {
+          window.location.href = event.data.url;
+        }
+      };
+
+      navigator.serviceWorker.addEventListener('message', handleSwMessage);
+      return () => navigator.serviceWorker.removeEventListener('message', handleSwMessage);
     }
   }, []);
 
