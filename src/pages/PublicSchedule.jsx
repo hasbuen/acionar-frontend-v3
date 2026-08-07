@@ -73,7 +73,7 @@ export function PublicSchedule({ slug: propSlug }) {
 
   // Inicializar Mapa Leaflet Interativo Estilo Uber / 99 para Atendimento Domiciliar
   React.useEffect(() => {
-    if (tipoAtendimento !== 'domicilio' || step !== 3) return;
+    if (tipoAtendimento !== 'domicilio' || currentStep !== 3) return;
 
     if (!document.getElementById('leaflet-css')) {
       const link = document.createElement('link');
@@ -160,7 +160,7 @@ export function PublicSchedule({ slug: propSlug }) {
       script.onload = () => setTimeout(initLeafletMap, 300);
       document.head.appendChild(script);
     }
-  }, [tipoAtendimento, step]);
+  }, [tipoAtendimento, currentStep]);
 
   // Busca Endereço por ViaCEP API
   const handleBuscarCep = async (overrideCep) => {
