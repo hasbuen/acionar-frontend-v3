@@ -19,13 +19,13 @@ jobs:
 
       - name: Install & Build Frontend
         run: |
-          npm ci || npm install
+          npm install --legacy-peer-deps
           npm run build
 
       - name: Deploy Dist to VPS via SSH
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.VPS_IP || '76.13.230.110' }}
+          host: "76.13.230.110"
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "dist/*"
@@ -35,7 +35,7 @@ jobs:
       - name: Reload Nginx via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.VPS_IP || '76.13.230.110' }}
+          host: "76.13.230.110"
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
