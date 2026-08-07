@@ -1335,9 +1335,11 @@ function FullscreenMapModal({ onClose, markerPos, onLocationSelected }) {
       if (onLocationSelected) onLocationSelected(pos.lat, pos.lng);
     });
 
-    setTimeout(() => {
-      map.invalidateSize();
-    }, 250);
+    [100, 300, 600].forEach(delay => {
+      setTimeout(() => {
+        if (map) map.invalidateSize();
+      }, delay);
+    });
 
     return () => {
       map.remove();
