@@ -41,6 +41,9 @@ export function PublicSchedule({ slug: propSlug }) {
   const [loadingCep, setLoadingCep] = useState(false);
   const [loadingGps, setLoadingGps] = useState(false);
 
+  const [mapObj, setMapObj] = useState(null);
+  const [markerObj, setMarkerObj] = useState(null);
+
   // Modal Sucesso
   const [showSucessoModal, setShowSucessoModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -68,6 +71,97 @@ export function PublicSchedule({ slug: propSlug }) {
     return [];
   }, [profissionais, tipoAtendimento]);
 
+  // Inicializar Mapa Leaflet Interativo Estilo Uber / 99 para Atendimento Domiciliar
+  React.useEffect(() => {
+    if (tipoAtendimento !== 'domicilio' || step !== 3) return;
+
+    if (!document.getElementById('leaflet-css')) {
+      const link = document.createElement('link');
+      link.id = 'leaflet-css';
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
+    }
+
+    const initLeafletMap = () => {
+      if (!window.L) return;
+      const container = document.getElementById('home-service-map');
+      if (!container || container._leaflet_id) return;
+
+      const initialLat = -23.55052;
+      const initialLng = -46.633308;
+
+      const map = window.L.map('home-service-map', {
+        center: [initialLat, initialLng],
+        zoom: 15,
+        zoomControl: true
+      });
+
+      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
+      }).addTo(map);
+
+      const customIcon = window.L.divIcon({
+        className: 'custom-map-pin',
+        html: `<div style="background-color: var(--color-primary, #10b981); width: 28px; height: 28px; border-radius: 50%; border: 3px solid #ffffff; box-shadow: 0 4px 14px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;"><div style="width: 8px; height: 8px; background-color: #ffffff; border-radius: 50%;"></div></div>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+      });
+
+      const marker = window.L.marker([initialLat, initialLng], {
+        draggable: true,
+        icon: customIcon
+      }).addTo(map);
+
+      marker.bindPopup('<b>Arraste o pino até seu imóvel</b>').openPopup();
+
+      marker.on('dragend', async () => {
+        const pos = marker.getLatLng();
+        console.log(`[MAP DRAGGED] Lat: ${pos.lat}, Lng: ${pos.lng}`);
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.lat}&lon=${pos.lng}&zoom=18&addressdetails=1&accept-language=pt-BR`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.address) {
+              const addr = data.address;
+              const cleanPostcode = addr.postcode ? String(addr.postcode).replace(/\D/g, '') : '';
+              if (cleanPostcode.length === 8) {
+                setCepInput(cleanPostcode.replace(/^(\d{5})(\d{3})$/, '$1-$2'));
+              }
+              setFormEndereco(prev => ({
+                ...prev,
+                rua: addr.road || addr.street || addr.pedestrian || addr.footway || prev.rua,
+                numero: addr.house_number || prev.numero,
+                bairro: addr.suburb || addr.neighbourhood || addr.city_district || prev.bairro
+              }));
+              showAlert({
+                type: 'success',
+                title: '📍 Localização por Mapa Atualizada!',
+                message: `${addr.road || 'Rua'}, ${addr.house_number || 'Sem nº'} — ${addr.suburb || addr.neighbourhood || 'Bairro'}`
+              });
+            }
+          }
+        } catch (eErr) {
+          console.warn('[REVERSE GEOCODE MAP DRAG WARN]', eErr);
+        }
+      });
+
+      setMapObj(map);
+      setMarkerObj(marker);
+    };
+
+    if (window.L) {
+      setTimeout(initLeafletMap, 300);
+    } else if (!document.getElementById('leaflet-js')) {
+      const script = document.createElement('script');
+      script.id = 'leaflet-js';
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.onload = () => setTimeout(initLeafletMap, 300);
+      document.head.appendChild(script);
+    }
+  }, [tipoAtendimento, step]);
+
   // Busca Endereço por ViaCEP API
   const handleBuscarCep = async (overrideCep) => {
     const targetCep = overrideCep || cepInput;
@@ -89,6 +183,22 @@ export function PublicSchedule({ slug: propSlug }) {
           bairro: data.bairro || prev.bairro,
           complemento: data.complemento || prev.complemento,
         }));
+
+        if (mapObj && markerObj && data.logradouro) {
+          try {
+            const nomSearch = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(data.logradouro + ', ' + data.bairro + ', Brasil')}`);
+            if (nomSearch.ok) {
+              const nomResults = await nomSearch.json();
+              if (nomResults && nomResults.length > 0) {
+                const nLat = parseFloat(nomResults[0].lat);
+                const nLng = parseFloat(nomResults[0].lon);
+                mapObj.flyTo([nLat, nLng], 17);
+                markerObj.setLatLng([nLat, nLng]);
+              }
+            }
+          } catch (eNomSearch) {}
+        }
+
         showAlert({ type: 'success', title: 'Endereço Encontrado!', message: `${data.logradouro}, ${data.bairro}` });
       }
     } catch (e) {
@@ -119,6 +229,11 @@ export function PublicSchedule({ slug: propSlug }) {
     const processPosition = async (position) => {
       const { latitude, longitude, accuracy, altitude } = position.coords;
       console.log(`[GPS LIVE] Lat: ${latitude}, Lon: ${longitude}, Acc: ${accuracy}m, Alt: ${altitude || 'N/A'}`);
+
+      if (mapObj && markerObj) {
+        mapObj.flyTo([latitude, longitude], 18);
+        markerObj.setLatLng([latitude, longitude]);
+      }
 
       let cepEncontrado = null;
       let ruaEncontrada = '';
@@ -936,6 +1051,17 @@ export function PublicSchedule({ slug: propSlug }) {
                         <LocateFixed className={`h-4 w-4 ${loadingGps ? 'animate-spin' : ''}`} style={isDispositivoMovel ? { color: 'var(--color-highlight)' } : {}} />
                         <span>{loadingGps ? 'Obtendo GPS...' : 'Usar Meu GPS'}</span>
                       </button>
+                    </div>
+
+                    {/* MAPA INTERATIVO ESTILO UBER / 99 COM PINO ARRASTÁVEL */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-300">
+                        <span>📍 Ajuste no Mapa (Arraste o pino até sua porta)</span>
+                        <span className="text-emerald-400 font-extrabold">Estilo Uber / 99</span>
+                      </div>
+                      <div className="w-full h-48 rounded-2xl border border-white/15 overflow-hidden relative shadow-inner bg-black/40">
+                        <div id="home-service-map" className="w-full h-full z-0"></div>
+                      </div>
                     </div>
 
                     {/* CAMPO CEP E BOTÃO BUSCAR ENCAIXADOS NO GRID */}

@@ -1015,8 +1015,8 @@ export function Agenda() {
                   {isRequest ? (
                     <>
                       <button
-                        onClick={() => updateAppointment(item, { status: 'agendado' }, 'Solicitação aceita.')}
-                        className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-black text-white"
+                        onClick={() => updateAppointment(item, { status: 'confirmado' }, 'Solicitação aceita e confirmada com sucesso!')}
+                        className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-black text-white hover:bg-emerald-500 transition shadow"
                       >
                         Aceitar
                       </button>
