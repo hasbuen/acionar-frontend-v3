@@ -118,63 +118,35 @@ export function PublicSchedule({ slug: propSlug }) {
 
     const processPosition = async (position) => {
       const { latitude, longitude, accuracy, altitude } = position.coords;
-      console.log(`[GPS HIGH ACCURACY LOCK] Lat: ${latitude}, Lon: ${longitude}, Acc: ${accuracy}m, Alt: ${altitude || 'N/A'}`);
+      console.log(`[GPS LIVE] Lat: ${latitude}, Lon: ${longitude}, Acc: ${accuracy}m, Alt: ${altitude || 'N/A'}`);
 
       let cepEncontrado = null;
       let ruaEncontrada = '';
+      let numeroEncontrado = '';
       let bairroEncontrado = '';
 
-      // Se a precisão for pior do que 2.000m (ex: IP de Provedor de Internet Wi-Fi)
-      if (accuracy > 2000) {
-        showAlert({
-          type: 'warning',
-          title: '📍 Localização por Provedor Wi-Fi/IP',
-          message: `Sua conexão Wi-Fi/IP forneceu um local aproximado (~${Math.round(accuracy / 1000)} km). Por favor, digite seu CEP no campo abaixo para indicar seu endereço exato.`
-        });
-        setLoadingGps(false);
-        return;
-      }
-
       // ----------------------------------------------------
-      // ETAPA 1: AwesomeAPI (Específica do Brasil - Busca por Lat/Lng)
+      // ETAPA 1: OpenStreetMap / Nominatim (Zoom 18 — Resolução por Imóvel/Rua)
       // ----------------------------------------------------
       try {
-        const resAwesome = await fetch(`https://cep.awesomeapi.com.br/search?lat=${latitude}&lng=${longitude}`);
-        if (resAwesome.ok) {
-          const dataAwesome = await resAwesome.json();
-          if (dataAwesome && dataAwesome.cep) {
-            cepEncontrado = String(dataAwesome.cep).replace(/\D/g, '');
-          }
-          if (dataAwesome.address) ruaEncontrada = dataAwesome.address;
-          if (dataAwesome.district) bairroEncontrado = dataAwesome.district;
-        }
-      } catch (eAwesome) {
-        console.warn('[GPS AWESOMEAPI WARN]', eAwesome);
-      }
-
-      // ----------------------------------------------------
-      // ETAPA 2: OpenStreetMap / Nominatim (Zoom 18 Edifício/Rua)
-      // ----------------------------------------------------
-      if (!cepEncontrado || cepEncontrado.length !== 8) {
-        try {
-          const resNom = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1&accept-language=pt-BR`
-          );
-          if (resNom.ok) {
-            const dataNom = await resNom.json();
-            if (dataNom && dataNom.address) {
-              const addr = dataNom.address;
-              if (addr.postcode) {
-                const cleanPostcode = String(addr.postcode).replace(/\D/g, '');
-                if (cleanPostcode.length === 8) cepEncontrado = cleanPostcode;
-              }
-              if (!ruaEncontrada) ruaEncontrada = addr.road || addr.street || addr.pedestrian || addr.footway || '';
-              if (!bairroEncontrado) bairroEncontrado = addr.suburb || addr.neighbourhood || addr.city_district || addr.residential || '';
+        const resNom = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1&accept-language=pt-BR`
+        );
+        if (resNom.ok) {
+          const dataNom = await resNom.json();
+          if (dataNom && dataNom.address) {
+            const addr = dataNom.address;
+            if (addr.postcode) {
+              const cleanPostcode = String(addr.postcode).replace(/\D/g, '');
+              if (cleanPostcode.length === 8) cepEncontrado = cleanPostcode;
             }
+            ruaEncontrada = addr.road || addr.street || addr.pedestrian || addr.footway || addr.suburb || '';
+            numeroEncontrado = addr.house_number || '';
+            bairroEncontrado = addr.suburb || addr.neighbourhood || addr.city_district || addr.residential || '';
           }
-        } catch (eNom) {
-          console.warn('[GPS NOMINATIM WARN]', eNom);
         }
+      } catch (eNom) {
+        console.warn('[GPS NOMINATIM WARN]', eNom);
       }
 
       // ----------------------------------------------------
@@ -217,13 +189,14 @@ export function PublicSchedule({ slug: propSlug }) {
               setFormEndereco(prev => ({
                 ...prev,
                 rua: dataVia.logradouro || ruaEncontrada || prev.rua,
+                numero: numeroEncontrado || prev.numero,
                 bairro: dataVia.bairro || bairroEncontrado || prev.bairro,
                 complemento: dataVia.complemento || prev.complemento,
               }));
               showAlert({
                 type: 'success',
-                title: '📍 Localização Exata por Satélite!',
-                message: `CEP ${cepFormatado} — ${dataVia.logradouro}, ${dataVia.bairro}. Endereço preenchido automaticamente! Por favor, insira o número do imóvel.`
+                title: '📍 Localização por GPS Identificada!',
+                message: `Endereço: ${dataVia.logradouro || ruaEncontrada}, ${bairroEncontrado || dataVia.bairro}. Preenchido automaticamente!`
               });
             }
           }
@@ -238,6 +211,7 @@ export function PublicSchedule({ slug: propSlug }) {
           setFormEndereco(prev => ({
             ...prev,
             rua: ruaEncontrada || prev.rua,
+            numero: numeroEncontrado || prev.numero,
             bairro: bairroEncontrado || prev.bairro,
           }));
           showAlert({
