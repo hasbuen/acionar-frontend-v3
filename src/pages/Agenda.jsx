@@ -963,6 +963,17 @@ export function Agenda() {
                           <span className="inline-flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-500/20">
                             <Home className="h-2.5 w-2.5" /> Domicílio
                           </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setModal({ type: 'address', item });
+                            }}
+                            className="inline-flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-purple-600/10 text-purple-600 dark:text-purple-300 border border-purple-500/20 hover:bg-purple-600 hover:text-white transition shadow-sm"
+                            title="Editar Endereço Domiciliar"
+                          >
+                            <MapPin className="h-2.5 w-2.5" /> Endereço
+                          </button>
                           <a
                             href={getGoogleMapsUrl(item.endereco_externo)}
                             target="_blank"
@@ -1169,6 +1180,79 @@ export function Agenda() {
             ))}
             {!profissionais.length && <p className="text-center text-sm text-slate-400 font-medium">Nenhum profissional disponível.</p>}
           </div>
+        </Modal>
+      )}
+
+      {modal?.type === 'address' && (
+        <Modal 
+          title="Editar Endereço a Domicílio" 
+          subtitle={`${modal.item.cliente_nome || 'Cliente'} — ${modal.item.servico_nome || 'Atendimento'}`} 
+          onClose={() => setModal(null)}
+        >
+          <form onSubmit={event => { 
+            event.preventDefault(); 
+            const data = new FormData(event.currentTarget);
+            const rua = data.get('rua');
+            const numero = data.get('numero');
+            const bairro = data.get('bairro');
+            const complemento = data.get('complemento');
+            
+            const payload = {
+              endereco_externo: { rua, numero, bairro, complemento }
+            };
+
+            updateAppointment(modal.item, payload, 'Endereço a domicílio atualizado!'); 
+          }} className="space-y-4">
+            {(() => {
+              let currentEnd = { rua: '', numero: '', bairro: '', complemento: '' };
+              if (modal.item.endereco_externo) {
+                if (typeof modal.item.endereco_externo === 'object') {
+                  currentEnd = { ...currentEnd, ...modal.item.endereco_externo };
+                } else {
+                  try {
+                    const parsed = JSON.parse(modal.item.endereco_externo);
+                    if (typeof parsed === 'object') currentEnd = { ...currentEnd, ...parsed };
+                  } catch (e) {
+                    currentEnd.rua = String(modal.item.endereco_externo);
+                  }
+                }
+              }
+
+              return (
+                <>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="col-span-2">
+                      <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400">Rua / Logradouro
+                        <input name="rua" type="text" defaultValue={currentEnd.rua || ''} className={`${inputClass} mt-1`} required placeholder="Ex: Av. Paulista" />
+                      </label>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400">Número
+                        <input name="numero" type="text" defaultValue={currentEnd.numero || ''} className={`${inputClass} mt-1`} placeholder="Ex: 1000" />
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400">Bairro
+                        <input name="bairro" type="text" defaultValue={currentEnd.bairro || ''} className={`${inputClass} mt-1`} placeholder="Ex: Bela Vista" />
+                      </label>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400">Complemento
+                        <input name="complemento" type="text" defaultValue={currentEnd.complemento || ''} className={`${inputClass} mt-1`} placeholder="Ex: Apto 42" />
+                      </label>
+                    </div>
+                  </div>
+
+                  <button className="btn-animated w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 py-3.5 text-xs font-black text-white shadow-lg shadow-emerald-500/25">
+                    Salvar Endereço
+                  </button>
+                </>
+              );
+            })()}
+          </form>
         </Modal>
       )}
 
