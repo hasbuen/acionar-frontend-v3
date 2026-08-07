@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, CheckCircle, Check, Moon, Sun, Layers, ArrowLeft, ArrowRight } from 'lucide-react';
+import { MapPin, CheckCircle, Check, Moon, Sun, Layers, ArrowLeft, ArrowRight, Scissors, Boxes } from 'lucide-react';
 import { ModalAlert, useModalAlert } from '../components/ModalAlert';
 
 export function PublicSchedule({ slug: propSlug }) {
@@ -302,15 +302,24 @@ export function PublicSchedule({ slug: propSlug }) {
                       }`}
                     >
                       <div className="flex items-center justify-between gap-4 w-full">
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          {s.foto_url && (
-                            <img src={s.foto_url} alt={s.nome} className="h-12 w-12 rounded-2xl object-cover border border-white/10 shrink-0" />
-                          )}
+                        <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                          <div className="h-14 w-14 rounded-2xl overflow-hidden border border-white/10 shrink-0 bg-white/5 flex items-center justify-center shadow-md">
+                            {s.foto_url ? (
+                              <img 
+                                src={s.foto_url} 
+                                alt={s.nome} 
+                                className="h-full w-full object-cover" 
+                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                              />
+                            ) : (
+                              <Scissors className="h-6 w-6 opacity-40" style={{ color: 'var(--color-text-secondary)' }} />
+                            )}
+                          </div>
                           <div className="min-w-0 flex-1">
                             <h4 className="font-extrabold text-base truncate" style={{ color: 'var(--color-text-primary)' }}>{s.nome}</h4>
                             <p className="text-xs opacity-90 flex items-center gap-2 mt-1" style={{ color: 'var(--color-text-secondary)' }}>
                               <span>{s.duracao_minutos} min</span>
-                              {s.descricao && <span>• {s.descricao}</span>}
+                              {s.descricao && <span className="truncate">• {s.descricao}</span>}
                             </p>
                           </div>
                         </div>
@@ -352,9 +361,18 @@ export function PublicSchedule({ slug: propSlug }) {
                                   }`}
                                 >
                                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                                    {sub.foto_url && (
-                                      <img src={sub.foto_url} alt={sub.nome} className="h-8 w-8 rounded-xl object-cover border border-white/10 shrink-0" />
-                                    )}
+                                    <div className="h-9 w-9 rounded-xl overflow-hidden border border-white/10 shrink-0 bg-white/5 flex items-center justify-center shadow-sm">
+                                      {sub.foto_url ? (
+                                        <img 
+                                          src={sub.foto_url} 
+                                          alt={sub.nome} 
+                                          className="h-full w-full object-cover" 
+                                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                        />
+                                      ) : (
+                                        <Boxes className="h-4 w-4 opacity-40" style={{ color: 'var(--color-text-secondary)' }} />
+                                      )}
+                                    </div>
                                     <div className="min-w-0 flex-1">
                                       <h6 className="text-sm font-extrabold truncate" style={{ color: 'var(--color-text-primary)' }}>{sub.nome}</h6>
                                       {sub.duracao_adicional_minutos && parseInt(sub.duracao_adicional_minutos, 10) > 0 && (
