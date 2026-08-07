@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, CheckCircle, Check, Moon, Sun, Layers, ArrowLeft, ArrowRight, Scissors, Boxes, Home, Building, Sparkles, UserCheck, Navigation, Search, Loader2, Map, LocateFixed } from 'lucide-react';
+import { MapPin, CheckCircle, Check, Moon, Sun, Layers, ArrowLeft, ArrowRight, Scissors, Boxes, Home, Building, Sparkles, UserCheck, Navigation, Search, Loader2, Map, LocateFixed, Maximize2, Minimize2 } from 'lucide-react';
 import { ModalAlert, useModalAlert } from '../components/ModalAlert';
 
 export function PublicSchedule({ slug: propSlug }) {
@@ -41,8 +41,9 @@ export function PublicSchedule({ slug: propSlug }) {
   const [loadingCep, setLoadingCep] = useState(false);
   const [loadingGps, setLoadingGps] = useState(false);
 
-  const [mapObj, setMapObj] = useState(null);
-  const [markerObj, setMarkerObj] = useState(null);
+  const mapRef = React.useRef(null);
+  const markerRef = React.useRef(null);
+  const [isMapFullscreen, setIsMapFullscreen] = useState(false);
 
   // Modal Sucesso
   const [showSucessoModal, setShowSucessoModal] = useState(false);
@@ -104,9 +105,9 @@ export function PublicSchedule({ slug: propSlug }) {
 
       const customIcon = window.L.divIcon({
         className: 'custom-map-pin',
-        html: `<div style="background-color: var(--color-primary, #10b981); width: 28px; height: 28px; border-radius: 50%; border: 3px solid #ffffff; box-shadow: 0 4px 14px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;"><div style="width: 8px; height: 8px; background-color: #ffffff; border-radius: 50%;"></div></div>`,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14]
+        html: `<div style="background-color: var(--color-primary, #10b981); width: 32px; height: 32px; border-radius: 50%; border: 3px solid #ffffff; box-shadow: 0 4px 14px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;"><div style="width: 10px; height: 10px; background-color: #ffffff; border-radius: 50%;"></div></div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
       });
 
       const marker = window.L.marker([initialLat, initialLng], {
@@ -147,8 +148,8 @@ export function PublicSchedule({ slug: propSlug }) {
         }
       });
 
-      setMapObj(map);
-      setMarkerObj(marker);
+      mapRef.current = map;
+      markerRef.current = marker;
     };
 
     if (window.L) {
@@ -184,7 +185,7 @@ export function PublicSchedule({ slug: propSlug }) {
           complemento: data.complemento || prev.complemento,
         }));
 
-        if (mapObj && markerObj && data.logradouro) {
+        if (mapRef.current && markerRef.current && data.logradouro) {
           try {
             const nomSearch = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(data.logradouro + ', ' + data.bairro + ', Brasil')}`);
             if (nomSearch.ok) {
@@ -192,8 +193,8 @@ export function PublicSchedule({ slug: propSlug }) {
               if (nomResults && nomResults.length > 0) {
                 const nLat = parseFloat(nomResults[0].lat);
                 const nLng = parseFloat(nomResults[0].lon);
-                mapObj.flyTo([nLat, nLng], 17);
-                markerObj.setLatLng([nLat, nLng]);
+                mapRef.current.flyTo([nLat, nLng], 17);
+                markerRef.current.setLatLng([nLat, nLng]);
               }
             }
           } catch (eNomSearch) {}
@@ -230,9 +231,10 @@ export function PublicSchedule({ slug: propSlug }) {
       const { latitude, longitude, accuracy, altitude } = position.coords;
       console.log(`[GPS LIVE] Lat: ${latitude}, Lon: ${longitude}, Acc: ${accuracy}m, Alt: ${altitude || 'N/A'}`);
 
-      if (mapObj && markerObj) {
-        mapObj.flyTo([latitude, longitude], 18);
-        markerObj.setLatLng([latitude, longitude]);
+      if (mapRef.current && markerRef.current) {
+        mapRef.current.flyTo([latitude, longitude], 18);
+        markerRef.current.setLatLng([latitude, longitude]);
+        if (markerRef.current.openPopup) markerRef.current.openPopup();
       }
 
       let cepEncontrado = null;
@@ -1056,11 +1058,44 @@ export function PublicSchedule({ slug: propSlug }) {
                     {/* MAPA INTERATIVO ESTILO UBER / 99 COM PINO ARRASTÁVEL */}
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-300">
-                        <span>📍 Ajuste no Mapa (Arraste o pino até sua porta)</span>
-                        <span className="text-emerald-400 font-extrabold">Estilo Uber / 99</span>
+                        <span className="flex items-center gap-1">📍 Marque no Mapa (Arraste o pino até sua porta)</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsMapFullscreen(true);
+                            setTimeout(() => {
+                              if (mapRef.current) mapRef.current.invalidateSize();
+                            }, 200);
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-extrabold flex items-center gap-1 hover:bg-emerald-500 hover:text-white transition shadow-sm"
+                        >
+                          <Maximize2 className="h-3 w-3" /> Expandir Tela Cheia
+                        </button>
                       </div>
-                      <div className="w-full h-48 rounded-2xl border border-white/15 overflow-hidden relative shadow-inner bg-black/40">
-                        <div id="home-service-map" className="w-full h-full z-0"></div>
+
+                      <div className={`transition-all ${isMapFullscreen ? 'fixed inset-0 z-50 bg-slate-950 p-4 flex flex-col' : 'w-full h-48 rounded-2xl border border-white/15 overflow-hidden relative shadow-inner bg-black/40'}`}>
+                        {isMapFullscreen && (
+                          <div className="flex items-center justify-between pb-3 text-white border-b border-white/10 mb-3 shrink-0">
+                            <div className="flex items-center gap-2">
+                              <MapPin className="h-5 w-5 text-emerald-400" />
+                              <span className="font-extrabold text-sm">Arraste o pino até a sua casa</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsMapFullscreen(false);
+                                setTimeout(() => {
+                                  if (mapRef.current) mapRef.current.invalidateSize();
+                                }, 200);
+                              }}
+                              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-1 shadow-lg"
+                            >
+                              <Minimize2 className="h-4 w-4" /> Concluir Marcação
+                            </button>
+                          </div>
+                        )}
+
+                        <div id="home-service-map" className={`w-full ${isMapFullscreen ? 'flex-1 rounded-2xl' : 'h-full'} z-0`}></div>
                       </div>
                     </div>
 

@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { NewAppointmentModal } from '../components/NewAppointmentModal';
 import {
   Activity, AlertCircle, ArrowRightLeft, Banknote, Calendar, CalendarDays, Check, CheckCircle, ChevronDown, ChevronUp, Clock, CreditCard, DollarSign,
-  Edit3, Home, Info, Link, Map, MapPin, MessageSquare, Phone, Plus, QrCode, Scissors, ShieldCheck, Trash2, User,
+  Edit3, Home, Info, Link, Map, MapPin, Maximize2, Minimize2, MessageSquare, Phone, Plus, QrCode, Scissors, ShieldCheck, Trash2, User,
   WalletCards, Wrench, X, Zap
 } from 'lucide-react';
 
@@ -1189,70 +1189,31 @@ export function Agenda() {
           subtitle={`${modal.item.cliente_nome || 'Cliente'} — ${modal.item.servico_nome || 'Atendimento'}`} 
           onClose={() => setModal(null)}
         >
-          <form onSubmit={event => { 
-            event.preventDefault(); 
-            const data = new FormData(event.currentTarget);
-            const rua = data.get('rua');
-            const numero = data.get('numero');
-            const bairro = data.get('bairro');
-            const complemento = data.get('complemento');
-            
-            const payload = {
-              endereco_externo: { rua, numero, bairro, complemento }
-            };
-
-            updateAppointment(modal.item, payload, 'Endereço a domicílio atualizado!'); 
-          }} className="space-y-4">
-            {(() => {
-              let currentEnd = { rua: '', numero: '', bairro: '', complemento: '' };
-              if (modal.item.endereco_externo) {
-                if (typeof modal.item.endereco_externo === 'object') {
-                  currentEnd = { ...currentEnd, ...modal.item.endereco_externo };
-                } else {
-                  try {
-                    const parsed = JSON.parse(modal.item.endereco_externo);
-                    if (typeof parsed === 'object') currentEnd = { ...currentEnd, ...parsed };
-                  } catch (e) {
-                    currentEnd.rua = String(modal.item.endereco_externo);
-                  }
+          {(() => {
+            let currentEnd = { rua: '', numero: '', bairro: '', complemento: '' };
+            if (modal.item.endereco_externo) {
+              if (typeof modal.item.endereco_externo === 'object') {
+                currentEnd = { ...currentEnd, ...modal.item.endereco_externo };
+              } else {
+                try {
+                  const parsed = JSON.parse(modal.item.endereco_externo);
+                  if (typeof parsed === 'object') currentEnd = { ...currentEnd, ...parsed };
+                } catch (e) {
+                  currentEnd.rua = String(modal.item.endereco_externo);
                 }
               }
+            }
 
-              return (
-                <>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="col-span-2">
-                      <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400">Rua / Logradouro
-                        <input name="rua" type="text" defaultValue={currentEnd.rua || ''} className={`${inputClass} mt-1`} required placeholder="Ex: Av. Paulista" />
-                      </label>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400">Número
-                        <input name="numero" type="text" defaultValue={currentEnd.numero || ''} className={`${inputClass} mt-1`} placeholder="Ex: 1000" />
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400">Bairro
-                        <input name="bairro" type="text" defaultValue={currentEnd.bairro || ''} className={`${inputClass} mt-1`} placeholder="Ex: Bela Vista" />
-                      </label>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400">Complemento
-                        <input name="complemento" type="text" defaultValue={currentEnd.complemento || ''} className={`${inputClass} mt-1`} placeholder="Ex: Apto 42" />
-                      </label>
-                    </div>
-                  </div>
-
-                  <button className="btn-animated w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 py-3.5 text-xs font-black text-white shadow-lg shadow-emerald-500/25">
-                    Salvar Endereço
-                  </button>
-                </>
-              );
-            })()}
-          </form>
+            return (
+              <AddressMapModalContent
+                currentEnd={currentEnd}
+                onSave={(newAddr) => {
+                  const payload = { endereco_externo: newAddr };
+                  updateAppointment(modal.item, payload, 'Endereço a domicílio atualizado!');
+                }}
+              />
+            );
+          })()}
         </Modal>
       )}
 
