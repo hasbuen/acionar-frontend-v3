@@ -10,12 +10,14 @@ import { Caixa } from './pages/Caixa';
 import { Estoque } from './pages/Estoque';
 import { Configuracoes } from './pages/Configuracoes';
 import { PublicSchedule } from './pages/PublicSchedule';
+import { ConfirmarAgendamento } from './pages/ConfirmarAgendamento';
 import './styles.css';
 
 function MainApp() {
   const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('agenda');
   const [publicSlug, setPublicSlug] = useState(null);
+  const [isConfirmPage, setIsConfirmPage] = useState(false);
 
   // 0. Sincronizar o Tema com o localStorage logo no carregamento inicial
   useEffect(() => {
@@ -31,6 +33,12 @@ function MainApp() {
     const hostname = window.location.hostname;
     const path = window.location.pathname;
 
+    // Rota de confirmação de agendamento (aberta pelo Service Worker)
+    if (path === '/confirmar-agendamento') {
+      setIsConfirmPage(true);
+      return;
+    }
+
     const parts = hostname.split('.');
     const isLocalhost = hostname.includes('localhost') || hostname.includes('127.0.0.1');
     const isSubdomainOfAcionar = hostname.endsWith('.acionar.online') && parts.length > 2 && parts[0] !== 'www';
@@ -45,26 +53,17 @@ function MainApp() {
     }
   }, []);
 
-  // Register PWA Service Worker & listen for WhatsApp redirect triggers
+  // Register PWA Service Worker
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW registration failed:', err));
-
-      const handleSwMessage = (event) => {
-        if (event.data?.type === 'OPEN_WHATSAPP' && event.data?.url) {
-          const waUrl = event.data.url;
-          try {
-            window.open(waUrl, '_blank');
-          } catch (e) {
-            window.location.href = waUrl;
-          }
-        }
-      };
-
-      navigator.serviceWorker.addEventListener('message', handleSwMessage);
-      return () => navigator.serviceWorker.removeEventListener('message', handleSwMessage);
     }
   }, []);
+
+  // 0. Confirmation page (opened by Service Worker notification click)
+  if (isConfirmPage) {
+    return <ConfirmarAgendamento />;
+  }
 
   // 1. Client-facing Public Schedule Page (/agendar/:slug)
   if (publicSlug) {

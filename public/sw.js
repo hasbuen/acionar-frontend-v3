@@ -89,58 +89,32 @@ self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     const action = event.action;
     const data = event.notification.data || {};
-    const confirmUrl = data.confirmUrl;
-    const whatsapp = data.whatsapp;
-    const clienteNome = data.clienteNome || 'Cliente';
-    const servicoNome = data.servicoNome || 'Serviço';
-    const dataHoraFormatted = data.dataHoraFormatted || '';
     const targetUrl = new URL(data.url || DEFAULT_URL, self.registration.scope);
 
-    // Identificar se é confirmação + WhatsApp (botão confirm_whatsapp OU clique no corpo da notificação quando possui WhatsApp)
-    const isConfirmAction = action === 'confirm_whatsapp' || (whatsapp && action !== 'open_agenda');
+    // Botão "Confirmar & WhatsApp" ou clique no corpo da notificação
+    const isConfirmAction = action === 'confirm_whatsapp' || (data.whatsapp && action !== 'open_agenda');
 
-    if (isConfirmAction) {
-        // 1. Disparar confirmação no banco em segundo plano (fire-and-forget, sem await)
-        if (confirmUrl) {
-            try {
-                const fullConfirmUrl = new URL(confirmUrl, self.registration.scope).href;
-                fetch(fullConfirmUrl, { method: 'POST' }).catch(e => console.warn('[SW CONFIRM ERROR]', e));
-            } catch (eUrl) {
-                console.warn('[SW CONFIRM URL ERR]', eUrl);
+    event.waitUntil((async () => {
+        if (isConfirmAction) {
+            // Construir a URL da página de confirmação (dentro da própria PWA)
+            // A página ConfirmarAgendamento.jsx faz tudo:
+            // 1. Chama o backend para confirmar + cadastrar cliente
+            // 2. Busca o template de mensagem das configurações
+            // 3. Redireciona para wa.me com a mensagem formatada
+            const confirmPageUrl = new URL('/confirmar-agendamento', self.registration.scope);
+            confirmPageUrl.searchParams.set('slug', data.tenantSlug || '');
+            confirmPageUrl.searchParams.set('id', data.agendamentoId || '');
+            confirmPageUrl.searchParams.set('phone', data.whatsapp || '');
+            confirmPageUrl.searchParams.set('nome', data.clienteNome || 'Cliente');
+            confirmPageUrl.searchParams.set('servico', data.servicoNome || 'Serviço');
+            confirmPageUrl.searchParams.set('dataHora', data.dataHoraFormatted || '');
+
+            if (clients.openWindow) {
+                return clients.openWindow(confirmPageUrl.href);
             }
         }
 
-        // 2. Montar texto e link do WhatsApp
-        const msgText = `Olá *${clienteNome}*, seu agendamento para *${servicoNome}* no dia *${dataHoraFormatted}* foi *CONFIRMADO* com sucesso! 🚀`;
-        const cleanNum = whatsapp ? String(whatsapp).replace(/\D/g, '') : '';
-        const waUrl = cleanNum 
-            ? `https://api.whatsapp.com/send?phone=${cleanNum}&text=${encodeURIComponent(msgText)}`
-            : targetUrl.href;
-
-        // 3. Notificar a janela da PWA para disparar a abertura do WhatsApp via esquema nativo
-        event.waitUntil((async () => {
-            const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
-            if (windowClients && windowClients.length > 0) {
-                for (const c of windowClients) {
-                    c.postMessage({ type: 'OPEN_WHATSAPP', url: waUrl });
-                }
-                return windowClients[0].focus();
-            }
-
-            if (clients.openWindow) {
-                try {
-                    await clients.openWindow(waUrl);
-                } catch (e) {
-                    console.warn('[SW OPEN WINDOW WARN]', e);
-                }
-            }
-        })());
-
-        return;
-    }
-
-    event.waitUntil((async () => {
-        // Se clicou na notificação padrão ou no botão "Ver na Agenda"
+        // Botão "Ver na Agenda" ou clique padrão
         const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
         const existingClient = windowClients.find(client => {
             const clientUrl = new URL(client.url);

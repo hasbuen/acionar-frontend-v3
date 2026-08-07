@@ -231,6 +231,16 @@ export function PublicSchedule({ slug: propSlug }) {
       const { latitude, longitude, accuracy, altitude } = position.coords;
       console.log(`[GPS LIVE] Lat: ${latitude}, Lon: ${longitude}, Acc: ${accuracy}m, Alt: ${altitude || 'N/A'}`);
 
+      if (accuracy > 200) {
+        setLoadingGps(false);
+        showAlert({
+          type: 'warning',
+          title: 'Sinal de GPS Impreciso',
+          message: `A precisão obtida foi de ${Math.round(accuracy)} metros (muito baixa). Para evitar endereços errados, por favor digite seu CEP abaixo.`
+        });
+        return;
+      }
+
       if (mapRef.current && markerRef.current) {
         mapRef.current.flyTo([latitude, longitude], 18);
         markerRef.current.setLatLng([latitude, longitude]);
