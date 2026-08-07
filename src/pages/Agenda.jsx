@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { NewAppointmentModal } from '../components/NewAppointmentModal';
 import {
   Activity, AlertCircle, ArrowRightLeft, Banknote, Calendar, CalendarDays, Check, CheckCircle, ChevronDown, ChevronUp, Clock, CreditCard, DollarSign,
-  Edit3, Info, Link, MessageSquare, Phone, Plus, QrCode, Scissors, ShieldCheck, Trash2, User,
+  Edit3, Home, Info, Link, Map, MapPin, MessageSquare, Phone, Plus, QrCode, Scissors, ShieldCheck, Trash2, User,
   WalletCards, Wrench, X, Zap
 } from 'lucide-react';
 
@@ -66,6 +66,40 @@ function formatTime(value) {
 function dateParts(value) {
   const date = new Date(value);
   return { month: date.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', ''), day: date.getDate() };
+}
+
+function getGoogleMapsUrl(endereco) {
+  if (!endereco) return '#';
+  let query = '';
+  if (typeof endereco === 'object') {
+    query = `${endereco.rua || ''}, ${endereco.numero || ''} ${endereco.bairro ? `- ${endereco.bairro}` : ''}`;
+  } else {
+    try {
+      const parsed = JSON.parse(endereco);
+      if (typeof parsed === 'object' && parsed !== null) {
+        query = `${parsed.rua || ''}, ${parsed.numero || ''} ${parsed.bairro ? `- ${parsed.bairro}` : ''}`;
+      } else {
+        query = String(endereco);
+      }
+    } catch (e) {
+      query = String(endereco);
+    }
+  }
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query.trim())}`;
+}
+
+function formatEnderecoTexto(endereco) {
+  if (!endereco) return 'Endereço informado no agendamento';
+  if (typeof endereco === 'object') {
+    return `${endereco.rua || ''}, ${endereco.numero || ''} ${endereco.bairro ? `— ${endereco.bairro}` : ''} ${endereco.complemento ? `(${endereco.complemento})` : ''}`;
+  }
+  try {
+    const parsed = JSON.parse(endereco);
+    if (typeof parsed === 'object' && parsed !== null) {
+      return `${parsed.rua || ''}, ${parsed.numero || ''} ${parsed.bairro ? `— ${parsed.bairro}` : ''} ${parsed.complemento ? `(${parsed.complemento})` : ''}`;
+    }
+  } catch (e) {}
+  return String(endereco);
 }
 
 function Modal({ title, subtitle, children, onClose, wide = false }) {
@@ -178,6 +212,30 @@ function DetailsModal({ item, onClose, onUpdateStatus, onOpenMaintenance, onEdit
         {item.observacao && (
           <div className="rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/60 dark:border-slate-800/50 p-3.5 italic text-slate-700 dark:text-slate-300 text-xs">
             “{item.observacao}”
+          </div>
+        )}
+
+        {/* ENDEREÇO DE ATENDIMENTO DOMICILIAR E BOTAO GOOGLE MAPS */}
+        {(item.tipo_atendimento === 'domicilio' || item.tipo_atendimento === 'externo' || item.endereco_externo) && (
+          <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/30 p-3.5 space-y-2.5">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-black text-xs">
+                <Home className="h-4 w-4 shrink-0" />
+                <span>Atendimento Domiciliar</span>
+              </div>
+              <a
+                href={getGoogleMapsUrl(item.endereco_externo)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-md transition-all shrink-0"
+              >
+                <MapPin className="h-3.5 w-3.5 text-white" />
+                <span>Abrir no Google Maps</span>
+              </a>
+            </div>
+            <p className="text-xs font-extrabold text-slate-800 dark:text-slate-100 leading-snug">
+              📍 {formatEnderecoTexto(item.endereco_externo)}
+            </p>
           </div>
         )}
       </div>
@@ -859,7 +917,7 @@ export function Agenda() {
             const parts = dateParts(item.data_hora);
             const isRequest = ['aguardando_confirmacao', 'solicitado'].includes(item.status);
             const isManutencao = item.status === 'manutencao';
-            const isAtendimentoExterno = (item.tipo_atendimento || 'salao').toLowerCase() === 'cliente' || (item.tipo_atendimento || 'salao').toLowerCase() === 'externo';
+            const isAtendimentoExterno = (item.tipo_atendimento || 'salao').toLowerCase() === 'cliente' || (item.tipo_atendimento || 'salao').toLowerCase() === 'externo' || (item.tipo_atendimento || 'salao').toLowerCase() === 'domicilio';
 
             return (
               <div
@@ -901,9 +959,21 @@ export function Agenda() {
                       )}
 
                       {isAtendimentoExterno ? (
-                        <span className="inline-flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-300 border border-orange-500/20 shrink-0">
-                          No local do cliente
-                        </span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className="inline-flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-500/20">
+                            <Home className="h-2.5 w-2.5" /> Domicílio
+                          </span>
+                          <a
+                            href={getGoogleMapsUrl(item.endereco_externo)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-600 text-white hover:bg-emerald-500 transition shadow-sm"
+                            title="Abrir localização no Google Maps"
+                          >
+                            <MapPin className="h-2.5 w-2.5" /> Maps
+                          </a>
+                        </div>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-500 dark:text-slate-300 border border-slate-500/20 shrink-0">
                           No salão
