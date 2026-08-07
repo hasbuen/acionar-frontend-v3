@@ -313,21 +313,30 @@ export function Servicos({ setActiveTab }) {
             >
               <div>
                 <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h3 className="text-lg font-black text-slate-900 dark:text-white">{s.nome}</h3>
-                    <button
-                      type="button"
-                      onClick={() => handleToggleServicoAtendo(s.id)}
-                      className={`mt-1 inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border text-[11px] font-black transition-all ${
-                        s.habilitado_profissional !== false
-                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'
-                      }`}
-                      title={s.habilitado_profissional !== false ? 'Deshabilitar este serviço para mim' : 'Habilitar este serviço para mim'}
-                    >
-                      {s.habilitado_profissional !== false ? <Check className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
-                      <span>{s.habilitado_profissional !== false ? 'Atendo' : 'Habilitar'}</span>
-                    </button>
+                  <div className="flex items-center gap-3">
+                    {s.foto_url ? (
+                      <img src={s.foto_url} alt={s.nome} className="h-12 w-12 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 shrink-0" />
+                    ) : (
+                      <div className="h-12 w-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500 shrink-0">
+                        <Scissors className="h-6 w-6" />
+                      </div>
+                    )}
+                    <div>
+                      <h3 className="text-lg font-black text-slate-900 dark:text-white">{s.nome}</h3>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleServicoAtendo(s.id)}
+                        className={`mt-1 inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border text-[11px] font-black transition-all ${
+                          s.habilitado_profissional !== false
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                        }`}
+                        title={s.habilitado_profissional !== false ? 'Deshabilitar este serviço para mim' : 'Habilitar este serviço para mim'}
+                      >
+                        {s.habilitado_profissional !== false ? <Check className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+                        <span>{s.habilitado_profissional !== false ? 'Atendo' : 'Habilitar'}</span>
+                      </button>
+                    </div>
                   </div>
                   <span className="text-lg font-black text-emerald-400 shrink-0">
                     R$ {parseFloat(s.preco).toFixed(2).replace('.', ',')}
@@ -360,6 +369,9 @@ export function Servicos({ setActiveTab }) {
                       <div key={sub.id} className="rounded-xl bg-slate-100 dark:bg-slate-950 p-2.5 text-xs space-y-1.5 border border-slate-200/50 dark:border-slate-800/50">
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0">
+                            {sub.foto_url && (
+                              <img src={sub.foto_url} alt={sub.nome} className="h-7 w-7 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0" />
+                            )}
                             <button
                               type="button"
                               onClick={() => handleToggleSubservicoAtendo(s.id, sub.id)}

@@ -302,12 +302,17 @@ export function PublicSchedule({ slug: propSlug }) {
                       }`}
                     >
                       <div className="flex items-center justify-between gap-4 w-full">
-                        <div className="min-w-0 flex-1">
-                          <h4 className="font-extrabold text-base truncate" style={{ color: 'var(--color-text-primary)' }}>{s.nome}</h4>
-                          <p className="text-xs opacity-90 flex items-center gap-2 mt-1" style={{ color: 'var(--color-text-secondary)' }}>
-                            <span>{s.duracao_minutos} min</span>
-                            {s.descricao && <span>• {s.descricao}</span>}
-                          </p>
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          {s.foto_url && (
+                            <img src={s.foto_url} alt={s.nome} className="h-12 w-12 rounded-2xl object-cover border border-white/10 shrink-0" />
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-extrabold text-base truncate" style={{ color: 'var(--color-text-primary)' }}>{s.nome}</h4>
+                            <p className="text-xs opacity-90 flex items-center gap-2 mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+                              <span>{s.duracao_minutos} min</span>
+                              {s.descricao && <span>• {s.descricao}</span>}
+                            </p>
+                          </div>
                         </div>
                         <div className="flex items-center gap-4 shrink-0">
                           <span className="font-black text-sm" style={{ color: 'var(--color-highlight)' }}>
@@ -346,13 +351,18 @@ export function PublicSchedule({ slug: propSlug }) {
                                     isSubSelected ? 'border-active bg-white/10' : ''
                                   }`}
                                 >
-                                  <div className="min-w-0 flex-1">
-                                    <h6 className="text-sm font-extrabold truncate" style={{ color: 'var(--color-text-primary)' }}>{sub.nome}</h6>
-                                    {sub.duracao_adicional && parseFloat(sub.duracao_adicional) > 0 && (
-                                      <p className="text-[10px] opacity-80 mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-                                        +{sub.duracao_adicional} minutos adicionais
-                                      </p>
+                                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                                    {sub.foto_url && (
+                                      <img src={sub.foto_url} alt={sub.nome} className="h-8 w-8 rounded-xl object-cover border border-white/10 shrink-0" />
                                     )}
+                                    <div className="min-w-0 flex-1">
+                                      <h6 className="text-sm font-extrabold truncate" style={{ color: 'var(--color-text-primary)' }}>{sub.nome}</h6>
+                                      {sub.duracao_adicional_minutos && parseInt(sub.duracao_adicional_minutos, 10) > 0 && (
+                                        <p className="text-[10px] opacity-80 mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+                                          +{sub.duracao_adicional_minutos} minutos adicionais
+                                        </p>
+                                      )}
+                                    </div>
                                   </div>
                                   <div className="text-right shrink-0 flex items-center gap-3">
                                     <span className="block text-xs font-black" style={{ color: 'var(--color-highlight)' }}>
