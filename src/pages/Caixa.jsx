@@ -318,19 +318,23 @@ export function Caixa() {
   const totalRecebido = data.resumo.totalEntradas || 0;
   const aReceber = data.resumo.totalAReceber || data.resumo.totalReceber || 0;
   const totalSaidas = data.resumo.totalSaidas || 0;
+  const despesasAPagar = data.resumo.totalSaidasPendente || 0;
   const qtdPendentes = data.resumo.qtdPendentes || 0;
   const qtdRecebidos = data.resumo.qtdRecebidos || 0;
+  const qtdDespesasPendentes = (data.movimentacoes || []).filter(m => (m.tipo === 'saida' || m.tipo === 'despesa') && (m.status === 'pendente' || m.status === 'a_pagar')).length;
 
-  const somaTotal = totalRecebido + aReceber + totalSaidas || 1;
-  const maxValor = Math.max(totalRecebido, aReceber, totalSaidas, 1);
+  const somaTotal = totalRecebido + aReceber + totalSaidas + despesasAPagar || 1;
+  const maxValor = Math.max(totalRecebido, aReceber, totalSaidas, despesasAPagar, 1);
 
   const pctRecebido = Math.round((totalRecebido / somaTotal) * 100);
   const pctAReceber = Math.round((aReceber / somaTotal) * 100);
   const pctSaidas = Math.round((totalSaidas / somaTotal) * 100);
+  const pctDespesasAPagar = Math.round((despesasAPagar / somaTotal) * 100);
 
   const barRecebido = Math.min(Math.round((totalRecebido / maxValor) * 100), 100);
   const barAReceber = Math.min(Math.round((aReceber / maxValor) * 100), 100);
   const barSaidas = Math.min(Math.round((totalSaidas / maxValor) * 100), 100);
+  const barDespesasAPagar = Math.min(Math.round((despesasAPagar / maxValor) * 100), 100);
 
   const movimentacoesFiltradas = data.movimentacoes.filter((m) => {
     const status = m.status || (m.pendente ? 'pendente' : 'pago');
@@ -485,9 +489,9 @@ export function Caixa() {
         {/* Conteúdo Dinâmico (KPIs ou Gráficos) */}
         <div className="w-full">
           {viewMode === 'valores' ? (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 w-full">
               {/* KPI: Total Recebido */}
-              <div className="rounded-2xl sm:rounded-3xl border border-emerald-500/20 bg-emerald-50/30 dark:bg-slate-900/60 p-4 sm:p-6 shadow-sm min-w-0 overflow-hidden">
+              <div className="rounded-2xl sm:rounded-3xl border border-emerald-500/20 bg-emerald-50/30 dark:bg-slate-900/60 p-4 sm:p-5 shadow-sm min-w-0 overflow-hidden">
                 <div className="flex items-center justify-between mb-3 sm:mb-4">
                   <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                     <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -497,13 +501,13 @@ export function Caixa() {
                   </div>
                 </div>
                 <div className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 leading-tight mb-1">TOTAL RECEBIDO</div>
-                <div className="text-xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 leading-tight truncate">
+                <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 leading-tight truncate">
                   R$&nbsp;{totalRecebido.toFixed(2).replace('.', ',')}
                 </div>
               </div>
 
               {/* KPI: À Receber */}
-              <div className="rounded-2xl sm:rounded-3xl border border-amber-500/20 bg-amber-50/30 dark:bg-slate-900/60 p-4 sm:p-6 shadow-sm min-w-0 overflow-hidden">
+              <div className="rounded-2xl sm:rounded-3xl border border-amber-500/20 bg-amber-50/30 dark:bg-slate-900/60 p-4 sm:p-5 shadow-sm min-w-0 overflow-hidden">
                 <div className="flex items-center justify-between mb-3 sm:mb-4">
                   <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
                     <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -513,24 +517,40 @@ export function Caixa() {
                   </div>
                 </div>
                 <div className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 leading-tight mb-1">À RECEBER</div>
-                <div className="text-xl sm:text-3xl font-black text-amber-600 dark:text-amber-400 leading-tight truncate">
+                <div className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 leading-tight truncate">
                   R$&nbsp;{aReceber.toFixed(2).replace('.', ',')}
                 </div>
               </div>
 
-              {/* KPI: Saídas */}
-              <div className="rounded-2xl sm:rounded-3xl border border-purple-500/20 bg-purple-50/30 dark:bg-slate-900/60 p-4 sm:p-6 shadow-sm min-w-0 overflow-hidden">
+              {/* KPI: Saídas Pagas */}
+              <div className="rounded-2xl sm:rounded-3xl border border-purple-500/20 bg-purple-50/30 dark:bg-slate-900/60 p-4 sm:p-5 shadow-sm min-w-0 overflow-hidden">
                 <div className="flex items-center justify-between mb-3 sm:mb-4">
                   <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
                     <ArrowDownRight className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
                   <div className="text-[10px] font-semibold text-slate-400 text-right">
-                    Despesas
+                    Pagas
                   </div>
                 </div>
-                <div className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 leading-tight mb-1">SAÍDAS</div>
-                <div className="text-xl sm:text-3xl font-black text-purple-600 dark:text-purple-400 leading-tight truncate">
+                <div className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 leading-tight mb-1">SAÍDAS (PAGAS)</div>
+                <div className="text-xl sm:text-2xl font-black text-purple-600 dark:text-purple-400 leading-tight truncate">
                   R$&nbsp;{totalSaidas.toFixed(2).replace('.', ',')}
+                </div>
+              </div>
+
+              {/* KPI: Despesas a Pagar (Mensalidades / Contas Pendentes) */}
+              <div className="rounded-2xl sm:rounded-3xl border border-rose-500/20 bg-rose-50/30 dark:bg-slate-900/60 p-4 sm:p-5 shadow-sm min-w-0 overflow-hidden">
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                    <ArrowUpRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </div>
+                  <div className="text-[10px] font-semibold text-slate-400 text-right">
+                    {qtdDespesasPendentes} pendente(s)
+                  </div>
+                </div>
+                <div className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 leading-tight mb-1">DESPESAS A PAGAR</div>
+                <div className="text-xl sm:text-2xl font-black text-rose-600 dark:text-rose-400 leading-tight truncate">
+                  R$&nbsp;{despesasAPagar.toFixed(2).replace('.', ',')}
                 </div>
               </div>
             </div>
@@ -565,12 +585,24 @@ export function Caixa() {
                   <div className="space-y-1.5 sm:space-y-2">
                     <div className="flex justify-between items-center text-xs font-black gap-2 min-w-0">
                       <span className="flex items-center gap-1.5 text-purple-600 dark:text-purple-400 truncate min-w-0">
-                        <ArrowDownRight className="h-4 w-4 shrink-0" /> <span className="truncate">SAÍDAS</span>
+                        <ArrowDownRight className="h-4 w-4 shrink-0" /> <span className="truncate">SAÍDAS (PAGAS)</span>
                       </span>
                       <span className="text-slate-900 dark:text-white shrink-0">R$ {totalSaidas.toFixed(2).replace('.', ',')} ({barSaidas}%)</span>
                     </div>
                     <div className="w-full bg-slate-100 dark:bg-slate-800 h-4 rounded-full overflow-hidden p-0.5">
                       <div className="bg-purple-500 h-full rounded-full transition-all duration-500" style={{ width: `${barSaidas}%` }} />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 sm:space-y-2">
+                    <div className="flex justify-between items-center text-xs font-black gap-2 min-w-0">
+                      <span className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400 truncate min-w-0">
+                        <ArrowUpRight className="h-4 w-4 shrink-0" /> <span className="truncate">DESPESAS A PAGAR</span>
+                      </span>
+                      <span className="text-slate-900 dark:text-white shrink-0">R$ {despesasAPagar.toFixed(2).replace('.', ',')} ({barDespesasAPagar}%)</span>
+                    </div>
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-4 rounded-full overflow-hidden p-0.5">
+                      <div className="bg-rose-500 h-full rounded-full transition-all duration-500" style={{ width: `${barDespesasAPagar}%` }} />
                     </div>
                   </div>
                 </div>
