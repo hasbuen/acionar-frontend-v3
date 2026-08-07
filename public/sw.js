@@ -139,6 +139,7 @@ self.addEventListener('notificationclick', (event) => {
         return;
     }
 
+    event.waitUntil((async () => {
         // Se clicou na notificação padrão ou no botão "Ver na Agenda"
         const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
         const existingClient = windowClients.find(client => {

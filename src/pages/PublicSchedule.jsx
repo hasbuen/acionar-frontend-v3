@@ -219,7 +219,7 @@ export function PublicSchedule({ slug: propSlug }) {
 
     const geoOptions = {
       enableHighAccuracy: true,
-      timeout: 10000,
+      timeout: 15000,
       maximumAge: 0 // Leitura de satélite em tempo real (força o hardware a não usar cache do provedor Wi-Fi)
     };
 
@@ -348,7 +348,7 @@ export function PublicSchedule({ slug: propSlug }) {
       setLoadingGps(false);
     };
 
-    // Timeout de segurança para usar a melhor posição obtida em 6 segundos
+    // Timeout de segurança para usar a melhor posição obtida em 15 segundos
     const fallbackTimer = setTimeout(() => {
       if (watchId !== null) {
         navigator.geolocation.clearWatch(watchId);
@@ -364,7 +364,7 @@ export function PublicSchedule({ slug: propSlug }) {
           message: 'Não foi possível travar os satélites de GPS no momento. Por favor, digite seu CEP abaixo.'
         });
       }
-    }, 7000);
+    }, 15000);
 
     watchId = navigator.geolocation.watchPosition(
       (position) => {
