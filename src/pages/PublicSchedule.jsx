@@ -1061,41 +1061,15 @@ export function PublicSchedule({ slug: propSlug }) {
                         <span className="flex items-center gap-1">📍 Marque no Mapa (Arraste o pino até sua porta)</span>
                         <button
                           type="button"
-                          onClick={() => {
-                            setIsMapFullscreen(true);
-                            setTimeout(() => {
-                              if (mapRef.current) mapRef.current.invalidateSize();
-                            }, 200);
-                          }}
+                          onClick={() => setIsMapFullscreen(true)}
                           className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-extrabold flex items-center gap-1 hover:bg-emerald-500 hover:text-white transition shadow-sm"
                         >
                           <Maximize2 className="h-3 w-3" /> Expandir Tela Cheia
                         </button>
                       </div>
 
-                      <div className={`transition-all ${isMapFullscreen ? 'fixed inset-0 z-50 bg-slate-950 p-4 flex flex-col' : 'w-full h-48 rounded-2xl border border-white/15 overflow-hidden relative shadow-inner bg-black/40'}`}>
-                        {isMapFullscreen && (
-                          <div className="flex items-center justify-between pb-3 text-white border-b border-white/10 mb-3 shrink-0">
-                            <div className="flex items-center gap-2">
-                              <MapPin className="h-5 w-5 text-emerald-400" />
-                              <span className="font-extrabold text-sm">Arraste o pino até a sua casa</span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setIsMapFullscreen(false);
-                                setTimeout(() => {
-                                  if (mapRef.current) mapRef.current.invalidateSize();
-                                }, 200);
-                              }}
-                              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-1 shadow-lg"
-                            >
-                              <Minimize2 className="h-4 w-4" /> Concluir Marcação
-                            </button>
-                          </div>
-                        )}
-
-                        <div id="home-service-map" className={`w-full ${isMapFullscreen ? 'flex-1 rounded-2xl' : 'h-full'} z-0`}></div>
+                      <div className="w-full h-48 rounded-2xl border border-white/15 overflow-hidden relative shadow-inner bg-black/40">
+                        <div id="home-service-map" className="w-full h-full z-0"></div>
                       </div>
                     </div>
 
@@ -1276,10 +1250,119 @@ export function PublicSchedule({ slug: propSlug }) {
         </div>
       )}
 
+      {/* FULLSCREEN MAP PORTAL */}
+      {isMapFullscreen && (
+        <FullscreenMapModal
+          markerPos={markerRef.current ? markerRef.current.getLatLng() : { lat: -23.55052, lng: -46.633308 }}
+          onClose={() => {
+            setIsMapFullscreen(false);
+            setTimeout(() => {
+              if (mapRef.current) mapRef.current.invalidateSize();
+            }, 200);
+          }}
+          onLocationSelected={async (lat, lng) => {
+            if (mapRef.current && markerRef.current) {
+              mapRef.current.flyTo([lat, lng], 18);
+              markerRef.current.setLatLng([lat, lng]);
+            }
+            try {
+              const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=pt-BR`);
+              if (res.ok) {
+                const data = await res.json();
+                if (data && data.address) {
+                  const addr = data.address;
+                  const cleanPostcode = addr.postcode ? String(addr.postcode).replace(/\D/g, '') : '';
+                  if (cleanPostcode.length === 8) {
+                    setCepInput(cleanPostcode.replace(/^(\d{5})(\d{3})$/, '$1-$2'));
+                  }
+                  setFormEndereco(prev => ({
+                    ...prev,
+                    rua: addr.road || addr.street || addr.pedestrian || addr.footway || prev.rua,
+                    numero: addr.house_number || prev.numero,
+                    bairro: addr.suburb || addr.neighbourhood || addr.city_district || prev.bairro
+                  }));
+                }
+              }
+            } catch (e) {}
+          }}
+        />
+      )}
+
       {/* Força color-scheme no input date */}
       <style>{`
-        .color-scheme-dark { color-scheme: dark; }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+          filter: invert(var(--calendar-invert, 0));
+          cursor: pointer;
+        }
       `}</style>
+    </div>
+  );
+}
+
+function FullscreenMapModal({ onClose, markerPos, onLocationSelected }) {
+  React.useEffect(() => {
+    if (!window.L) return;
+    const initialLat = markerPos?.lat || -23.55052;
+    const initialLng = markerPos?.lng || -46.633308;
+
+    const map = window.L.map('fullscreen-portal-map', {
+      center: [initialLat, initialLng],
+      zoom: 17,
+      zoomControl: true
+    });
+
+    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    const customIcon = window.L.divIcon({
+      className: 'custom-map-pin',
+      html: `<div style="background-color: var(--color-primary, #10b981); width: 36px; height: 36px; border-radius: 50%; border: 3px solid #ffffff; box-shadow: 0 4px 18px rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center;"><div style="width: 12px; height: 12px; background-color: #ffffff; border-radius: 50%;"></div></div>`,
+      iconSize: [36, 36],
+      iconAnchor: [18, 18]
+    });
+
+    const marker = window.L.marker([initialLat, initialLng], {
+      draggable: true,
+      icon: customIcon
+    }).addTo(map);
+
+    marker.bindPopup('<b>Arraste o pino até seu imóvel</b>').openPopup();
+
+    marker.on('dragend', () => {
+      const pos = marker.getLatLng();
+      if (onLocationSelected) onLocationSelected(pos.lat, pos.lng);
+    });
+
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 250);
+
+    return () => {
+      map.remove();
+    };
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-[99999] bg-slate-950 p-4 flex flex-col">
+      <div className="flex items-center justify-between pb-3 text-white border-b border-white/10 shrink-0">
+        <div className="flex items-center gap-2">
+          <MapPin className="h-5 w-5 text-emerald-400" />
+          <span className="font-extrabold text-sm sm:text-base">Arraste o pino até a sua porta</span>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-lg transition"
+        >
+          <Minimize2 className="h-4 w-4" /> Concluir Marcação
+        </button>
+      </div>
+
+      <div className="flex-1 w-full mt-3 rounded-2xl overflow-hidden relative border border-white/15 shadow-2xl">
+        <div id="fullscreen-portal-map" className="w-full h-full z-0"></div>
+      </div>
     </div>
   );
 }
