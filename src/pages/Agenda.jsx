@@ -940,7 +940,7 @@ export function Agenda() {
                   <div className="min-w-0">
                     <div className="mb-1 flex flex-wrap items-center gap-2">
                       <span className="text-base font-black text-slate-900 dark:text-white">
-                        {item.cliente_nome || 'Cliente não identificado'}
+                        {item.cliente_nome && item.cliente_nome !== 'Cliente não identificado' ? item.cliente_nome : (item.temp_cliente_nome || 'Cliente')}
                       </span>
                       <span
                         className={`rounded-full border px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider ${statusClasses[item.status] || statusClasses.agendado
