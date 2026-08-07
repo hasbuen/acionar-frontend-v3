@@ -4,7 +4,8 @@ import { apiRequest } from '../services/api';
 import {
   Plus, Wallet, Clock, ArrowDownRight, CheckCircle2, Trash2, X, List, Check,
   Hourglass, BarChart3, DollarSign, PieChart, Activity, Calendar, ArrowUpRight,
-  CreditCard, Banknote, QrCode, BadgeCheck, User, Package, FileText, Building2, Phone, UserPlus
+  CreditCard, Banknote, QrCode, BadgeCheck, User, Package, FileText, Building2, Phone, UserPlus,
+  ChevronDown, ChevronUp, PhoneCall, Repeat, Layers
 } from 'lucide-react';
 import { ModalAlert, useModalAlert } from '../components/ModalAlert';
 
@@ -29,6 +30,8 @@ export function Caixa() {
   const [clienteModo, setClienteModo] = useState('existente'); // 'existente' | 'novo'
   const [novoCliente, setNovoCliente] = useState({ nome: '', whatsapp: '' });
   const [contaSubTipo, setContaSubTipo] = useState('luz');
+  const [qtdMeses, setQtdMeses] = useState(1);
+  const [expandedGroups, setExpandedGroups] = useState({});
 
   const [form, setForm] = useState({
     tipo: 'entrada',
@@ -142,10 +145,43 @@ export function Caixa() {
     }));
   };
 
+  const handlePickContact = async () => {
+    if ('contacts' in navigator && 'select' in navigator.contacts) {
+      try {
+        const contacts = await navigator.contacts.select(['name', 'tel'], { multiple: false });
+        if (contacts && contacts.length > 0) {
+          const c = contacts[0];
+          const name = (c.name && c.name[0]) || '';
+          const tel = (c.tel && c.tel[0]) || '';
+          setNovoCliente({
+            nome: name || novoCliente.nome,
+            whatsapp: tel || novoCliente.whatsapp,
+          });
+          if (name) {
+            setForm(prev => ({ ...prev, descricao: `Lançamento para ${name}` }));
+          }
+        }
+      } catch (err) {
+        console.warn('Seleção de contato cancelada:', err);
+      }
+    } else {
+      showAlert({
+        type: 'info',
+        title: 'Agenda Telefônica',
+        message: 'A seleção direta da lista de contatos é nativa do aplicativo/navegador mobile (Android/iOS). Em navegadores de computador, digite o Nome e WhatsApp nos campos abaixo.',
+      });
+    }
+  };
+
+  const toggleGroupExpand = (key) => {
+    setExpandedGroups(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
   const handleOpenNovaMovimentacao = () => {
     setActiveTabModal('avulso');
     setClienteModo('existente');
     setNovoCliente({ nome: '', whatsapp: '' });
+    setQtdMeses(1);
     setForm({
       tipo: 'entrada',
       descricao: '',
@@ -200,6 +236,7 @@ export function Caixa() {
         cliente_id: finalClienteId ? parseInt(finalClienteId, 10) : undefined,
         produto_id: form.produto_id ? parseInt(form.produto_id, 10) : undefined,
         quantidade_produto: form.quantidade_produto ? parseInt(form.quantidade_produto, 10) : undefined,
+        qtd_meses: activeTabModal === 'conta' ? parseInt(qtdMeses, 10) : 1,
       });
 
       setShowModal(false);
@@ -301,6 +338,47 @@ export function Caixa() {
     if (statusTab === 'a_receber') return status === 'pendente';
     return true;
   });
+
+  const groupedMovimentacoes = React.useMemo(() => {
+    const groups = [];
+    const groupMap = new Map();
+
+    movimentacoesFiltradas.forEach((item) => {
+      const match = item.descricao?.match(/^(.*?)\s*\((\d+)\/(\d+)\)$/);
+      if (match) {
+        const baseTitle = match[1].trim();
+        const totalParcelas = match[3];
+        const key = `${baseTitle}_${totalParcelas}`;
+
+        if (!groupMap.has(key)) {
+          const newGroup = {
+            isGroup: true,
+            key,
+            titulo: baseTitle,
+            categoria: item.categoria,
+            totalParcelas,
+            items: [],
+            tipo: item.tipo,
+            totalValor: 0,
+            qtdPagas: 0,
+            qtdPendentes: 0,
+          };
+          groupMap.set(key, newGroup);
+          groups.push(newGroup);
+        }
+
+        const group = groupMap.get(key);
+        group.items.push(item);
+        group.totalValor += parseFloat(item.valor || 0);
+        if (item.status === 'pago') group.qtdPagas++;
+        else group.qtdPendentes++;
+      } else {
+        groups.push({ isGroup: false, ...item });
+      }
+    });
+
+    return groups;
+  }, [movimentacoesFiltradas]);
 
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-4 sm:space-y-5 w-full max-w-full overflow-x-hidden">
@@ -683,7 +761,119 @@ export function Caixa() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-900">
-                {movimentacoesFiltradas.map((m) => {
+                {groupedMovimentacoes.map((item) => {
+                  if (item.isGroup) {
+                    const isExpanded = !!expandedGroups[item.key];
+                    const isEntrada = item.tipo === 'entrada';
+                    const firstDate = item.items[0]?.data_movimento;
+
+                    return (
+                      <React.Fragment key={item.key}>
+                        {/* LINHA PAI DO ACORDEÃO */}
+                        <tr
+                          onClick={() => toggleGroupExpand(item.key)}
+                          className="bg-indigo-50/40 dark:bg-indigo-950/20 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors cursor-pointer border-l-4 border-l-indigo-500"
+                        >
+                          <td className="px-4 py-3 text-xs font-bold text-slate-600 dark:text-slate-300">
+                            {firstDate ? new Date(firstDate).toLocaleDateString('pt-BR') : '-'}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <span className={`text-xs sm:text-sm font-black ${isEntrada ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                              {isEntrada ? '+' : '-'}&nbsp;R$&nbsp;{item.totalValor.toFixed(2).replace('.', ',')}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                              {item.qtdPagas}/{item.totalParcelas} Pagos
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="px-2 py-0.5 rounded-lg font-black uppercase tracking-wider text-[9px] bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                              Recorrente ({item.categoria || 'conta'})
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <div className="h-6 w-6 rounded-lg bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 flex items-center justify-center font-bold">
+                                {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                              </div>
+                              <span className="font-black text-slate-900 dark:text-white text-xs sm:text-sm">
+                                {item.titulo}
+                              </span>
+                              <span className="text-[10px] font-bold text-slate-400">
+                                ({item.totalParcelas} meses)
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 underline">
+                              {isExpanded ? 'Recolher' : 'Expandir'}
+                            </span>
+                          </td>
+                        </tr>
+
+                        {/* SUB-LINHAS DO ACORDEÃO (EXPANDIDO) */}
+                        {isExpanded && item.items.map((subM) => {
+                          const subIsEntrada = subM.tipo === 'entrada';
+                          const subIsSaida = subM.tipo === 'saida';
+                          const subIsPago = subM.status === 'pago';
+
+                          return (
+                            <tr key={subM.id} className="bg-slate-50/70 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800/60">
+                              <td className="px-4 py-2.5 pl-8 text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                <span className="text-slate-300 dark:text-slate-600">└─</span>
+                                {new Date(subM.data_movimento).toLocaleDateString('pt-BR')}
+                              </td>
+                              <td className="px-4 py-2.5 text-right text-xs font-extrabold text-slate-800 dark:text-slate-200">
+                                R$&nbsp;{parseFloat(subM.valor).toFixed(2).replace('.', ',')}
+                              </td>
+                              <td className="px-4 py-2.5">
+                                <div className="flex items-center gap-1.5">
+                                  {renderPaymentBadge(subM.forma_pagamento)}
+                                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md font-black uppercase text-[9px] ${subIsPago ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                                    {subIsPago ? '✓ Pago' : '⏳ Pendente'}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-2.5 text-xs text-slate-400 font-semibold">
+                                {subM.categoria || 'conta'}
+                              </td>
+                              <td className="px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300">
+                                {subM.descricao}
+                              </td>
+                              <td className="px-4 py-2.5 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  {!subIsPago && (subIsEntrada || subIsSaida) && (
+                                    <button
+                                      onClick={() => handleOpenBaixa(subM)}
+                                      title="Dar Baixa"
+                                      className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500 hover:text-white text-[9px] font-black uppercase tracking-wide transition-all border border-amber-500/20"
+                                    >
+                                      <BadgeCheck className="h-3 w-3 shrink-0" /> Baixar
+                                    </button>
+                                  )}
+                                  {subIsPago && (
+                                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[9px] font-black uppercase">
+                                      <Check className="h-3 w-3" /> Recebido
+                                    </span>
+                                  )}
+                                  <button
+                                    onClick={() => handleDeleteEntry(subM.id)}
+                                    className="p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition"
+                                    title="Excluir Parcela"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </React.Fragment>
+                    );
+                  }
+
+                  const m = item;
                   const isEntrada = m.tipo === 'entrada';
                   const isSaida = m.tipo === 'saida';
                   const isPago = m.status === 'pago';
@@ -692,39 +882,27 @@ export function Caixa() {
                   return (
                     <tr
                       key={m.id}
-                      className={`transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40 ${isAgendamentoVirtual && !isPago ? 'bg-amber-50/30 dark:bg-amber-900/5' : ''
-                        }`}
+                      className={`transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40 ${isAgendamentoVirtual && !isPago ? 'bg-amber-50/30 dark:bg-amber-900/5' : ''}`}
                     >
-
-                      {/* 2. Data */}
                       <td className="px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400">
                         {new Date(m.data_movimento).toLocaleDateString('pt-BR')}
                       </td>
-
-                      {/* 5. Valor */}
                       <td className="px-4 py-3 text-right">
-                        <span className={`text-xs sm:text-sm font-black whitespace-nowrap ${isEntrada ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
-                          }`}>
+                        <span className={`text-xs sm:text-sm font-black whitespace-nowrap ${isEntrada ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                           {isEntrada ? '+' : '-'}&nbsp;R$&nbsp;{parseFloat(m.valor).toFixed(2).replace('.', ',')}
                         </span>
                       </td>
-
-                      {/* 4. Status e Forma de Pgto */}
                       <td className="px-4 py-3">
                         <div className="flex flex-col gap-1 items-start">
                           {renderPaymentBadge(m.forma_pagamento)}
-                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md font-black uppercase tracking-wider text-[9px] ${isPago ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
-                            }`}>
+                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md font-black uppercase tracking-wider text-[9px] ${isPago ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
                             {isPago ? '✓ Pago' : '⏳ Pendente'}
                           </span>
                         </div>
                       </td>
-
-                      {/* 3. Categoria / Tipo */}
                       <td className="px-4 py-3">
                         <div className="flex flex-col gap-1.5 items-start">
-                          <span className={`px-2 py-0.5 rounded-lg font-black uppercase tracking-wider text-[9px] ${isEntrada ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
-                            }`}>
+                          <span className={`px-2 py-0.5 rounded-lg font-black uppercase tracking-wider text-[9px] ${isEntrada ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'}`}>
                             {m.tipo}
                           </span>
                           {(m.categoria === 'agendamento' || m.origem === 'agendamento') && (
@@ -739,13 +917,9 @@ export function Caixa() {
                           )}
                         </div>
                       </td>
-
-
-                      {/* 1. Descrição */}
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <div className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 font-bold ${isEntrada ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
-                            }`}>
+                          <div className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 font-bold ${isEntrada ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'}`}>
                             {isEntrada ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
                           </div>
                           <span className="font-extrabold text-slate-900 dark:text-white text-xs sm:text-sm">
@@ -753,10 +927,8 @@ export function Caixa() {
                           </span>
                         </div>
                       </td>
-
-                      {/* 6. Ações */}
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex items-center justify-center gap-2">
                           {!isPago && (isEntrada || isSaida) && (
                             <button
                               onClick={() => handleOpenBaixa(m)}
@@ -1066,6 +1238,14 @@ export function Caixa() {
                     </div>
                   ) : (
                     <div className="space-y-3 p-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/5">
+                      <button
+                        type="button"
+                        onClick={handlePickContact}
+                        onDoubleClick={handlePickContact}
+                        className="w-full py-2.5 px-3 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs font-black flex items-center justify-center gap-2 hover:bg-emerald-500/25 transition shadow-sm"
+                      >
+                        <PhoneCall className="h-4 w-4" /> Importar da Agenda Telefônica
+                      </button>
                       <div>
                         <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">NOME DO CLIENTE</label>
                         <input
@@ -1339,9 +1519,31 @@ export function Caixa() {
                     />
                   </div>
 
+                  <div>
+                    <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1.5">
+                      <Repeat className="h-3.5 w-3.5 text-blue-500" /> LANÇAR RECORRÊNCIA (QUANTOS MESES)
+                    </label>
+                    <select
+                      value={qtdMeses}
+                      onChange={(e) => setQtdMeses(parseInt(e.target.value, 10))}
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                    >
+                      <option value={1}>1 mês (Lançamento único)</option>
+                      <option value={2}>2 meses (Próximos 2 meses)</option>
+                      <option value={3}>3 meses (Próximos 3 meses)</option>
+                      <option value={6}>6 meses (Semestral - 6 meses)</option>
+                      <option value={12}>12 meses (Anual - 12 meses)</option>
+                    </select>
+                    {qtdMeses > 1 && (
+                      <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
+                        * O sistema gerará <strong>{qtdMeses} lançamentos mensais</strong> e os agrupará em um acordeão expansível na tabela.
+                      </p>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">VALOR (R$)</label>
+                      <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">VALOR MENSAL (R$)</label>
                       <input
                         type="number"
                         step="0.01"
