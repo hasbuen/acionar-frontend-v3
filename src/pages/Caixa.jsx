@@ -25,7 +25,20 @@ export function Caixa() {
   });
 
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ tipo: 'entrada', descricao: '', valor: '', forma_pagamento: 'pix', status: 'pago' });
+  const [form, setForm] = useState({
+    tipo: 'entrada',
+    descricao: '',
+    valor: '',
+    forma_pagamento: 'pix',
+    status: 'pago',
+    categoria: 'outros',
+    cliente_id: '',
+    produto_id: '',
+    quantidade_produto: '',
+    valor_unitario: ''
+  });
+  const [clientes, setClientes] = useState([]);
+  const [produtos, setProdutos] = useState([]);
 
   // Modal Dar Baixa
   const [showBaixaModal, setShowBaixaModal] = useState(false);
@@ -38,6 +51,25 @@ export function Caixa() {
   useEffect(() => {
     fetchCaixa();
   }, [activeFilter]);
+
+  useEffect(() => {
+    fetchAuxiliaryData();
+  }, []);
+
+  const fetchAuxiliaryData = async () => {
+    try {
+      const cRes = await apiRequest('/clientes');
+      setClientes(cRes.clientes || []);
+    } catch (e) {
+      console.warn('Erro ao carregar clientes:', e);
+    }
+    try {
+      const pRes = await apiRequest('/estoque/produtos');
+      setProdutos(pRes.produtos || []);
+    } catch (e) {
+      console.warn('Erro ao carregar produtos:', e);
+    }
+  };
 
   const handleSetViewMode = (mode) => {
     setViewMode(mode);
@@ -64,12 +96,56 @@ export function Caixa() {
     }
   };
 
+  const handleProductChange = (prodId) => {
+    const selectedProd = produtos.find(p => p.id === parseInt(prodId, 10));
+    const qty = parseInt(form.quantidade_produto || 0, 10);
+    const unitPrice = selectedProd ? parseFloat(selectedProd.custo_unitario || 0) : 0;
+    const totalVal = qty * unitPrice;
+    
+    setForm(prev => ({
+      ...prev,
+      produto_id: prodId,
+      valor_unitario: unitPrice,
+      valor: totalVal || prev.valor,
+      descricao: selectedProd ? `Compra de mercadoria: ${qty} un de ${selectedProd.nome}` : prev.descricao
+    }));
+  };
+
+  const handleQtyChange = (qty) => {
+    const selectedProd = produtos.find(p => p.id === parseInt(form.produto_id, 10));
+    const unitPrice = parseFloat(form.valor_unitario || 0);
+    const totalVal = qty * unitPrice;
+
+    setForm(prev => ({
+      ...prev,
+      quantidade_produto: qty,
+      valor: totalVal || prev.valor,
+      descricao: selectedProd ? `Compra de mercadoria: ${qty} un de ${selectedProd.nome}` : prev.descricao
+    }));
+  };
+
+  const handleUnitPriceChange = (price) => {
+    const selectedProd = produtos.find(p => p.id === parseInt(form.produto_id, 10));
+    const qty = parseInt(form.quantidade_produto || 0, 10);
+    const totalVal = qty * price;
+
+    setForm(prev => ({
+      ...prev,
+      valor_unitario: price,
+      valor: totalVal || prev.valor,
+      descricao: selectedProd ? `Compra de mercadoria: ${qty} un de ${selectedProd.nome}` : prev.descricao
+    }));
+  };
+
   const handleCreateEntry = async (e) => {
     e.preventDefault();
     try {
       await apiRequest('/caixa', 'POST', {
         ...form,
         valor: parseFloat(form.valor),
+        cliente_id: form.cliente_id ? parseInt(form.cliente_id, 10) : undefined,
+        produto_id: form.produto_id ? parseInt(form.produto_id, 10) : undefined,
+        quantidade_produto: form.quantidade_produto ? parseInt(form.quantidade_produto, 10) : undefined,
       });
       setShowModal(false);
       fetchCaixa();
@@ -188,7 +264,21 @@ export function Caixa() {
         </div>
 
         <button
-          onClick={() => setShowModal(true)}
+          onClick={() => {
+            setForm({
+              tipo: 'entrada',
+              descricao: '',
+              valor: '',
+              forma_pagamento: 'pix',
+              status: 'pago',
+              categoria: 'outros',
+              cliente_id: '',
+              produto_id: '',
+              quantidade_produto: '',
+              valor_unitario: ''
+            });
+            setShowModal(true);
+          }}
           className="btn-animated inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-3.5 text-xs font-black text-white shadow-lg shadow-emerald-500/25 transition hover:opacity-90 w-full sm:w-auto shrink-0"
         >
           <Plus className="h-4 w-4" /> Nova Movimentação
@@ -655,6 +745,269 @@ export function Caixa() {
                     </tr>
                   );
                 })}
+                  {showModal && createPortal(
+        <div className="fixed inset-0 z-[999999] h-screen w-screen flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="text-lg font-black text-slate-900 dark:text-white">Nova Movimentação</h3>
+              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-800 dark:hover:text-white p-1 rounded-lg">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateEntry} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1 no-scrollbar">
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">TIPO DE LANÇAMENTO</label>
+                <select
+                  value={form.tipo}
+                  onChange={(e) => {
+                    const type = e.target.value;
+                    setForm({
+                      ...form,
+                      tipo: type,
+                      categoria: 'outros',
+                      produto_id: '',
+                      quantidade_produto: '',
+                      valor_unitario: '',
+                      descricao: '',
+                      valor: ''
+                    });
+                  }}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                >
+                  <option value="entrada">Entrada (+)</option>
+                  <option value="saida">Saída (-)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">CATEGORIA</label>
+                <select
+                  value={form.categoria}
+                  onChange={(e) => {
+                    const cat = e.target.value;
+                    setForm({
+                      ...form,
+                      categoria: cat,
+                      produto_id: '',
+                      quantidade_produto: '',
+                      valor_unitario: '',
+                      descricao: '',
+                      valor: ''
+                    });
+                  }}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                >
+                  {form.tipo === 'entrada' ? (
+                    <>
+                      <option value="outros">Outros / Avulso</option>
+                      <option value="servico">Serviço / Atendimento</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="outros">Outros / Avulso</option>
+                      <option value="compra_mercadoria">Compra de Mercadoria (Estoque)</option>
+                      <option value="despesas">Despesas Gerais</option>
+                    </>
+                  )}
+                </select>
+              </div>
+
+              {/* Se for Compra de Mercadoria */}
+              {form.tipo === 'saida' && form.categoria === 'compra_mercadoria' && (
+                <>
+                  <div>
+                    <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">SELECIONE O PRODUTO</label>
+                    <select
+                      value={form.produto_id}
+                      onChange={(e) => handleProductChange(e.target.value)}
+                      required
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                    >
+                      <option value="">-- Selecione o produto --</option>
+                      {produtos.map(p => (
+                        <option key={p.id} value={p.id}>{p.nome} (Qtd atual: {p.quantidade})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">QUANTIDADE</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={form.quantidade_produto}
+                        onChange={(e) => handleQtyChange(e.target.value)}
+                        required
+                        placeholder="Ex: 5"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">CUSTO UNITÁRIO (R$)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={form.valor_unitario}
+                        onChange={(e) => handleUnitPriceChange(e.target.value)}
+                        required
+                        placeholder="0.00"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Vincular Cliente (Opcional) */}
+              {form.categoria !== 'compra_mercadoria' && (
+                <div>
+                  <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">VINCULAR CLIENTE (OPCIONAL)</label>
+                  <select
+                    value={form.cliente_id}
+                    onChange={(e) => setForm({ ...form, cliente_id: e.target.value })}
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                  >
+                    <option value="">-- Selecione o cliente --</option>
+                    {clientes.map(c => (
+                      <option key={c.id} value={c.id}>{c.nome} ({c.whatsapp || 'Sem whatsapp'})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">STATUS</label>
+                <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
+                  <option value="pago">Pago / Recebido</option>
+                  <option value="pendente">Pendente / A Receber</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">DESCRIÇÃO</label>
+                <input
+                  type="text"
+                  value={form.descricao}
+                  onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+                  placeholder="ex: Pagamento de Atendimento"
+                  required
+                  disabled={form.categoria === 'compra_mercadoria'}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 disabled:opacity-75 disabled:cursor-not-allowed"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">VALOR TOTAL (R$)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={form.valor}
+                  onChange={(e) => setForm({ ...form, valor: e.target.value })}
+                  placeholder="0.00"
+                  required
+                  disabled={form.categoria === 'compra_mercadoria'}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 disabled:opacity-75 disabled:cursor-not-allowed"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">FORMA DE PAGAMENTO</label>
+                <select value={form.forma_pagamento} onChange={(e) => setForm({ ...form, forma_pagamento: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
+                  <option value="pix">PIX</option>
+                  <option value="cartao_credito">Cartão de Crédito</option>
+                  <option value="cartao_debito">Cartão de Débito</option>
+                  <option value="dinheiro">Dinheiro</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition">Cancelar</button>
+                <button type="submit" className="px-5 py-2.5 rounded-2xl bg-emerald-600 text-xs font-black text-white hover:bg-emerald-500 transition shadow-md shadow-emerald-500/10">Lançar no Caixa</button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {showBaixaModal && baixaTarget && createPortal(
+        <div className="fixed inset-0 z-[999999] h-screen w-screen flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
+          <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-5 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                  <BadgeCheck className="h-4 w-4" />
+                </div>
+                <h3 className="text-base font-black text-slate-900 dark:text-white">Dar Baixa</h3>
+              </div>
+              <button onClick={() => setShowBaixaModal(false)} className="text-slate-400 hover:text-slate-800 dark:hover:text-white p-1 rounded-lg">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Resumo do lançamento */}
+            <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/50 p-4 space-y-1 border border-slate-200/60 dark:border-slate-700/40">
+              <p className="text-xs font-extrabold text-slate-900 dark:text-white truncate">{baixaTarget.descricao}</p>
+              <p className="text-xl font-black text-emerald-600 dark:text-emerald-400">
+                R$ {parseFloat(baixaTarget.valor).toFixed(2).replace('.', ',')}
+              </p>
+              <p className="text-[10px] font-semibold text-slate-400">
+                {new Date(baixaTarget.data_movimento).toLocaleDateString('pt-BR')}
+              </p>
+            </div>
+
+            {/* Seletor de forma de pagamento */}
+            <div>
+              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">FORMA DE PAGAMENTO RECEBIDA</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: 'pix', label: 'PIX', icon: <QrCode className="h-4 w-4" />, color: 'teal' },
+                  { value: 'cartao_credito', label: 'Crédito', icon: <CreditCard className="h-4 w-4" />, color: 'blue' },
+                  { value: 'cartao_debito', label: 'Débito', icon: <CreditCard className="h-4 w-4" />, color: 'indigo' },
+                  { value: 'dinheiro', label: 'Dinheiro', icon: <Banknote className="h-4 w-4" />, color: 'amber' },
+                ].map(({ value, label, icon }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setBaixaFormaPagamento(value)}
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-2xl border text-xs font-extrabold transition-all ${baixaFormaPagamento === value
+                      ? 'bg-emerald-500 text-white border-emerald-500 shadow-md shadow-emerald-500/20'
+                      : 'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-400'
+                      }`}
+                  >
+                    {icon} {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowBaixaModal(false)}
+                className="flex-1 px-4 py-2.5 rounded-2xl text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white border border-slate-200 dark:border-slate-700 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmarBaixa}
+                disabled={baixaLoading}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-xs font-black text-white shadow-lg shadow-emerald-500/20 hover:opacity-90 transition disabled:opacity-60"
+              >
+                {baixaLoading ? (
+                  <span className="animate-pulse">Baixando...</span>
+                ) : (
+                  <><BadgeCheck className="h-4 w-4" /> Confirmar Baixa</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
               </tbody>
             </table>
           </div>
@@ -662,144 +1015,4 @@ export function Caixa() {
       </div>
     </div>
   );
-
-  {/* Modal Nova Movimentação */ }
-  {
-    showModal && createPortal(
-      <div className="fixed inset-0 z-[999999] h-screen w-screen flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
-        <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-            <h3 className="text-lg font-black text-slate-900 dark:text-white">Nova Movimentação</h3>
-            <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-800 dark:hover:text-white p-1 rounded-lg">
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-
-          <form onSubmit={handleCreateEntry} className="space-y-4">
-            <div>
-              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">TIPO DE LANÇAMENTO</label>
-              <select value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
-                <option value="entrada">Entrada (+)</option>
-                <option value="saida">Saída (-)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">STATUS</label>
-              <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
-                <option value="pago">Pago / Recebido</option>
-                <option value="pendente">Pendente / A Receber</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">DESCRIÇÃO</label>
-              <input type="text" value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} placeholder="ex: Pagamento de Atendimento" required className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">VALOR (R$)</label>
-              <input type="number" step="0.01" value={form.valor} onChange={(e) => setForm({ ...form, valor: e.target.value })} placeholder="0.00" required className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">FORMA DE PAGAMENTO</label>
-              <select value={form.forma_pagamento} onChange={(e) => setForm({ ...form, forma_pagamento: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
-                <option value="pix">PIX</option>
-                <option value="cartao_credito">Cartão de Crédito</option>
-                <option value="cartao_debito">Cartão de Débito</option>
-                <option value="dinheiro">Dinheiro</option>
-              </select>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-2">
-              <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition">Cancelar</button>
-              <button type="submit" className="px-5 py-2.5 rounded-2xl bg-emerald-600 text-xs font-black text-white hover:bg-emerald-500 transition shadow-md shadow-emerald-500/10">Lançar no Caixa</button>
-            </div>
-          </form>
-        </div>
-      </div>,
-      document.body
-    )
-  };
-
-  {/* Modal Dar Baixa */ }
-  {
-    showBaixaModal && baixaTarget && createPortal(
-      <div className="fixed inset-0 z-[999999] h-screen w-screen flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
-        <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-5 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                <BadgeCheck className="h-4 w-4" />
-              </div>
-              <h3 className="text-base font-black text-slate-900 dark:text-white">Dar Baixa</h3>
-            </div>
-            <button onClick={() => setShowBaixaModal(false)} className="text-slate-400 hover:text-slate-800 dark:hover:text-white p-1 rounded-lg">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-
-          {/* Resumo do lançamento */}
-          <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/50 p-4 space-y-1 border border-slate-200/60 dark:border-slate-700/40">
-            <p className="text-xs font-extrabold text-slate-900 dark:text-white truncate">{baixaTarget.descricao}</p>
-            <p className="text-xl font-black text-emerald-600 dark:text-emerald-400">
-              R$ {parseFloat(baixaTarget.valor).toFixed(2).replace('.', ',')}
-            </p>
-            <p className="text-[10px] font-semibold text-slate-400">
-              {new Date(baixaTarget.data_movimento).toLocaleDateString('pt-BR')}
-            </p>
-          </div>
-
-          {/* Seletor de forma de pagamento */}
-          <div>
-            <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">FORMA DE PAGAMENTO RECEBIDA</label>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { value: 'pix', label: 'PIX', icon: <QrCode className="h-4 w-4" />, color: 'teal' },
-                { value: 'cartao_credito', label: 'Crédito', icon: <CreditCard className="h-4 w-4" />, color: 'blue' },
-                { value: 'cartao_debito', label: 'Débito', icon: <CreditCard className="h-4 w-4" />, color: 'indigo' },
-                { value: 'dinheiro', label: 'Dinheiro', icon: <Banknote className="h-4 w-4" />, color: 'amber' },
-              ].map(({ value, label, icon }) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setBaixaFormaPagamento(value)}
-                  className={`flex items-center gap-2 px-3 py-2.5 rounded-2xl border text-xs font-extrabold transition-all ${baixaFormaPagamento === value
-                    ? 'bg-emerald-500 text-white border-emerald-500 shadow-md shadow-emerald-500/20'
-                    : 'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-400'
-                    }`}
-                >
-                  {icon} {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex gap-3 pt-1">
-            <button
-              type="button"
-              onClick={() => setShowBaixaModal(false)}
-              className="flex-1 px-4 py-2.5 rounded-2xl text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white border border-slate-200 dark:border-slate-700 transition"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={handleConfirmarBaixa}
-              disabled={baixaLoading}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-xs font-black text-white shadow-lg shadow-emerald-500/20 hover:opacity-90 transition disabled:opacity-60"
-            >
-              {baixaLoading ? (
-                <span className="animate-pulse">Baixando...</span>
-              ) : (
-                <><BadgeCheck className="h-4 w-4" /> Confirmar Baixa</>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>,
-      document.body
-    )
-  };
 }
