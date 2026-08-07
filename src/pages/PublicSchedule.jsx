@@ -430,13 +430,14 @@ export function PublicSchedule({ slug: propSlug }) {
                       setTipoAtendimento('salao');
                       setSelectedProfissional(null);
                     }}
+                    style={tipoAtendimento === 'salao' ? { backgroundColor: 'var(--color-primary)', color: '#ffffff' } : {}}
                     className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-all ${
                       tipoAtendimento === 'salao'
-                        ? 'bg-white text-slate-900 shadow-md font-black scale-[1.02]'
+                        ? 'shadow-md scale-[1.02]'
                         : 'text-white/70 hover:text-white'
                     }`}
                   >
-                    <Building className="h-4 w-4 text-blue-500 shrink-0" />
+                    <Building className="h-4 w-4 shrink-0" />
                     <span>No Estabelecimento</span>
                   </button>
 
@@ -451,13 +452,14 @@ export function PublicSchedule({ slug: propSlug }) {
                         setSelectedProfissional(null);
                       }
                     }}
+                    style={tipoAtendimento === 'domicilio' ? { backgroundColor: 'var(--color-primary)', color: '#ffffff' } : {}}
                     className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-all ${
                       tipoAtendimento === 'domicilio'
-                        ? 'bg-emerald-500 text-white shadow-md font-black scale-[1.02]'
+                        ? 'shadow-md scale-[1.02]'
                         : 'text-white/70 hover:text-white'
                     }`}
                   >
-                    <Home className="h-4 w-4 text-amber-300 shrink-0" />
+                    <Home className="h-4 w-4 shrink-0" />
                     <span>Atendimento Domicílio</span>
                   </button>
                 </div>
@@ -473,9 +475,10 @@ export function PublicSchedule({ slug: propSlug }) {
                     <button
                       type="button"
                       onClick={() => setSelectedProfissional(null)}
+                      style={!selectedProfissional ? { backgroundColor: 'rgba(var(--color-primary-rgb), 0.3)', borderColor: 'var(--color-primary)' } : {}}
                       className={`px-3 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 transition-all border ${
                         !selectedProfissional
-                          ? 'bg-white/20 border-white text-white shadow-sm'
+                          ? 'text-white shadow-sm'
                           : 'bg-white/5 border-white/10 text-white/60 hover:text-white'
                       }`}
                     >
@@ -489,9 +492,10 @@ export function PublicSchedule({ slug: propSlug }) {
                           key={p.id}
                           type="button"
                           onClick={() => setSelectedProfissional(p)}
+                          style={isSel ? { backgroundColor: 'var(--color-primary)', borderColor: 'var(--color-primary)' } : {}}
                           className={`px-3 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-2 transition-all border ${
                             isSel
-                              ? 'bg-indigo-600 border-indigo-400 text-white shadow-md'
+                              ? 'text-white shadow-md'
                               : 'bg-white/5 border-white/10 text-white/70 hover:text-white'
                           }`}
                         >
@@ -747,21 +751,25 @@ export function PublicSchedule({ slug: propSlug }) {
 
                 {/* ENDEREÇO DE ATENDIMENTO DOMICILIAR */}
                 {tipoAtendimento === 'domicilio' && (
-                  <div className="p-4 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 space-y-4">
+                  <div 
+                    className="p-4 rounded-3xl border space-y-4"
+                    style={{ backgroundColor: 'rgba(var(--color-primary-rgb), 0.08)', borderColor: 'rgba(var(--color-primary-rgb), 0.25)' }}
+                  >
                     
                     {/* CABEÇALHO DO ENDEREÇO + BOTÃO GPS COM ÍCONE DE MAPA */}
-                    <div className="flex items-center justify-between gap-3 flex-wrap border-b border-emerald-500/20 pb-3">
-                      <div className="flex items-center gap-2 text-emerald-400">
-                        <Map className="h-4 w-4 shrink-0 text-emerald-400" />
+                    <div className="flex items-center justify-between gap-3 flex-wrap border-b border-white/10 pb-3">
+                      <div className="flex items-center gap-2" style={{ color: 'var(--color-highlight)' }}>
+                        <Map className="h-4 w-4 shrink-0" />
                         <h4 className="text-xs font-black uppercase tracking-wider">Endereço para Atendimento Domiciliar</h4>
                       </div>
                       <button
                         type="button"
                         onClick={handleObterGps}
                         disabled={loadingGps}
-                        className="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-extrabold flex items-center gap-2 hover:bg-emerald-500/30 transition shadow-sm"
+                        style={{ backgroundColor: 'rgba(var(--color-primary-rgb), 0.2)', borderColor: 'rgba(var(--color-primary-rgb), 0.4)', color: 'var(--color-text-primary)' }}
+                        className="px-3 py-1.5 rounded-xl border text-xs font-extrabold flex items-center gap-2 transition hover:brightness-110 shadow-sm"
                       >
-                        <LocateFixed className={`h-4 w-4 text-emerald-400 ${loadingGps ? 'animate-spin' : ''}`} />
+                        <LocateFixed className={`h-4 w-4 ${loadingGps ? 'animate-spin' : ''}`} style={{ color: 'var(--color-highlight)' }} />
                         <span>{loadingGps ? 'Obtendo GPS...' : 'Usar Meu GPS'}</span>
                       </button>
                     </div>
@@ -786,13 +794,14 @@ export function PublicSchedule({ slug: propSlug }) {
                           }}
                           placeholder="00000-000"
                           maxLength={9}
-                          className="flex-1 rounded-xl bg-black/40 border border-white/10 px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-emerald-500 font-medium tracking-wide shadow-inner"
+                          className="flex-1 rounded-xl bg-black/40 border border-white/10 px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-white/40 font-medium tracking-wide shadow-inner"
                         />
                         <button
                           type="button"
                           onClick={() => handleBuscarCep()}
                           disabled={loadingCep}
-                          className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold flex items-center gap-1.5 transition shadow shrink-0"
+                          style={{ backgroundColor: 'var(--color-primary)' }}
+                          className="px-4 py-2.5 rounded-xl text-white text-xs font-extrabold flex items-center gap-1.5 transition hover:brightness-110 shadow shrink-0"
                         >
                           {loadingCep ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
