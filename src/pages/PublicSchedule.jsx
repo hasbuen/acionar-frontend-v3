@@ -98,7 +98,7 @@ export function PublicSchedule({ slug: propSlug }) {
     }
   };
 
-  // Obter Localização via GPS do Navegador com Pipeline de Fallback Multi-Provedores (AwesomeAPI -> Nominatim -> BigDataCloud -> ViaCEP)
+  // Obter Localização via GPS do Navegador usando watchPosition (para forçar aquecimento do chip GPS de satélite) + Pipeline Multi-Provedores
   const handleObterGps = () => {
     if (!navigator.geolocation) {
       showAlert({ type: 'info', title: 'GPS Não Suportado', message: 'Geolocalização não é suportada neste navegador.' });
@@ -108,143 +108,198 @@ export function PublicSchedule({ slug: propSlug }) {
 
     const geoOptions = {
       enableHighAccuracy: true,
-      timeout: 15000,
-      maximumAge: 0 // Leitura fresca em tempo real (sem usar cache antigo)
+      timeout: 10000,
+      maximumAge: 0 // Leitura de satélite em tempo real (força o hardware a não usar cache do provedor Wi-Fi)
     };
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude, accuracy, altitude } = position.coords;
-        console.log(`[GPS LIVE] Lat: ${latitude}, Lon: ${longitude}, Acc: ${accuracy}m, Alt: ${altitude || 'N/A'}`);
+    let bestPosition = null;
+    let attempts = 0;
+    let watchId = null;
 
-        let cepEncontrado = null;
-        let ruaEncontrada = '';
-        let bairroEncontrado = '';
+    const processPosition = async (position) => {
+      const { latitude, longitude, accuracy, altitude } = position.coords;
+      console.log(`[GPS HIGH ACCURACY LOCK] Lat: ${latitude}, Lon: ${longitude}, Acc: ${accuracy}m, Alt: ${altitude || 'N/A'}`);
 
-        // ----------------------------------------------------
-        // ETAPA 1: AwesomeAPI (Específica do Brasil - Gratuita por Lat/Lng)
-        // ----------------------------------------------------
-        try {
-          const resAwesome = await fetch(`https://cep.awesomeapi.com.br/search?lat=${latitude}&lng=${longitude}`);
-          if (resAwesome.ok) {
-            const dataAwesome = await resAwesome.json();
-            if (dataAwesome && dataAwesome.cep) {
-              cepEncontrado = String(dataAwesome.cep).replace(/\D/g, '');
-            }
-            if (dataAwesome.address) ruaEncontrada = dataAwesome.address;
-            if (dataAwesome.district) bairroEncontrado = dataAwesome.district;
-          }
-        } catch (eAwesome) {
-          console.warn('[GPS AWESOMEAPI WARN]', eAwesome);
-        }
+      let cepEncontrado = null;
+      let ruaEncontrada = '';
+      let bairroEncontrado = '';
 
-        // ----------------------------------------------------
-        // ETAPA 2: OpenStreetMap / Nominatim (Zoom 18 Edifício/Rua)
-        // ----------------------------------------------------
-        if (!cepEncontrado || cepEncontrado.length !== 8) {
-          try {
-            const resNom = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1&accept-language=pt-BR`
-            );
-            if (resNom.ok) {
-              const dataNom = await resNom.json();
-              if (dataNom && dataNom.address) {
-                const addr = dataNom.address;
-                if (addr.postcode) {
-                  const cleanPostcode = String(addr.postcode).replace(/\D/g, '');
-                  if (cleanPostcode.length === 8) cepEncontrado = cleanPostcode;
-                }
-                if (!ruaEncontrada) ruaEncontrada = addr.road || addr.street || addr.pedestrian || addr.footway || '';
-                if (!bairroEncontrado) bairroEncontrado = addr.suburb || addr.neighbourhood || addr.city_district || addr.residential || '';
-              }
-            }
-          } catch (eNom) {
-            console.warn('[GPS NOMINATIM WARN]', eNom);
-          }
-        }
-
-        // ----------------------------------------------------
-        // ETAPA 3: BigDataCloud Reverse Geocoding
-        // ----------------------------------------------------
-        if (!cepEncontrado || cepEncontrado.length !== 8) {
-          try {
-            const resBdc = await fetch(
-              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=pt`
-            );
-            if (resBdc.ok) {
-              const dataBdc = await resBdc.json();
-              if (dataBdc) {
-                if (dataBdc.postcode) {
-                  const cleanBdcPost = String(dataBdc.postcode).replace(/\D/g, '');
-                  if (cleanBdcPost.length === 8) cepEncontrado = cleanBdcPost;
-                }
-                if (!ruaEncontrada && dataBdc.locality) ruaEncontrada = dataBdc.locality;
-                if (!bairroEncontrado && dataBdc.city) bairroEncontrado = dataBdc.city;
-              }
-            }
-          } catch (eBdc) {
-            console.warn('[GPS BIGDATACLOUD WARN]', eBdc);
-          }
-        }
-
-        // ----------------------------------------------------
-        // ETAPA 4: Validação Cruzada com ViaCEP (Base Oficial Correios Brasil)
-        // ----------------------------------------------------
-        let viaCepSucesso = false;
-        if (cepEncontrado && cepEncontrado.length === 8) {
-          const cepFormatado = cepEncontrado.replace(/^(\d{5})(\d{3})$/, '$1-$2');
-          setCepInput(cepFormatado);
-          try {
-            const resVia = await fetch(`https://viacep.com.br/ws/${cepEncontrado}/json/`);
-            if (resVia.ok) {
-              const dataVia = await resVia.json();
-              if (!dataVia.erro) {
-                viaCepSucesso = true;
-                setFormEndereco(prev => ({
-                  ...prev,
-                  rua: dataVia.logradouro || ruaEncontrada || prev.rua,
-                  bairro: dataVia.bairro || bairroEncontrado || prev.bairro,
-                  complemento: dataVia.complemento || prev.complemento,
-                }));
-                showAlert({
-                  type: 'success',
-                  title: '📍 Localização Exata Identificada!',
-                  message: `CEP ${cepFormatado} — ${dataVia.logradouro}, ${dataVia.bairro}. Endereço preenchido automaticamente! Por favor, insira o número do imóvel.`
-                });
-              }
-            }
-          } catch (eVia) {
-            console.warn('[GPS VIACEP WARN]', eVia);
-          }
-        }
-
-        // Fallback final se ViaCEP não tiver sido disparado com sucesso direto
-        if (!viaCepSucesso) {
-          if (ruaEncontrada || bairroEncontrado) {
-            setFormEndereco(prev => ({
-              ...prev,
-              rua: ruaEncontrada || prev.rua,
-              bairro: bairroEncontrado || prev.bairro,
-            }));
-            showAlert({
-              type: 'success',
-              title: '📍 Localização por GPS Obtida!',
-              message: `Endereço aproximado: ${ruaEncontrada || 'Sua região'} ${bairroEncontrado ? `(${bairroEncontrado})` : ''}. Por favor, confirme a rua, número e CEP.`
-            });
-          } else {
-            showAlert({
-              type: 'warning',
-              title: '📍 Precisão de Localização',
-              message: `Sinal de GPS lido (precisão ~${Math.round(accuracy)}m). Para garantia de endereço exato, digite seu CEP no campo abaixo.`
-            });
-          }
-        }
-
+      // Se a precisão for pior do que 2.000m (ex: IP de Provedor de Internet Wi-Fi)
+      if (accuracy > 2000) {
+        showAlert({
+          type: 'warning',
+          title: '📍 Localização por Provedor Wi-Fi/IP',
+          message: `Sua conexão Wi-Fi/IP forneceu um local aproximado (~${Math.round(accuracy / 1000)} km). Por favor, digite seu CEP no campo abaixo para indicar seu endereço exato.`
+        });
         setLoadingGps(false);
+        return;
+      }
+
+      // ----------------------------------------------------
+      // ETAPA 1: AwesomeAPI (Específica do Brasil - Busca por Lat/Lng)
+      // ----------------------------------------------------
+      try {
+        const resAwesome = await fetch(`https://cep.awesomeapi.com.br/search?lat=${latitude}&lng=${longitude}`);
+        if (resAwesome.ok) {
+          const dataAwesome = await resAwesome.json();
+          if (dataAwesome && dataAwesome.cep) {
+            cepEncontrado = String(dataAwesome.cep).replace(/\D/g, '');
+          }
+          if (dataAwesome.address) ruaEncontrada = dataAwesome.address;
+          if (dataAwesome.district) bairroEncontrado = dataAwesome.district;
+        }
+      } catch (eAwesome) {
+        console.warn('[GPS AWESOMEAPI WARN]', eAwesome);
+      }
+
+      // ----------------------------------------------------
+      // ETAPA 2: OpenStreetMap / Nominatim (Zoom 18 Edifício/Rua)
+      // ----------------------------------------------------
+      if (!cepEncontrado || cepEncontrado.length !== 8) {
+        try {
+          const resNom = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1&accept-language=pt-BR`
+          );
+          if (resNom.ok) {
+            const dataNom = await resNom.json();
+            if (dataNom && dataNom.address) {
+              const addr = dataNom.address;
+              if (addr.postcode) {
+                const cleanPostcode = String(addr.postcode).replace(/\D/g, '');
+                if (cleanPostcode.length === 8) cepEncontrado = cleanPostcode;
+              }
+              if (!ruaEncontrada) ruaEncontrada = addr.road || addr.street || addr.pedestrian || addr.footway || '';
+              if (!bairroEncontrado) bairroEncontrado = addr.suburb || addr.neighbourhood || addr.city_district || addr.residential || '';
+            }
+          }
+        } catch (eNom) {
+          console.warn('[GPS NOMINATIM WARN]', eNom);
+        }
+      }
+
+      // ----------------------------------------------------
+      // ETAPA 3: BigDataCloud Reverse Geocoding
+      // ----------------------------------------------------
+      if (!cepEncontrado || cepEncontrado.length !== 8) {
+        try {
+          const resBdc = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=pt`
+          );
+          if (resBdc.ok) {
+            const dataBdc = await resBdc.json();
+            if (dataBdc) {
+              if (dataBdc.postcode) {
+                const cleanBdcPost = String(dataBdc.postcode).replace(/\D/g, '');
+                if (cleanBdcPost.length === 8) cepEncontrado = cleanBdcPost;
+              }
+              if (!ruaEncontrada && dataBdc.locality) ruaEncontrada = dataBdc.locality;
+              if (!bairroEncontrado && dataBdc.city) bairroEncontrado = dataBdc.city;
+            }
+          }
+        } catch (eBdc) {
+          console.warn('[GPS BIGDATACLOUD WARN]', eBdc);
+        }
+      }
+
+      // ----------------------------------------------------
+      // ETAPA 4: Validação Cruzada com ViaCEP (Base Oficial Correios Brasil)
+      // ----------------------------------------------------
+      let viaCepSucesso = false;
+      if (cepEncontrado && cepEncontrado.length === 8) {
+        const cepFormatado = cepEncontrado.replace(/^(\d{5})(\d{3})$/, '$1-$2');
+        setCepInput(cepFormatado);
+        try {
+          const resVia = await fetch(`https://viacep.com.br/ws/${cepEncontrado}/json/`);
+          if (resVia.ok) {
+            const dataVia = await resVia.json();
+            if (!dataVia.erro) {
+              viaCepSucesso = true;
+              setFormEndereco(prev => ({
+                ...prev,
+                rua: dataVia.logradouro || ruaEncontrada || prev.rua,
+                bairro: dataVia.bairro || bairroEncontrado || prev.bairro,
+                complemento: dataVia.complemento || prev.complemento,
+              }));
+              showAlert({
+                type: 'success',
+                title: '📍 Localização Exata por Satélite!',
+                message: `CEP ${cepFormatado} — ${dataVia.logradouro}, ${dataVia.bairro}. Endereço preenchido automaticamente! Por favor, insira o número do imóvel.`
+              });
+            }
+          }
+        } catch (eVia) {
+          console.warn('[GPS VIACEP WARN]', eVia);
+        }
+      }
+
+      // Fallback final se ViaCEP não tiver sido disparado com sucesso direto
+      if (!viaCepSucesso) {
+        if (ruaEncontrada || bairroEncontrado) {
+          setFormEndereco(prev => ({
+            ...prev,
+            rua: ruaEncontrada || prev.rua,
+            bairro: bairroEncontrado || prev.bairro,
+          }));
+          showAlert({
+            type: 'success',
+            title: '📍 Localização por GPS Obtida!',
+            message: `Endereço aproximado: ${ruaEncontrada || 'Sua localização'} ${bairroEncontrado ? `(${bairroEncontrado})` : ''}. Por favor, confirme a rua, número e CEP.`
+          });
+        } else {
+          showAlert({
+            type: 'warning',
+            title: '📍 Precisão de Localização',
+            message: `Sinal de GPS lido (precisão ~${Math.round(accuracy)}m). Para garantia de endereço exato, digite seu CEP no campo abaixo.`
+          });
+        }
+      }
+
+      setLoadingGps(false);
+    };
+
+    // Timeout de segurança para usar a melhor posição obtida em 6 segundos
+    const fallbackTimer = setTimeout(() => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
+      if (bestPosition) {
+        processPosition(bestPosition);
+      } else {
+        setLoadingGps(false);
+        showAlert({
+          type: 'warning',
+          title: 'Sinal de GPS Fraco',
+          message: 'Não foi possível travar os satélites de GPS no momento. Por favor, digite seu CEP abaixo.'
+        });
+      }
+    }, 7000);
+
+    watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        attempts++;
+        if (!bestPosition || position.coords.accuracy < bestPosition.coords.accuracy) {
+          bestPosition = position;
+        }
+
+        // Se a precisão for excelente (< 100m) ou já tentou 3 atualizações
+        if (position.coords.accuracy <= 100 || attempts >= 3) {
+          clearTimeout(fallbackTimer);
+          if (watchId !== null) {
+            navigator.geolocation.clearWatch(watchId);
+            watchId = null;
+          }
+          processPosition(position);
+        }
       },
       (err) => {
+        clearTimeout(fallbackTimer);
+        if (watchId !== null) {
+          navigator.geolocation.clearWatch(watchId);
+          watchId = null;
+        }
         setLoadingGps(false);
-        console.error('[GPS ERROR]', err);
+        console.error('[GPS WATCH ERROR]', err);
         showAlert({
           type: 'warning',
           title: 'Permissão de GPS',
