@@ -33,6 +33,7 @@ export function Configuracoes() {
   ]);
   const [novoBloqueio, setNovoBloqueio] = useState({ inicio: '', fim: '', motivo: '' });
   const [alarmEnabled, setAlarmEnabledState] = useState(false);
+  const [alarmMinutes, setAlarmMinutes] = useState(() => parseInt(localStorage.getItem('alarm-minutes') || '10', 10));
   const [profissionaisList, setProfissionaisList] = useState([]);
   const [editingProfId, setEditingProfId] = useState(null);
   const [profForm, setProfForm] = useState({
@@ -811,15 +812,25 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
             </div>
 
             <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
-              <select className={selectClass}>
-                <option value="5">5 Minutos antes (Padrão)</option>
-                <option value="10">10 Minutos antes</option>
+              <select
+                className={selectClass}
+                value={alarmMinutes}
+                onChange={(e) => setAlarmMinutes(Number(e.target.value))}
+              >
+                <option value="5">5 Minutos antes</option>
+                <option value="10">10 Minutos antes (Padrão)</option>
                 <option value="15">15 Minutos antes</option>
                 <option value="20">20 Minutos antes</option>
                 <option value="30">30 Minutos antes</option>
                 <option value="60">1 Hora antes</option>
               </select>
-              <button className="w-full sm:w-auto shrink-0 px-6 py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-xs font-black text-slate-950 transition">
+              <button
+                onClick={() => {
+                  localStorage.setItem('alarm-minutes', String(alarmMinutes));
+                  showAlert({ type: 'info', title: 'Alerta configurado', message: `Você será alertado ${alarmMinutes} minuto${alarmMinutes > 1 ? 's' : ''} antes de cada atendimento.` });
+                }}
+                className="w-full sm:w-auto shrink-0 px-6 py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-xs font-black text-slate-950 transition"
+              >
                 ✓ Salvar Alerta
               </button>
             </div>

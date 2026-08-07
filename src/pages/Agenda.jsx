@@ -5,6 +5,8 @@ import { gsap } from 'gsap';
 import { PaymentModal } from '../components/PaymentModal';
 import { useAuth } from '../context/AuthContext';
 import { NewAppointmentModal } from '../components/NewAppointmentModal';
+import { ModalAlert, useModalAlert } from '../components/ModalAlert';
+import { MapModal } from '../components/MapModal';
 import {
   Activity, AlertCircle, ArrowRightLeft, Banknote, Calendar, CalendarDays, Check, CheckCircle, ChevronDown, ChevronUp, Clock, CreditCard, DollarSign,
   Edit3, Home, Info, Link, Map, MapPin, Maximize2, Minimize2, MessageSquare, Phone, Plus, QrCode, Scissors, ShieldCheck, Trash2, User,
@@ -169,7 +171,7 @@ function ActionButton({ kind, label, children, onClick }) {
   return <button type="button" onClick={onClick} title={label} aria-label={label} className={`flex h-10 w-10 items-center justify-center rounded-xl border transition ${buttonStyles[kind]}`}>{children}</button>;
 }
 
-function DetailsModal({ item, onClose, onUpdateStatus, onOpenMaintenance, onEditFull }) {
+function DetailsModal({ item, onClose, onUpdateStatus, onOpenMaintenance, onEditFull, onOpenMap }) {
   const [selectedStatus, setSelectedStatus] = useState(item.status || 'agendado');
   const [saving, setSaving] = useState(false);
 
@@ -239,15 +241,25 @@ function DetailsModal({ item, onClose, onUpdateStatus, onOpenMaintenance, onEdit
                 <Home className="h-4 w-4 shrink-0" />
                 <span>Atendimento Domiciliar</span>
               </div>
-              <a
-                href={getGoogleMapsUrl(item.endereco_externo)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-md transition-all shrink-0"
-              >
-                <MapPin className="h-3.5 w-3.5 text-white" />
-                <span>Abrir no Google Maps</span>
-              </a>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => onOpenMap(item)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs shadow-md transition-all"
+                >
+                  <Map className="h-3.5 w-3.5" />
+                  <span>Ver no mapa</span>
+                </button>
+                <a
+                  href={getGoogleMapsUrl(item.endereco_externo)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-md transition-all shrink-0"
+                >
+                  <MapPin className="h-3.5 w-3.5 text-white" />
+                  <span>Google Maps</span>
+                </a>
+              </div>
             </div>
             <p className="text-xs font-extrabold text-slate-800 dark:text-slate-100 leading-snug">
               📍 {formatEnderecoTexto(item.endereco_externo)}
@@ -267,7 +279,7 @@ function DetailsModal({ item, onClose, onUpdateStatus, onOpenMaintenance, onEdit
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className={`w-full appearance-none rounded-2xl border px-4 py-3.5 pr-10 text-xs font-extrabold outline-none transition-all cursor-pointer shadow-sm ${currentOption.badgeClass}`}
+              className={`w-full appearance-none rounded-2xl border px-4 py-3.5 pr-10 text-xs font-extrabold outline-none transition-all cursor-pointer shadow-sm bg-white dark:bg-slate-900 ${currentOption.badgeClass}`}
             >
               {statusOptions.map(opt => (
                 <option key={opt.value} value={opt.value} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold py-2">
@@ -586,11 +598,13 @@ function OnlinePaymentModal({ item, valor, onClose, notify }) {
 
 export function Agenda() {
   const { user, tenant, socket } = useAuth();
+  const { alertState, showAlert, closeAlert } = useModalAlert();
   const [agendamentos, setAgendamentos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('hoje');
   const [modal, setModal] = useState(null);
   const [nestedModal, setNestedModal] = useState(null);
+  const [mapModal, setMapModal] = useState(null); // { item } when open
   const [clientes, setClientes] = useState([]);
   const [servicos, setServicos] = useState([]);
   const [profissionais, setProfissionais] = useState([]);
@@ -782,7 +796,7 @@ export function Agenda() {
     try { await apiRequest(`/agendamentos/${item.id}`, 'PUT', data); notify(message); setModal(null); await fetchAgenda(); }
     catch (error) {
       if (error.message && error.message.includes('já foi aceito')) {
-        window.alert(error.message);
+        showAlert({ type: 'warning', title: 'Conflito de agendamento', message: error.message });
         setModal(null);
         fetchAgenda();
       } else {
@@ -835,8 +849,17 @@ export function Agenda() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
+      <ModalAlert {...alertState} onClose={closeAlert} />
+      {/* Modal de Mapa Interativo para Atendimentos à Domicílio */}
+      <MapModal
+        open={!!mapModal}
+        onClose={() => setMapModal(null)}
+        endereco={mapModal?.item?.endereco_externo}
+        clienteNome={mapModal?.item?.cliente_nome}
+        googleMapsUrl={mapModal ? getGoogleMapsUrl(mapModal.item?.endereco_externo) : '#'}
+      />
       {modal?.type === 'payment-new' && <PaymentModal item={modal.item} payments={payments} draft={paymentDraft} setDraft={setPaymentDraft} onClose={() => setModal(null)} onSubmit={event => recordPayment(event, modal.item)} onOnline={() => setNestedModal({ type: 'online_payment', item: modal.item, valor: paymentDraft.gross || modal.item.valor_total })} />}
-      {modal === 'create-new' && <NewAppointmentModal form={form} setForm={setForm} clients={filteredClients} services={servicos} onClose={() => setModal(null)} onSubmit={createAppointment} />}
+      {modal === 'create-new' && <NewAppointmentModal form={form} setForm={setForm} clients={filteredClients} services={servicos} onClose={() => setModal(null)} onSubmit={createAppointment} showAlert={showAlert} />}
       {toast && <div className="fixed right-5 top-5 z-[70] rounded-2xl border border-emerald-500/30 bg-slate-900 px-5 py-3 text-sm font-bold text-emerald-300 shadow-2xl">{toast}</div>}
 
       <div className="flex items-center justify-between w-full p-1">
@@ -1098,6 +1121,7 @@ export function Agenda() {
           onUpdateStatus={updateAppointment}
           onOpenMaintenance={(item) => setModal({ type: 'maintenance', item })}
           onEditFull={(item) => setModal({ type: 'edit', item })}
+          onOpenMap={(item) => { setModal(null); setMapModal({ item }); }}
         />
       )}
 

@@ -160,15 +160,24 @@ export function Estoque() {
     }
   };
 
-  const handleDeleteProduct = async (p) => {
-    if (!window.confirm(`Tem certeza que deseja excluir o produto "${p.nome}"?`)) return;
-    try {
-      await apiRequest(`/estoque/produtos/${p.id}`, 'DELETE');
-      showAlert({ type: 'success', message: 'Produto excluído com sucesso.' });
-      fetchData();
-    } catch (err) {
-      showAlert({ type: 'error', message: err.message || 'Erro ao excluir produto.' });
-    }
+  const handleDeleteProduct = (p) => {
+    showAlert({
+      type: 'warning',
+      title: 'Excluir produto',
+      message: `Tem certeza que deseja excluir "${p.nome}"? Esta ação é irreversível.`,
+      confirmLabel: 'Sim, excluir',
+      cancelLabel: 'Cancelar',
+      onConfirm: async () => {
+        closeAlert();
+        try {
+          await apiRequest(`/estoque/produtos/${p.id}`, 'DELETE');
+          showAlert({ type: 'success', message: 'Produto excluído com sucesso.' });
+          fetchData();
+        } catch (err) {
+          showAlert({ type: 'error', message: err.message || 'Erro ao excluir produto.' });
+        }
+      },
+    });
   };
 
   const handleOpenHistory = async (p) => {

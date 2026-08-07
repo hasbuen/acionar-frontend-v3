@@ -3,7 +3,7 @@ import { Calendar, Search, UserRound, X, Smartphone } from 'lucide-react';
 
 const inputClass = 'w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-100 dark:focus:border-blue-500';
 
-export function NewAppointmentModal({ form, setForm, clients, services, onClose, onSubmit }) {
+export function NewAppointmentModal({ form, setForm, clients, services, onClose, onSubmit, showAlert }) {
   const [finderOpen, setFinderOpen] = useState(false);
   const [search, setSearch] = useState('');
   const matches = clients.filter(client => (client.nome || '').toLowerCase().includes(search.toLowerCase()) || (client.whatsapp || '').includes(search)).slice(0, 8);
@@ -12,7 +12,11 @@ export function NewAppointmentModal({ form, setForm, clients, services, onClose,
 
   const handleImportContact = async () => {
     if (!contactsSupported) {
-      alert('Para buscar contatos direto da lista do seu telefone, abra este aplicativo no navegador do seu celular (Android Chrome ou iOS Safari)!');
+      if (showAlert) {
+        showAlert({ type: 'info', title: 'Recurso não suportado', message: 'Para buscar contatos direto da lista do seu telefone, abra este aplicativo no navegador do seu celular (Android Chrome ou iOS Safari)!' });
+      } else {
+        alert('Para buscar contatos direto da lista do seu telefone, abra este aplicativo no navegador do seu celular (Android Chrome ou iOS Safari)!');
+      }
       return;
     }
     try {

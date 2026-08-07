@@ -21,26 +21,87 @@
 input[type="date"], select {
   min-height: 48px;
   -webkit-appearance: none;
+  appearance: none;
 }
 
+/* =====================================================
+   SELECTS / COMBOBOXES — Estilo Premium Global
+   ===================================================== */
+
+/* Wrapper container para selects com seta customizada */
+.select-wrapper {
+  position: relative;
+  display: block;
+}
+
+.select-wrapper::after {
+  content: '';
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+/* Estilização global de selects — modo claro */
+html:not(.dark) select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Estilização global de selects — modo escuro */
+html.dark select {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #1e293b !important;
+}
+
+/* Options — modo claro */
+html:not(.dark) select option {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+/* Options — modo escuro */
+html.dark select option {
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+
+/* Select com classes Tailwind do sistema (appearance-none) */
+select.appearance-none {
+  background-image: none !important;
+}
+
+/* Focus ring premium */
+select:focus {
+  outline: none !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+html.dark select:focus {
+  border-color: #60a5fa !important;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2) !important;
+}
+
+/* Tamanho e padding consistentes */
 select, select option {
   max-width: 100% !important;
   box-sizing: border-box !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
   overflow: hidden !important;
-  padding: 10px !important;
+  padding: 10px 40px 10px 14px !important;
 }
 
-html:not(.dark) select option {
-  background-color: #ffffff;
-  color: #0f172a;
-}
-
-html.dark select option {
-  background-color: #0f172a;
-  color: #f8fafc;
-}
 
 /* --- Sistema de Cores e Glows Neon --- */
 :root {
