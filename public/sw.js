@@ -96,38 +96,54 @@ self.addEventListener('notificationclick', (event) => {
     const dataHoraFormatted = data.dataHoraFormatted || '';
     const targetUrl = new URL(data.url || DEFAULT_URL, self.registration.scope);
 
-    event.waitUntil((async () => {
-        if (action === 'confirm_whatsapp') {
-            // 1. Confirmar o agendamento no banco em segundo plano (fire-and-forget)
-            if (confirmUrl) {
-                fetch(confirmUrl, { method: 'POST' }).catch(e => console.warn('[SW CONFIRM ERROR]', e));
-            }
+    // Identificar se é confirmação + WhatsApp (botão confirm_whatsapp OU clique no corpo da notificação quando possui WhatsApp)
+    const isConfirmAction = action === 'confirm_whatsapp' || (whatsapp && action !== 'open_agenda');
 
-            // 2. Montar o texto e link do WhatsApp
-            const msgText = `Olá *${clienteNome}*, seu agendamento para *${servicoNome}* no dia *${dataHoraFormatted}* foi *CONFIRMADO* com sucesso! 🚀`;
-            const cleanNum = whatsapp ? String(whatsapp).replace(/\D/g, '') : '';
-            const waUrl = cleanNum 
-                ? `https://api.whatsapp.com/send?phone=${cleanNum}&text=${encodeURIComponent(msgText)}`
-                : targetUrl.href;
-
-            // 3. Procurar se a janela da PWA já está aberta para enviar postMessage de redirecionamento direto
-            const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
-            if (windowClients && windowClients.length > 0) {
-                for (const client of windowClients) {
-                    client.postMessage({ type: 'OPEN_WHATSAPP', url: waUrl });
-                }
-                return windowClients[0].focus();
-            }
-
-            // 4. Se o app estiver fechado, abrir diretamente o link do WhatsApp
-            if (clients.openWindow) {
-                try {
-                    return await clients.openWindow(waUrl);
-                } catch (eErr) {
-                    console.warn('[SW OPEN WINDOW WARN]', eErr);
-                }
+    if (isConfirmAction) {
+        // 1. Disparar confirmação no banco em segundo plano (fire-and-forget, sem await)
+        if (confirmUrl) {
+            try {
+                const fullConfirmUrl = new URL(confirmUrl, self.registration.scope).href;
+                fetch(fullConfirmUrl, { method: 'POST' }).catch(e => console.warn('[SW CONFIRM ERROR]', e));
+            } catch (eUrl) {
+                console.warn('[SW CONFIRM URL ERR]', eUrl);
             }
         }
+
+        // 2. Montar texto e link do WhatsApp
+        const msgText = `Olá *${clienteNome}*, seu agendamento para *${servicoNome}* no dia *${dataHoraFormatted}* foi *CONFIRMADO* com sucesso! 🚀`;
+        const cleanNum = whatsapp ? String(whatsapp).replace(/\D/g, '') : '';
+        const waUrl = cleanNum 
+            ? `https://api.whatsapp.com/send?phone=${cleanNum}&text=${encodeURIComponent(msgText)}`
+            : targetUrl.href;
+
+        // 3. EXECUTAR clients.openWindow(waUrl) NO PRIMEIRO TICK DA PROMISE (preserva o token de gesto do usuário no Android/iOS)
+        event.waitUntil((async () => {
+            let windowOpened = false;
+
+            if (clients.openWindow) {
+                try {
+                    const client = await clients.openWindow(waUrl);
+                    if (client) windowOpened = true;
+                } catch (e) {
+                    console.warn('[SW OPEN WINDOW WARN]', e);
+                }
+            }
+
+            // Fallback se openWindow não abrir (ex: PWA instalada bloqueando popup externo)
+            if (!windowOpened) {
+                const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+                if (windowClients && windowClients.length > 0) {
+                    for (const c of windowClients) {
+                        c.postMessage({ type: 'OPEN_WHATSAPP', url: waUrl });
+                    }
+                    windowClients[0].focus();
+                }
+            }
+        })());
+
+        return;
+    }
 
         // Se clicou na notificação padrão ou no botão "Ver na Agenda"
         const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
