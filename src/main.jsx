@@ -53,28 +53,11 @@ function MainApp() {
       const handleSwMessage = (event) => {
         if (event.data?.type === 'OPEN_WHATSAPP' && event.data?.url) {
           const waUrl = event.data.url;
-          const cleanPhone = waUrl.match(/phone=(\d+)/)?.[1] || '';
-          const cleanText = waUrl.match(/text=([^&]+)/)?.[1] || '';
-
-          const nativeScheme = cleanPhone
-            ? `whatsapp://send?phone=${cleanPhone}&text=${cleanText}`
-            : waUrl;
-
           try {
-            const link = document.createElement('a');
-            link.href = nativeScheme;
-            link.target = '_blank';
-            link.rel = 'noreferrer';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          } catch (eClick) {
-            console.warn('[WA NATIVE CLICK WARN]', eClick);
-          }
-
-          setTimeout(() => {
+            window.open(waUrl, '_blank');
+          } catch (e) {
             window.location.href = waUrl;
-          }, 350);
+          }
         }
       };
 
