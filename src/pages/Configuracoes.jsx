@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../services/api';
-import { Settings, Users, Bell, Globe, Palette, Copy, Check, Clock, MessageSquare, MapPin, ShieldAlert, Plus, Trash2, Upload, Image as ImageIcon, CreditCard, Loader2, Power, QrCode } from 'lucide-react';
+import { Settings, Users, Bell, Globe, Palette, Copy, Check, Clock, MessageSquare, MapPin, ShieldAlert, Plus, Trash2, Upload, Image as ImageIcon, CreditCard, Loader2, Power, QrCode, Sparkles } from 'lucide-react';
 import { ModalAlert, useModalAlert } from '../components/ModalAlert';
 import { PremiumToggle } from '../components/PremiumToggle';
 import { PremiumCheckbox } from '../components/PremiumCheckbox';
 import { PremiumSelect } from '../components/PremiumSelect';
+import { BotFlowBuilder } from './BotFlowBuilder';
 
 export function Configuracoes() {
   const { tenant, setTenant, user } = useAuth();
@@ -53,6 +54,7 @@ export function Configuracoes() {
   const [whatsappQrCode, setWhatsappQrCode] = useState(null);
   const [loadingWhatsapp, setLoadingWhatsapp] = useState(false);
   const [pollingInterval, setPollingInterval] = useState(null);
+  const [showBotBuilder, setShowBotBuilder] = useState(false);
 
   const fetchWhatsappStatus = async () => {
     try {
@@ -589,6 +591,10 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
   const selectClass = "w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-100 dark:focus:border-blue-500";
   const inputClass = "w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-100 dark:focus:border-blue-500 placeholder:text-slate-400";
   const cardClass = "rounded-3xl border border-slate-200 bg-white/80 dark:border-slate-800/80 dark:bg-slate-900/60 p-6 shadow-xl space-y-4 backdrop-blur-xl transition-all duration-300";
+
+  if (showBotBuilder) {
+    return <BotFlowBuilder onBack={() => setShowBotBuilder(false)} />;
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -1279,6 +1285,15 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
                   
                   <button
                     type="button"
+                    onClick={() => setShowBotBuilder(true)}
+                    className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 font-black text-xs text-white shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
+                  >
+                    <Sparkles className="h-4 w-4 text-amber-300 animate-pulse" />
+                    Abrir Construtor de Fluxos ApexChat (Estilo N8N)
+                  </button>
+
+                  <button
+                    type="button"
                     disabled={loadingWhatsapp}
                     onClick={handleDisconnectWhatsapp}
                     className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 font-black text-xs text-white shadow-lg shadow-rose-500/10 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
@@ -1289,6 +1304,14 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
                 </div>
               ) : (
                 <div className="space-y-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowBotBuilder(true)}
+                    className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 font-black text-xs text-white shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
+                  >
+                    <Sparkles className="h-4 w-4 text-amber-300 animate-pulse" />
+                    Abrir Construtor de Fluxos ApexChat (Estilo N8N)
+                  </button>
                   {whatsappQrCode ? (
                     <div className="flex flex-col items-center justify-center p-6 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-800">
                       <p className="text-xs font-bold text-slate-600 dark:text-slate-300 text-center mb-4 leading-relaxed">
