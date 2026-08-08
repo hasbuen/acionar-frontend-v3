@@ -173,16 +173,40 @@ export function useModalAlert() {
     cancelLabel: 'Fechar',
   });
 
-  const showAlert = React.useCallback((opts = {}) => {
-    setAlertState({
-      open: true,
-      type: opts.type || 'info',
-      title: opts.title || '',
-      message: opts.message || '',
-      onConfirm: opts.onConfirm || null,
-      confirmLabel: opts.confirmLabel || 'Confirmar',
-      cancelLabel: opts.cancelLabel || (opts.onConfirm ? 'Cancelar' : 'Fechar'),
-    });
+  const showAlert = React.useCallback((titleOrOpts = {}, messageParam = '', typeParam = 'info') => {
+    if (typeof titleOrOpts === 'string') {
+      let title = titleOrOpts;
+      let message = messageParam;
+      let type = typeParam;
+
+      // Suporte a showAlert('Mensagem', 'success')
+      if (messageParam === 'success' || messageParam === 'error' || messageParam === 'warning' || messageParam === 'info') {
+        type = messageParam;
+        message = titleOrOpts;
+        title = '';
+      }
+
+      setAlertState({
+        open: true,
+        type: type || 'info',
+        title: title || '',
+        message: message || '',
+        onConfirm: null,
+        confirmLabel: 'Confirmar',
+        cancelLabel: 'Fechar',
+      });
+    } else {
+      const opts = titleOrOpts || {};
+      setAlertState({
+        open: true,
+        type: opts.type || 'info',
+        title: opts.title || '',
+        message: opts.message || '',
+        onConfirm: opts.onConfirm || null,
+        confirmLabel: opts.confirmLabel || 'Confirmar',
+        cancelLabel: opts.cancelLabel || (opts.onConfirm ? 'Cancelar' : 'Fechar'),
+      });
+    }
   }, []);
 
   const closeAlert = React.useCallback(() => {

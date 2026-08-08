@@ -84,16 +84,28 @@ export function Configuracoes() {
           if (status.connected) {
             clearInterval(interval);
             setPollingInterval(null);
-            showAlert('Sucesso', 'Seu WhatsApp foi pareado com sucesso!', 'success');
+            showAlert({
+              title: 'Pareamento Concluído! 🎉',
+              message: 'Seu celular foi sincronizado com sucesso! O robô de confirmação por WhatsApp já está ativo para seu estabelecimento.',
+              type: 'success',
+            });
           }
         }, 5000);
         setPollingInterval(interval);
       } else if (data.connected) {
         setWhatsappStatus({ connected: true, state: data.state });
-        showAlert('Conectado', 'WhatsApp já está conectado.', 'success');
+        showAlert({
+          title: 'WhatsApp Conectado',
+          message: 'Sua conta de WhatsApp já está pareada e pronta para enviar mensagens.',
+          type: 'info',
+        });
       }
     } catch (e) {
-      showAlert('Erro', `Erro ao gerar conexão: ${e.message}`, 'error');
+      showAlert({
+        title: 'Erro na Conexão',
+        message: `Não foi possível gerar o código de conexão: ${e.message}`,
+        type: 'error',
+      });
     } finally {
       setLoadingWhatsapp(false);
     }
@@ -109,9 +121,17 @@ export function Configuracoes() {
         clearInterval(pollingInterval);
         setPollingInterval(null);
       }
-      showAlert('Desconectado', 'WhatsApp desconectado com sucesso.', 'success');
+      showAlert({
+        title: 'Desconectado',
+        message: 'Seu WhatsApp foi desconectado do sistema com sucesso.',
+        type: 'info',
+      });
     } catch (e) {
-      showAlert('Erro', `Erro ao desconectar: ${e.message}`, 'error');
+      showAlert({
+        title: 'Erro ao Desconectar',
+        message: `Ocorreu uma falha ao desconectar o aparelho: ${e.message}`,
+        type: 'error',
+      });
     } finally {
       setLoadingWhatsapp(false);
     }
