@@ -469,6 +469,19 @@ html:not(.dark) .bg-slate-50\/20 {
   background-color: #f1f5f9 !important; /* Fundos internos do acordeão nítidos (slate-100) */
 }
 
+/* Utilitários de rolagem por toque para o menu inferior mobile */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scroll-x-touch {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
 /* =====================================================
    DEFENSIVE LAYOUT RESETS — PREMIUM EXPERIENCE
    ===================================================== */

@@ -299,19 +299,19 @@ export function Navbar({ activeTab, setActiveTab }) {
         showAlert={showAlert}
       />
 
-      {/* Mobile Bottom Bar - Shadcn UI Style */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 border-t border-slate-200 dark:border-slate-800/80 backdrop-blur-xl pb-safe-bottom dark:bg-slate-950/95 shadow-lg transition-colors duration-200">
-        <div className="flex h-14 items-center justify-between gap-1 px-1.5 w-full">
+      {/* Mobile Bottom Bar - Shadcn UI Style com Rolagem Touch Suave & Snap */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 border-t border-slate-200 dark:border-slate-800/80 backdrop-blur-2xl pb-safe-bottom dark:bg-slate-950/95 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.4)] transition-colors duration-200">
+        <div className="flex h-15 items-center gap-1.5 px-2.5 w-full overflow-x-auto snap-x snap-mandatory no-scrollbar scroll-x-touch py-1">
           {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
             const isActive = activeTab === id;
             return (
               <button
                 key={id}
                 onClick={() => handleTabChange(id)}
-                className={`flex flex-1 min-w-0 flex-col items-center justify-center py-1 px-1 transition-all rounded-xl ${
+                className={`flex snap-center shrink-0 min-w-[4.3rem] flex-1 flex-col items-center justify-center py-1.5 px-2 transition-all duration-200 rounded-xl ${
                   isActive
-                    ? 'text-blue-600 dark:text-blue-400 bg-blue-50/80 dark:bg-blue-950/50 border border-blue-200/50 dark:border-blue-800/50'
-                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+                    ? 'text-blue-600 dark:text-blue-400 bg-blue-50/90 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-800/60 shadow-sm scale-[1.02]'
+                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100/60 dark:hover:bg-slate-900/60'
                 }`}
               >
                 <Icon id={`nav-icon-mobile-${id}`} className={`h-4.5 w-4.5 transition-transform ${isActive ? 'stroke-[2.2px] scale-105' : 'stroke-[1.75px]'}`} />
