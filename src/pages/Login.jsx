@@ -1,19 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { gsap } from 'gsap';
 import { ArrowRight, Building2, CalendarCheck2, Check, Eye, EyeOff, Lock, LockKeyhole, Mail, Moon, ShieldCheck, ShieldQuestion, Sparkles, Sun, WalletCards, Zap } from 'lucide-react';
 
 export function Login() {
   const { login } = useAuth();
+  const { isDark, toggleMode } = useTheme();
   const [tenantSlug, setTenantSlug] = useState(() => localStorage.getItem('acionar_v3_slug') || '');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [dark, setDark] = useState(() => {
-    const saved = localStorage.getItem('color-theme');
-    if (saved) return saved === 'dark';
-    return false; // Padrão de fábrica é claro (false)
-  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [tenantValido, setTenantValido] = useState(false);
@@ -42,15 +39,6 @@ export function Login() {
   }, [tenantSlug]);
 
   React.useEffect(() => {
-    const saved = localStorage.getItem('color-theme') || 'light';
-    if (saved === 'dark') {
-      document.documentElement.classList.add('dark');
-      setDark(true);
-    } else {
-      document.documentElement.classList.remove('dark');
-      setDark(false);
-    }
-
     // Animações sutis com GSAP
     gsap.fromTo('.login-box',
       { opacity: 0, scale: 0.96, y: 20 },
@@ -66,13 +54,6 @@ export function Login() {
     );
   }, []);
 
-  React.useEffect(() => {
-    const favicon = document.querySelector("link[rel='icon']");
-    if (favicon) {
-      favicon.href = dark ? "/logo-tema-escuro.png?v=4" : "/logo-tema-claro.png?v=4";
-    }
-  }, [dark]);
-
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
@@ -86,13 +67,6 @@ export function Login() {
     }
   };
 
-  const toggleTheme = () => {
-    const next = !dark;
-    setDark(next);
-    document.documentElement.classList.toggle('dark', next);
-    localStorage.setItem('color-theme', next ? 'dark' : 'light');
-  };
-
   return (
     <div className="relative min-h-[100dvh] w-full overflow-x-hidden bg-[#eef4fb] text-slate-900 dark:bg-[#030712] dark:text-slate-100 flex flex-col items-center justify-center p-4 sm:p-6">
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
@@ -102,14 +76,14 @@ export function Login() {
 
       <header className="relative z-10 w-full max-w-6xl mx-auto flex items-center justify-between pt-safe-top">
         <div className="flex items-center gap-2">
-          <img src={dark ? "/logo-tema-escuro.png?v=4" : "/logo-tema-claro.png?v=4"} alt="Logo Acionar" className="login-logo h-10 w-10 object-contain rounded-xl shadow-lg shadow-blue-500/10" />
+          <img src={isDark ? "/logo-tema-escuro.png?v=4" : "/logo-tema-claro.png?v=4"} alt="Logo Acionar" className="login-logo h-10 w-10 object-contain rounded-xl shadow-lg shadow-blue-500/10" />
           <div>
             <span className="block text-xl font-black tracking-tight text-slate-900 dark:text-white">Acionar</span>
             <span className="block text-[9px] font-extrabold uppercase tracking-[0.22em] text-blue-600 dark:text-blue-400">GESTÃO QUE ACOMPANHA VOCÊ</span>
           </div>
         </div>
-        <button type="button" aria-label="Alternar Tema" onClick={toggleTheme} className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
-          {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+        <button type="button" aria-label="Alternar Tema" onClick={toggleMode} className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+          {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </button>
       </header>
 

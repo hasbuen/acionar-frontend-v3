@@ -1,6 +1,7 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { Navbar } from './components/Navbar';
 import './styles.css';
 
@@ -14,6 +15,8 @@ const Estoque = lazy(() => import('./pages/Estoque').then(m => ({ default: m.Est
 const Configuracoes = lazy(() => import('./pages/Configuracoes').then(m => ({ default: m.Configuracoes })));
 const PublicSchedule = lazy(() => import('./pages/PublicSchedule').then(m => ({ default: m.PublicSchedule })));
 const ConfirmarAgendamento = lazy(() => import('./pages/ConfirmarAgendamento').then(m => ({ default: m.ConfirmarAgendamento })));
+const AvaliacaoPublica = lazy(() => import('./pages/AvaliacaoPublica').then(m => ({ default: m.AvaliacaoPublica })));
+const Avaliacoes = lazy(() => import('./pages/Avaliacoes').then(m => ({ default: m.Avaliacoes })));
 
 // Skeleton loader elegante para transições ultra-fluidas
 function PageSkeleton() {
@@ -32,23 +35,21 @@ function PageSkeleton() {
 
 function MainApp() {
   const { user, loading } = useAuth();
+  useTheme();
   const [activeTab, setActiveTab] = useState('agenda');
   const [publicSlug, setPublicSlug] = useState(null);
   const [isConfirmPage, setIsConfirmPage] = useState(false);
-
-  // 0. Sincronizar o Tema com o localStorage logo no carregamento inicial
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('color-theme') || 'light';
-    if (savedTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, []);
+  const [publicEvaluation, setPublicEvaluation] = useState(null);
 
   useEffect(() => {
     const hostname = window.location.hostname;
     const path = window.location.pathname;
+
+    const evaluationMatch = path.match(/^\/avaliar\/([^/]+)\/([^/]+)\/?$/);
+    if (evaluationMatch) {
+      setPublicEvaluation({ slug: evaluationMatch[1], appointmentId: evaluationMatch[2] });
+      return;
+    }
 
     // Rota de confirmação de agendamento (aberta pelo Service Worker)
     if (path === '/confirmar-agendamento') {
@@ -70,7 +71,7 @@ function MainApp() {
 
   // Preload das páginas secundárias em idle
   useEffect(() => {
-    if (user && !publicSlug && !isConfirmPage) {
+    if (user && !publicSlug && !isConfirmPage && !publicEvaluation) {
       const timer = setTimeout(() => {
         import('./pages/Clientes');
         import('./pages/Servicos');
@@ -79,7 +80,7 @@ function MainApp() {
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [user, publicSlug, isConfirmPage]);
+  }, [user, publicSlug, isConfirmPage, publicEvaluation]);
 
   // Register PWA Service Worker
   useEffect(() => {
@@ -93,6 +94,14 @@ function MainApp() {
     return (
       <Suspense fallback={<PageSkeleton />}>
         <ConfirmarAgendamento />
+      </Suspense>
+    );
+  }
+
+  if (publicEvaluation) {
+    return (
+      <Suspense fallback={<PageSkeleton />}>
+        <AvaliacaoPublica slug={publicEvaluation.slug} appointmentId={publicEvaluation.appointmentId} />
       </Suspense>
     );
   }
@@ -126,7 +135,7 @@ function MainApp() {
 
   // 4. Authenticated Management App
   return (
-    <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden bg-gradient-to-tr from-slate-50 via-[#f0f4f9] to-[#e5eef7] dark:from-[#020617] dark:via-[#090f23] dark:to-[#020617] text-slate-900 dark:text-slate-100 transition-colors duration-300">
+    <div className="app-shell flex flex-col min-h-screen w-full max-w-full overflow-x-hidden text-slate-900 dark:text-slate-100 transition-colors duration-300">
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
       <main className="flex-1 w-full max-w-full overflow-x-hidden pb-28 md:pb-12">
         <Suspense fallback={<PageSkeleton />}>
@@ -135,6 +144,7 @@ function MainApp() {
           {activeTab === 'servicos' && <Servicos setActiveTab={setActiveTab} />}
           {activeTab === 'estoque' && <Estoque />}
           {activeTab === 'caixa' && <Caixa />}
+          {activeTab === 'avaliacoes' && <Avaliacoes />}
           {activeTab === 'configuracoes' && <Configuracoes />}
         </Suspense>
       </main>
@@ -150,7 +160,9 @@ function MainApp() {
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <AuthProvider>
-      <MainApp />
+      <ThemeProvider>
+        <MainApp />
+      </ThemeProvider>
     </AuthProvider>
   </React.StrictMode>
 );

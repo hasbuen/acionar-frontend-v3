@@ -5,10 +5,12 @@ import {
   Bell, LogOut, HelpCircle, Moon, Sun, Globe, X,
   ChevronDown, Plus, Activity,
   Cog,
-  User
+  User,
+  Star
 } from 'lucide-react';
 import { ModalAlert, useModalAlert } from './ModalAlert';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { apiRequest } from '../services/api';
 
 const NAV_ITEMS = [
@@ -17,13 +19,14 @@ const NAV_ITEMS = [
   { id: 'servicos', label: 'Serviços', icon: Scissors },
   { id: 'estoque', label: 'Estoque', icon: Boxes },
   { id: 'caixa', label: 'Caixa', icon: DollarSign },
+  { id: 'avaliacoes', label: 'Avaliações', icon: Star },
   { id: 'configuracoes', label: 'Ajustes', icon: Cog },
 ];
 
 export function Navbar({ activeTab, setActiveTab }) {
   const { user, tenant, logout, socket } = useAuth();
+  const { isDark } = useTheme();
   const [showHelpModal, setShowHelpModal] = useState(false);
-  const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'));
   const isProduction = typeof window !== 'undefined' && window.location.hostname.includes('acionar.online');
   const publicUrl = isProduction && tenant?.slug
     ? `https://${tenant.slug}.acionar.online`
@@ -136,18 +139,6 @@ export function Navbar({ activeTab, setActiveTab }) {
     });
   };
 
-  useEffect(() => {
-    const saved = localStorage.getItem('color-theme') || 'light';
-    setDark(saved === 'dark');
-  }, []);
-
-  const toggleTheme = () => {
-    const next = !dark;
-    setDark(next);
-    document.documentElement.classList.toggle('dark', next);
-    localStorage.setItem('color-theme', next ? 'dark' : 'light');
-  };
-
   const handleTabChange = (id) => {
     setActiveTab(id);
     
@@ -170,7 +161,7 @@ export function Navbar({ activeTab, setActiveTab }) {
         <div className="px-4 sm:px-6 py-3 max-w-7xl mx-auto flex items-center justify-between">
 
           <div className="flex items-center gap-3">
-            <img src={dark ? "/logo-tema-escuro.png?v=4" : "/logo-tema-claro.png?v=4"} alt="Logo Acionar" className="h-10 w-10 object-contain rounded-xl shadow-lg shadow-blue-500/10" />
+            <img src={isDark ? "/logo-tema-escuro.png?v=4" : "/logo-tema-claro.png?v=4"} alt="Logo Acionar" className="h-10 w-10 object-contain rounded-xl shadow-lg shadow-blue-500/10" />
             <div className="flex flex-col justify-center">
               <span className="text-sm font-bold tracking-tight text-slate-800 dark:text-slate-100 leading-tight">
                 { User && user?.nome ? user.nome.charAt(0).toUpperCase() + user.nome.slice(1) : 'Usuário' }
@@ -309,14 +300,14 @@ export function Navbar({ activeTab, setActiveTab }) {
 
       {/* Mobile Bottom Bar */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 border-t border-slate-200/80 dark:border-blue-500/20 backdrop-blur-2xl pb-safe-bottom dark:bg-slate-950/95 shadow-[0_-8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_-8px_30px_rgba(59,130,246,0.12)] transition-colors duration-300">
-        <div className="flex h-16 items-center justify-around px-2">
+        <div className="flex h-16 items-center gap-1 overflow-x-auto px-2 no-scrollbar">
           {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
             const isActive = activeTab === id;
             return (
               <button
                 key={id}
                 onClick={() => handleTabChange(id)}
-                className="flex w-16 flex-col items-center justify-center gap-1 py-1 transition-all group"
+                className="flex min-w-[4.5rem] flex-1 flex-col items-center justify-center gap-1 py-1 transition-all group"
               >
                 <div id={`nav-icon-mobile-${id}`} className={`flex h-8 w-14 items-center justify-center rounded-full transition-all duration-300 ${isActive
                     ? 'bg-blue-100/90 text-blue-600 shadow-[0_0_12px_rgba(37,99,235,0.2)] dark:bg-blue-900/50 dark:text-blue-400 dark:shadow-[0_0_18px_rgba(59,130,246,0.45)] scale-105'

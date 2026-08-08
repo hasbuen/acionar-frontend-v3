@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { apiRequest } from '../services/api';
 import { Settings, Users, Bell, Globe, Palette, Copy, Check, Clock, MessageSquare, MapPin, ShieldAlert, Plus, Trash2, Upload, Image as ImageIcon, CreditCard, Loader2, Power, QrCode, Sparkles, ArrowLeft, ChevronRight, Pencil, X } from 'lucide-react';
 import { ModalAlert, useModalAlert } from '../components/ModalAlert';
@@ -11,6 +12,7 @@ import { HelpBadge } from '../components/HelpBadge';
 
 export function Configuracoes() {
   const { tenant, setTenant, user } = useAuth();
+  const { setMode } = useTheme();
   const [loading, setLoading] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [activeCategory, setActiveCategory] = useState(null);
@@ -27,8 +29,8 @@ export function Configuracoes() {
     empresa_nome: tenant?.empresa_nome || '',
     slug_publico: tenant?.slug_publico || '',
     cor_primaria: tenant?.cor_primaria || '#2563eb',
-    cor_secundaria: tenant?.cor_secundaria || '#3b82f6',
-    cor_fundo_card: tenant?.cor_fundo_card || '#ffffff',
+    cor_destaque: tenant?.cor_destaque || tenant?.cor_secundaria || '#3b82f6',
+    cor_fundo: tenant?.cor_fundo || tenant?.cor_fundo_card || '#020617',
     cor_texto_principal: tenant?.cor_texto_principal || '#0f172a',
     cor_texto_secundario: tenant?.cor_texto_secundario || '#64748b',
     foto_url: tenant?.foto_url || '',
@@ -193,8 +195,8 @@ export function Configuracoes() {
         empresa_nome: tenant.empresa_nome || '',
         slug_publico: tenant.slug_publico || '',
         cor_primaria: tenant.cor_primaria || '#2563eb',
-        cor_secundaria: tenant.cor_secundaria || '#3b82f6',
-        cor_fundo_card: tenant.cor_fundo_card || '#ffffff',
+        cor_destaque: tenant.cor_destaque || tenant.cor_secundaria || '#3b82f6',
+        cor_fundo: tenant.cor_fundo || tenant.cor_fundo_card || '#020617',
         cor_texto_principal: tenant.cor_texto_principal || '#0f172a',
         cor_texto_secundario: tenant.cor_texto_secundario || '#64748b',
         foto_url: tenant.foto_url || '',
@@ -246,9 +248,20 @@ export function Configuracoes() {
     setLoading(true);
     setMessage('');
     try {
-      const updatedTenant = await apiRequest('/config/public-schedule', 'PUT', form);
-      if (updatedTenant && updatedTenant.tenant) {
-        setTenant(updatedTenant.tenant);
+      const updatedTenant = await apiRequest('/config/public-schedule', 'PUT', {
+        agenda_publica_ativa: form.agenda_publica_ativa,
+        foto_url: form.foto_url,
+        cor_primaria: form.cor_primaria,
+        cor_destaque: form.cor_destaque,
+        cor_fundo: form.cor_fundo,
+        cor_texto_principal: form.cor_texto_principal,
+        cor_texto_secundario: form.cor_texto_secundario,
+        nome_empresa: form.empresa_nome,
+        novo_slug: form.slug_publico,
+      });
+      const savedTenant = updatedTenant?.tenant || updatedTenant?.settings;
+      if (savedTenant) {
+        setTenant(savedTenant);
       }
       if (endereco) {
         await apiRequest('/config/messages', 'PUT', { endereco });
@@ -1156,8 +1169,7 @@ export function Configuracoes() {
                 <button
                   type="button"
                   onClick={() => {
-                    document.documentElement.classList.remove('dark');
-                    localStorage.setItem('color-theme', 'light');
+                    setMode('light');
                     showAlert({ type: 'info', title: 'Tema Claro Ativado' });
                   }}
                   className="flex-1 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs border border-slate-200 text-center transition"
@@ -1168,8 +1180,7 @@ export function Configuracoes() {
                 <button
                   type="button"
                   onClick={() => {
-                    document.documentElement.classList.add('dark');
-                    localStorage.setItem('color-theme', 'dark');
+                    setMode('dark');
                     showAlert({ type: 'info', title: 'Tema Escuro Ativado' });
                   }}
                   className="flex-1 py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs border border-slate-700 text-center transition"
