@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../services/api';
-import { Settings, Users, Bell, Globe, Palette, Copy, Check, Clock, MessageSquare, MapPin, ShieldAlert, Plus, Trash2, Upload, Image as ImageIcon, CreditCard, Loader2, Power, QrCode, Sparkles, ArrowLeft, ChevronRight } from 'lucide-react';
+import { Settings, Users, Bell, Globe, Palette, Copy, Check, Clock, MessageSquare, MapPin, ShieldAlert, Plus, Trash2, Upload, Image as ImageIcon, CreditCard, Loader2, Power, QrCode, Sparkles, ArrowLeft, ChevronRight, Pencil, X } from 'lucide-react';
 import { ModalAlert, useModalAlert } from '../components/ModalAlert';
 import { PremiumToggle } from '../components/PremiumToggle';
 import { PremiumCheckbox } from '../components/PremiumCheckbox';
@@ -13,12 +13,8 @@ export function Configuracoes() {
   const { tenant, setTenant, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [activeCategory, setActiveCategory] = useState(null);
   const [message, setMessage] = useState('');
-  const [savingPayments, setSavingPayments] = useState(false);
-  const [showPixForm, setShowPixForm] = useState(false);
-  const [payments, setPayments] = useState({ pix_key: '' });
   const { alertState, showAlert, closeAlert } = useModalAlert();
   const [alarmEnabled, setAlarmEnabled] = useState(false);
   const [alarmMinutes, setAlarmMinutes] = useState(10);
@@ -40,16 +36,20 @@ export function Configuracoes() {
 
   const [endereco, setEndereco] = useState('');
 
-  // Equipe / Profissionais Auxiliares
+  // Equipe / Profissionais Modal e Form State
   const [profissionais, setProfissionais] = useState([]);
-  const [novoProfissional, setNovoProfissional] = useState({
+  const [showProfModal, setShowProfModal] = useState(false);
+  const [editingProf, setEditingProf] = useState(null);
+  const [profForm, setProfForm] = useState({
     nome: '',
     email: '',
     whatsapp: '',
     senha: '',
+    cargo: 'auxiliar',
     cor_identificadora: '#8c52ff',
     aceita_atendimento_externo: false
   });
+
   const [logoError, setLogoError] = useState(false);
 
   // WhatsApp Integration states
@@ -138,9 +138,6 @@ export function Configuracoes() {
     domingo: { ativo: false, inicio: '08:00', fim: '12:00' },
   });
 
-  const [bloqueios, setBloqueios] = useState([]);
-  const [novoBloqueio, setNovoBloqueio] = useState({ inicio: '', fim: '', motivo: '' });
-
   useEffect(() => {
     if (tenant) {
       setForm({
@@ -162,7 +159,6 @@ export function Configuracoes() {
   useEffect(() => {
     fetchProfissionais();
     fetchEndereco();
-    fetchPaymentConfig();
     const saved = localStorage.getItem('alarm-enabled');
     if (saved === 'true') setAlarmEnabled(true);
     const savedMin = localStorage.getItem('alarm-minutes');
@@ -185,15 +181,6 @@ export function Configuracoes() {
       setAlarmEnabled(false);
       localStorage.setItem('alarm-enabled', 'false');
       showAlert({ type: 'info', title: 'Alarme Desativado', message: 'Notificações automáticas desativadas.' });
-    }
-  };
-
-  const fetchPaymentConfig = async () => {
-    try {
-      const data = await apiRequest('/config/payments');
-      if (data && data.payments) setPayments(data.payments);
-    } catch (err) {
-      console.error('Erro ao buscar chave pix:', err);
     }
   };
 
@@ -234,7 +221,7 @@ export function Configuracoes() {
       if (Array.isArray(data)) setProfissionais(data);
       else if (data && Array.isArray(data.profissionais)) setProfissionais(data.profissionais);
     } catch (err) {
-      console.error('Erro ao buscar auxiliares:', err);
+      console.error('Erro ao buscar equipe:', err);
     }
   };
 
@@ -269,52 +256,89 @@ export function Configuracoes() {
     reader.readAsDataURL(file);
   };
 
-  const handleAddProfissional = async (e) => {
+  // Abrir Modal de Cadastro de Profissional
+  const handleOpenAddProf = () => {
+    setEditingProf(null);
+    setProfForm({
+      nome: '',
+      email: '',
+      whatsapp: '',
+      senha: '',
+      cargo: 'auxiliar',
+      cor_identificadora: '#8c52ff',
+      aceita_atendimento_externo: false
+    });
+    setShowProfModal(true);
+  };
+
+  // Abrir Modal de Edição de Profissional
+  const handleOpenEditProf = (p) => {
+    setEditingProf(p);
+    setProfForm({
+      nome: p.nome || '',
+      email: p.email || '',
+      whatsapp: p.whatsapp || p.telefone || '',
+      senha: '', // Opcional ao editar
+      cargo: p.cargo || 'auxiliar',
+      cor_identificadora: p.cor_identificadora || '#8c52ff',
+      aceita_atendimento_externo: Boolean(p.aceita_atendimento_externo)
+    });
+    setShowProfModal(true);
+  };
+
+  // Salvar (Cadastrar ou Editar) Profissional
+  const handleSaveProfissional = async (e) => {
     e.preventDefault();
-    if (!novoProfissional.nome || !novoProfissional.email || !novoProfissional.senha) {
-      showAlert({ type: 'warning', title: 'Campos obrigatórios', message: 'Preencha Nome, E-mail e Senha do novo auxiliar.' });
+    if (!profForm.nome || !profForm.email) {
+      showAlert({ type: 'warning', title: 'Campos obrigatórios', message: 'Nome e E-mail são obrigatórios.' });
+      return;
+    }
+
+    if (!editingProf && !profForm.senha) {
+      showAlert({ type: 'warning', title: 'Senha obrigatória', message: 'Informe a senha para o novo profissional.' });
       return;
     }
 
     setLoading(true);
     try {
-      await apiRequest('/profissionais', 'POST', {
-        ...novoProfissional,
-        cargo: 'auxiliar'
-      });
-      showAlert({ type: 'success', title: 'Sucesso', message: 'Novo auxiliar cadastrado com sucesso!' });
-      setNovoProfissional({
-        nome: '',
-        email: '',
-        whatsapp: '',
-        senha: '',
-        cor_identificadora: '#8c52ff',
-        aceita_atendimento_externo: false
-      });
+      if (editingProf) {
+        await apiRequest(`/profissionais/${editingProf.id}`, 'PUT', profForm);
+        showAlert({ type: 'success', title: 'Sucesso', message: 'Dados do profissional atualizados com sucesso!' });
+      } else {
+        await apiRequest('/profissionais', 'POST', profForm);
+        showAlert({ type: 'success', title: 'Sucesso', message: 'Novo profissional cadastrado com sucesso!' });
+      }
+      setShowProfModal(false);
       fetchProfissionais();
     } catch (err) {
-      showAlert({ type: 'error', title: 'Erro', message: err.message || 'Erro ao cadastrar auxiliar.' });
+      showAlert({ type: 'error', title: 'Erro', message: err.message || 'Erro ao salvar profissional.' });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRemoveProfissional = (id) => {
+  // Remover Profissional
+  const handleRemoveProfissional = (p) => {
+    if (p.cargo === 'proprietario') {
+      showAlert({ type: 'warning', title: 'Ação não permitida', message: 'Não é possível excluir o profissional proprietário.' });
+      return;
+    }
+
     showAlert({
       type: 'warning',
       title: 'Confirmar Exclusão',
-      message: 'Tem certeza que deseja remover este auxiliar?',
+      message: `Tem certeza que deseja remover o profissional ${p.nome}?`,
       confirmLabel: 'Sim, remover',
       cancelLabel: 'Cancelar',
       onConfirm: async () => {
         closeAlert();
         try {
           setLoading(true);
-          await apiRequest(`/profissionais/${id}`, 'DELETE');
-          showAlert({ type: 'success', message: 'Auxiliar removido com sucesso!' });
+          await apiRequest(`/profissionais/${p.id}`, 'DELETE');
+          showAlert({ type: 'success', message: 'Profissional removido com sucesso!' });
           fetchProfissionais();
         } catch (err) {
-          showAlert({ type: 'error', message: err.message || 'Erro ao remover auxiliar.' });
+          showAlert({ type: 'error', message: err.message || 'Erro ao remover profissional.' });
         } finally {
           setLoading(false);
         }
@@ -369,7 +393,7 @@ export function Configuracoes() {
       icon: Users,
       iconBg: 'bg-pink-500/10 text-pink-600 dark:text-pink-400',
       helpTitle: 'Equipe de Atendimento',
-      helpDesc: 'Gerencie os profissionais auxiliares cadastrados que atendem no seu estabelecimento.'
+      helpDesc: 'Cadastre, edite ou remova profissionais da equipe e gerencie permissões e atendimentos a domicílio.'
     },
     {
       id: 'tema',
@@ -388,6 +412,152 @@ export function Configuracoes() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
       <ModalAlert {...alertState} onClose={closeAlert} />
+
+      {/* Modal de Cadastro/Edição de Profissional */}
+      {showProfModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-lg rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-5 animate-scale-up">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-2xl bg-pink-500/10 text-pink-600 dark:text-pink-400 flex items-center justify-center font-bold">
+                  <Users className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 dark:text-white">
+                    {editingProf ? `Editar ${editingProf.nome}` : 'Cadastrar Novo Profissional'}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {editingProf ? 'Atualize os dados e acessos do integrante da equipe.' : 'Adicione um novo membro para atender no estabelecimento.'}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowProfModal(false)}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveProfissional} className="space-y-4">
+              <div>
+                <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400 mb-1">Nome Completo *</label>
+                <input
+                  type="text"
+                  value={profForm.nome}
+                  onChange={(e) => setProfForm({ ...profForm, nome: e.target.value })}
+                  className={inputClass}
+                  placeholder="Ex: Carlos Oliveira"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400 mb-1">E-mail (Login) *</label>
+                  <input
+                    type="email"
+                    value={profForm.email}
+                    onChange={(e) => setProfForm({ ...profForm, email: e.target.value })}
+                    className={inputClass}
+                    placeholder="carlos@empresa.com"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400 mb-1">WhatsApp / Celular</label>
+                  <input
+                    type="text"
+                    value={profForm.whatsapp}
+                    onChange={(e) => setProfForm({ ...profForm, whatsapp: e.target.value })}
+                    className={inputClass}
+                    placeholder="(45) 99999-8888"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400 mb-1">
+                  Senha {editingProf ? '(Opcional)' : '*'}
+                </label>
+                <input
+                  type="password"
+                  value={profForm.senha}
+                  onChange={(e) => setProfForm({ ...profForm, senha: e.target.value })}
+                  className={inputClass}
+                  placeholder={editingProf ? 'Deixe em branco para manter a senha atual' : 'Digite a senha do usuário'}
+                  required={!editingProf}
+                />
+                {editingProf && (
+                  <span className="text-[10px] text-slate-400 block mt-1">Preencha apenas se quiser redefinir a senha do usuário.</span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400 mb-1">Cargo / Função</label>
+                  <PremiumSelect
+                    value={profForm.cargo}
+                    onChange={(e) => setProfForm({ ...profForm, cargo: e.target.value })}
+                  >
+                    <option value="auxiliar">Auxiliar / Profissional</option>
+                    <option value="administrador">Administrador</option>
+                  </PremiumSelect>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400 mb-1">Cor na Agenda</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={profForm.cor_identificadora}
+                      onChange={(e) => setProfForm({ ...profForm, cor_identificadora: e.target.value })}
+                      className="h-11 w-14 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer p-0.5 bg-white dark:bg-slate-950 shrink-0"
+                    />
+                    <input
+                      type="text"
+                      value={profForm.cor_identificadora}
+                      onChange={(e) => setProfForm({ ...profForm, cor_identificadora: e.target.value })}
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">Aceita Atendimento a Domicílio?</h4>
+                  <p className="text-[10px] text-slate-500">Receberá alertas para atendimentos externos.</p>
+                </div>
+                <PremiumToggle
+                  checked={profForm.aceita_atendimento_externo}
+                  onChange={(e) => setProfForm({ ...profForm, aceita_atendimento_externo: e.target.checked })}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowProfModal(false)}
+                  className="px-5 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-black text-slate-700 dark:text-slate-300 transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-6 py-3 rounded-2xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-xs font-black text-white shadow-lg shadow-pink-500/20 transition disabled:opacity-50"
+                >
+                  {loading ? 'Salvando...' : editingProf ? 'Salvar Alterações' : 'Cadastrar Profissional'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Header Banner */}
       <div className="flex items-center gap-3">
@@ -759,43 +929,95 @@ export function Configuracoes() {
           {/* Categoria: Equipe & Auxiliares */}
           {activeCategory === 'equipe' && (
             <div className={cardClass}>
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-4 gap-3">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-2xl bg-pink-500/10 text-pink-600 dark:text-pink-400 flex items-center justify-center font-bold shadow-sm">
                     <Users className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="text-base font-black text-slate-900 dark:text-white">Equipe de Auxiliares</h3>
+                    <h3 className="text-base font-black text-slate-900 dark:text-white">Equipe de Profissionais</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Gerencie todos os membros do seu estabelecimento</p>
                   </div>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={handleOpenAddProf}
+                  className="btn-animated inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 px-4 py-2.5 text-xs font-black text-white shadow-lg shadow-pink-500/20 transition shrink-0"
+                >
+                  <Plus className="h-4 w-4" />
+                  Cadastrar Profissional
+                </button>
               </div>
 
               {/* Lista da Equipe */}
               <div className="space-y-3 pt-2">
-                {profissionais.map(p => (
-                  <div key={p.id} className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full flex items-center justify-center text-white font-bold text-xs" style={{ backgroundColor: p.cor_identificadora || '#8c52ff' }}>
-                        {p.nome?.charAt(0).toUpperCase()}
+                {profissionais.length === 0 ? (
+                  <div className="py-8 text-center text-xs font-bold text-slate-400">
+                    Nenhum profissional cadastrado. Clique em "+ Cadastrar Profissional" acima.
+                  </div>
+                ) : (
+                  profissionais.map(p => (
+                    <div key={p.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800/80 gap-3">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="h-10 w-10 rounded-2xl flex items-center justify-center text-white font-black text-sm shadow-md shrink-0"
+                          style={{ backgroundColor: p.cor_identificadora || '#8c52ff' }}
+                        >
+                          {p.nome?.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-xs font-black text-slate-900 dark:text-white">{p.nome}</h4>
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                              p.cargo === 'proprietario' 
+                                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                                : p.cargo === 'administrador'
+                                ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20'
+                                : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                            }`}>
+                              {p.cargo || 'auxiliar'}
+                            </span>
+                            {p.aceita_atendimento_externo && (
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                🏠 Domicílio
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-0.5">
+                            <span>{p.email}</span>
+                            {(p.whatsapp || p.telefone) && (
+                              <span className="font-semibold text-slate-500">📱 {p.whatsapp || p.telefone}</span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-slate-900 dark:text-white">{p.nome}</h4>
-                        <p className="text-[10px] text-slate-400">{p.email}</p>
+
+                      <div className="flex items-center gap-2 self-end sm:self-center">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditProf(p)}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition"
+                          title="Editar dados e acesso"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                          Editar
+                        </button>
+
+                        {p.cargo !== 'proprietario' && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveProfissional(p)}
+                            className="p-1.5 rounded-xl text-rose-500 hover:bg-rose-500/10 transition"
+                            title="Remover integrante da equipe"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
-
-                    {p.cargo === 'auxiliar' && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveProfissional(p.id)}
-                        className="p-2 rounded-xl text-rose-500 hover:bg-rose-500/10 transition-colors"
-                        title="Remover auxiliar"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           )}
