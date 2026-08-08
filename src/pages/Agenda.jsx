@@ -955,22 +955,34 @@ export function Agenda() {
         )}
       </div>
 
-      <div className="flex gap-2.5 overflow-x-auto pb-3.5 no-scrollbar px-1 select-none">
-        {filters.map(([key, label]) => (
-          <button
-            key={key}
-            onClick={() => setActiveFilter(key)}
-            className={`
-              flex-shrink-0 whitespace-nowrap rounded-2xl px-5 py-2.5 text-xs font-black transition-all duration-300 transform active:scale-95
-              ${activeFilter === key
-                ? 'bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 text-white border-transparent shadow-[0_4px_15px_rgba(37,99,235,0.35)] scale-[1.03] dark:shadow-[0_4px_20px_rgba(59,130,246,0.25)]'
-                : 'border border-slate-200/80 bg-white/80 text-slate-600 hover:text-slate-900 hover:bg-white hover:border-slate-300 dark:border-slate-800/80 dark:bg-slate-900/80 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/90 shadow-sm backdrop-blur-sm'
-              }
-            `}
-          >
-            {label}
-          </button>
-        ))}
+      <div className="flex gap-2 overflow-x-auto pb-3.5 no-scrollbar px-1 select-none">
+        {filters.map(([key, label]) => {
+          const isActive = activeFilter === key;
+          const filterColors = {
+            todos: 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 border-slate-900 dark:border-slate-100',
+            hoje: 'bg-blue-600 text-white dark:bg-blue-500 dark:text-white border-blue-600 dark:border-blue-500',
+            solicitacoes: 'bg-amber-500 text-white dark:bg-amber-500 dark:text-white border-amber-500',
+            confirmados: 'bg-emerald-600 text-white dark:bg-emerald-500 dark:text-white border-emerald-600',
+            cancelados: 'bg-rose-600 text-white dark:bg-rose-500 dark:text-white border-rose-600',
+          };
+          const colorClass = filterColors[key] || 'bg-blue-600 text-white border-blue-600';
+
+          return (
+            <button
+              key={key}
+              onClick={() => setActiveFilter(key)}
+              className={`
+                flex-shrink-0 whitespace-nowrap rounded-2xl px-4.5 py-2 text-xs font-black transition-all duration-200 border
+                ${isActive
+                  ? `${colorClass} shadow-sm scale-[1.02]`
+                  : 'border-slate-200/80 bg-white/90 text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:border-slate-800/80 dark:bg-slate-900/80 dark:text-slate-400 dark:hover:text-white'
+                }
+              `}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
 
       {loading ? (

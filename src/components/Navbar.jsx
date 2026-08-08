@@ -15,13 +15,13 @@ import { useTheme } from '../context/ThemeContext';
 import { apiRequest } from '../services/api';
 
 const NAV_ITEMS = [
-  { id: 'agenda', label: 'Agenda', icon: Calendar },
-  { id: 'clientes', label: 'Clientes', icon: Users },
-  { id: 'servicos', label: 'Serviços', icon: Scissors },
-  { id: 'estoque', label: 'Estoque', icon: Boxes },
-  { id: 'caixa', label: 'Caixa', icon: DollarSign },
-  { id: 'avaliacoes', label: 'Avaliações', icon: Star },
-  { id: 'configuracoes', label: 'Ajustes', icon: Cog },
+  { id: 'agenda', label: 'Agenda', icon: Calendar, activeClass: 'bg-blue-50/90 text-blue-600 border-blue-200/80 dark:bg-blue-950/60 dark:text-blue-400 dark:border-blue-800/80' },
+  { id: 'clientes', label: 'Clientes', icon: Users, activeClass: 'bg-purple-50/90 text-purple-600 border-purple-200/80 dark:bg-purple-950/60 dark:text-purple-400 dark:border-purple-800/80' },
+  { id: 'servicos', label: 'Serviços', icon: Scissors, activeClass: 'bg-cyan-50/90 text-cyan-600 border-cyan-200/80 dark:bg-cyan-950/60 dark:text-cyan-400 dark:border-cyan-800/80' },
+  { id: 'estoque', label: 'Estoque', icon: Boxes, activeClass: 'bg-amber-50/90 text-amber-600 border-amber-200/80 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-800/80' },
+  { id: 'caixa', label: 'Caixa', icon: DollarSign, activeClass: 'bg-emerald-50/90 text-emerald-600 border-emerald-200/80 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800/80' },
+  { id: 'avaliacoes', label: 'Avaliações', icon: Star, activeClass: 'bg-yellow-50/90 text-yellow-600 border-yellow-200/80 dark:bg-yellow-950/60 dark:text-yellow-400 dark:border-yellow-800/80' },
+  { id: 'configuracoes', label: 'Ajustes', icon: Cog, activeClass: 'bg-slate-100/90 text-slate-800 border-slate-300/80 dark:bg-slate-800/80 dark:text-slate-200 dark:border-slate-700/80' },
 ];
 
 export function Navbar({ activeTab, setActiveTab }) {
@@ -299,25 +299,23 @@ export function Navbar({ activeTab, setActiveTab }) {
         showAlert={showAlert}
       />
 
-      {/* Mobile Bottom Bar - Shadcn UI Style com Rolagem Touch Suave & Snap */}
+      {/* Mobile Bottom Bar - Cores Semânticas Suaves por Função com Rolagem & Snap */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 border-t border-slate-200 dark:border-slate-800/80 backdrop-blur-2xl pb-safe-bottom dark:bg-slate-950/95 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.4)] transition-colors duration-200">
         <div className="flex h-15 items-center gap-1.5 px-2.5 w-full overflow-x-auto snap-x snap-mandatory no-scrollbar scroll-x-touch py-1">
-          {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
+          {NAV_ITEMS.map(({ id, label, icon: Icon, activeClass }) => {
             const isActive = activeTab === id;
             return (
               <button
                 key={id}
                 onClick={() => handleTabChange(id)}
-                className={`flex snap-center shrink-0 min-w-[4.3rem] flex-1 flex-col items-center justify-center py-1.5 px-2 transition-all duration-200 rounded-xl ${
+                className={`flex snap-center shrink-0 min-w-[4.3rem] flex-1 flex-col items-center justify-center py-1.5 px-2 transition-all duration-200 rounded-xl border ${
                   isActive
-                    ? 'text-blue-600 dark:text-blue-400 bg-blue-50/90 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-800/60 shadow-sm scale-[1.02]'
-                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100/60 dark:hover:bg-slate-900/60'
+                    ? `${activeClass} shadow-sm scale-[1.02] font-extrabold`
+                    : 'border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100/60 dark:hover:bg-slate-900/60 font-medium'
                 }`}
               >
                 <Icon id={`nav-icon-mobile-${id}`} className={`h-4.5 w-4.5 transition-transform ${isActive ? 'stroke-[2.2px] scale-105' : 'stroke-[1.75px]'}`} />
-                <span className={`text-[10px] tracking-tight truncate max-w-full mt-0.5 ${
-                  isActive ? 'font-bold text-blue-600 dark:text-blue-400' : 'font-medium text-slate-500 dark:text-slate-400'
-                }`}>
+                <span className="text-[10px] tracking-tight truncate max-w-full mt-0.5">
                   {label}
                 </span>
               </button>
