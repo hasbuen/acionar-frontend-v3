@@ -7,6 +7,7 @@ import { PremiumToggle } from '../components/PremiumToggle';
 import { PremiumCheckbox } from '../components/PremiumCheckbox';
 import { PremiumSelect } from '../components/PremiumSelect';
 import { BotFlowBuilder } from './BotFlowBuilder';
+import { HelpBadge } from '../components/HelpBadge';
 
 export function Configuracoes() {
   const { tenant, setTenant, user } = useAuth();
@@ -1249,8 +1250,13 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
                   <MessageSquare className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-slate-900 dark:text-white">Chatbot & Integração WhatsApp</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Conecte seu celular para habilitar confirmações automáticas por WhatsApp</p>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-black text-slate-900 dark:text-white">Robô de WhatsApp</h3>
+                    <HelpBadge
+                      title="Robô de WhatsApp"
+                      description="Conecte seu WhatsApp lendo o QR Code para enviar confirmações e lembretes automáticos para seus clientes sem pagar taxas adicionais."
+                    />
+                  </div>
                 </div>
               </div>
               
@@ -1276,20 +1282,13 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
             <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800/80">
               {whatsappStatus.connected ? (
                 <div className="space-y-3">
-                  <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 flex items-start gap-3">
-                    <Check className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                      Sua conta de WhatsApp está <strong>ativa e sincronizada</strong>! Os clientes receberão mensagens automáticas para confirmar seus agendamentos ao agendar pelo portal público.
-                    </p>
-                  </div>
-                  
                   <button
                     type="button"
                     onClick={() => setShowBotBuilder(true)}
                     className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 font-black text-xs text-white shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
                   >
                     <Sparkles className="h-4 w-4 text-amber-300 animate-pulse" />
-                    Abrir Construtor de Fluxos ApexChat (Estilo N8N)
+                    Personalizar Robô do WhatsApp
                   </button>
 
                   <button
@@ -1310,7 +1309,7 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
                     className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 font-black text-xs text-white shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
                   >
                     <Sparkles className="h-4 w-4 text-amber-300 animate-pulse" />
-                    Abrir Construtor de Fluxos ApexChat (Estilo N8N)
+                    Personalizar Robô do WhatsApp
                   </button>
                   {whatsappQrCode ? (
                     <div className="flex flex-col items-center justify-center p-6 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-800">
