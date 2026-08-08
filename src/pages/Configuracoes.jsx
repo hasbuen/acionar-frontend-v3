@@ -53,18 +53,26 @@ export function Configuracoes() {
   const [logoError, setLogoError] = useState(false);
 
   // WhatsApp Integration states
-  const [whatsappStatus, setWhatsappStatus] = useState({ connected: false, state: 'close' });
+  const [whatsappStatus, setWhatsappStatus] = useState({ connected: false, state: 'close', number: null, connected_since: null });
   const [whatsappQrCode, setWhatsappQrCode] = useState(null);
   const [loadingWhatsapp, setLoadingWhatsapp] = useState(false);
   const [pollingInterval, setPollingInterval] = useState(null);
   const [showBotBuilder, setShowBotBuilder] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
 
   const fetchWhatsappStatus = async () => {
     try {
       const data = await apiRequest('/whatsapp/status');
-      setWhatsappStatus({ connected: data.connected, state: data.state });
+      setWhatsappStatus({
+        connected: data.connected,
+        state: data.state,
+        number: data.number,
+        connected_since: data.connected_since
+      });
+
       if (data.connected) {
         setWhatsappQrCode(null);
+        setShowQrModal(false); // Fecha o modal pop-up automaticamente quando conectado!
         if (pollingInterval) {
           clearInterval(pollingInterval);
           setPollingInterval(null);
@@ -87,17 +95,18 @@ export function Configuracoes() {
   const handleConnectWhatsapp = async () => {
     setLoadingWhatsapp(true);
     setWhatsappQrCode(null);
+    setShowQrModal(true); // Abre o modal pop-up do QR Code
     try {
       const res = await apiRequest('/whatsapp/connect', 'POST');
       if (res.qrcode) {
         setWhatsappQrCode(res.qrcode);
       }
-      setWhatsappStatus({ connected: false, state: 'connecting' });
+      setWhatsappStatus(prev => ({ ...prev, connected: false, state: 'connecting' }));
       
       if (!pollingInterval) {
         const interval = setInterval(() => {
           fetchWhatsappStatus();
-        }, 5000);
+        }, 3000);
         setPollingInterval(interval);
       }
     } catch (e) {
@@ -111,8 +120,9 @@ export function Configuracoes() {
     setLoadingWhatsapp(true);
     try {
       await apiRequest('/whatsapp/disconnect', 'POST');
-      setWhatsappStatus({ connected: false, state: 'close' });
+      setWhatsappStatus({ connected: false, state: 'close', number: null, connected_since: null });
       setWhatsappQrCode(null);
+      setShowQrModal(false);
       if (pollingInterval) {
         clearInterval(pollingInterval);
         setPollingInterval(null);
@@ -123,6 +133,40 @@ export function Configuracoes() {
     } finally {
       setLoadingWhatsapp(false);
     }
+  };
+
+  const getConnectedDuration = (sinceIso) => {
+    if (!sinceIso) return 'Conectado recentemente';
+    const since = new Date(sinceIso);
+    const now = new Date();
+    const diffTime = Math.abs(now - since);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const dateFormatted = since.toLocaleDateString('pt-BR');
+
+    if (diffDays === 0) {
+      return `Conectado hoje (desde ${dateFormatted})`;
+    } else if (diffDays === 1) {
+      return `Conectado há 1 dia (desde ${dateFormatted})`;
+    } else {
+      return `Conectado há ${diffDays} dias (desde ${dateFormatted})`;
+    }
+  };
+
+  const formatPhoneNumber = (num) => {
+    if (!num) return 'Número do Estabelecimento';
+    const clean = String(num).replace(/\D/g, '');
+    if (clean.length === 13 && clean.startsWith('55')) {
+      const ddd = clean.substring(2, 4);
+      const part1 = clean.substring(4, 9);
+      const part2 = clean.substring(9);
+      return `+55 (${ddd}) ${part1}-${part2}`;
+    } else if (clean.length === 12 && clean.startsWith('55')) {
+      const ddd = clean.substring(2, 4);
+      const part1 = clean.substring(4, 8);
+      const part2 = clean.substring(8);
+      return `+55 (${ddd}) ${part1}-${part2}`;
+    }
+    return `+${clean}`;
   };
 
   const fileInputRef = useRef(null);
@@ -256,7 +300,6 @@ export function Configuracoes() {
     reader.readAsDataURL(file);
   };
 
-  // Abrir Modal de Cadastro de Profissional
   const handleOpenAddProf = () => {
     setEditingProf(null);
     setProfForm({
@@ -271,14 +314,13 @@ export function Configuracoes() {
     setShowProfModal(true);
   };
 
-  // Abrir Modal de Edição de Profissional
   const handleOpenEditProf = (p) => {
     setEditingProf(p);
     setProfForm({
       nome: p.nome || '',
       email: p.email || '',
       whatsapp: p.whatsapp || p.telefone || '',
-      senha: '', // Opcional ao editar
+      senha: '',
       cargo: p.cargo || 'auxiliar',
       cor_identificadora: p.cor_identificadora || '#8c52ff',
       aceita_atendimento_externo: Boolean(p.aceita_atendimento_externo)
@@ -286,7 +328,6 @@ export function Configuracoes() {
     setShowProfModal(true);
   };
 
-  // Salvar (Cadastrar ou Editar) Profissional
   const handleSaveProfissional = async (e) => {
     e.preventDefault();
     if (!profForm.nome || !profForm.email) {
@@ -317,7 +358,6 @@ export function Configuracoes() {
     }
   };
 
-  // Remover Profissional
   const handleRemoveProfissional = (p) => {
     if (p.cargo === 'proprietario') {
       showAlert({ type: 'warning', title: 'Ação não permitida', message: 'Não é possível excluir o profissional proprietário.' });
@@ -420,6 +460,75 @@ export function Configuracoes() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
       <ModalAlert {...alertState} onClose={closeAlert} />
+
+      {/* Modal Pop-up do QR Code do WhatsApp */}
+      {showQrModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-5 animate-scale-up text-center">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="h-9 w-9 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+                  <QrCode className="h-5 w-5" />
+                </div>
+                <h3 className="text-base font-black text-slate-900 dark:text-white">Conectar Robô do WhatsApp</h3>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowQrModal(false)}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {loadingWhatsapp ? (
+              <div className="py-12 flex flex-col items-center justify-center space-y-3">
+                <Loader2 className="h-10 w-10 text-emerald-500 animate-spin" />
+                <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Gerando código seguro de conexão...</p>
+              </div>
+            ) : whatsappQrCode ? (
+              <div className="space-y-4">
+                <p className="text-xs font-bold text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Abra o WhatsApp no celular, vá em <strong>Aparelhos Conectados &gt; Conectar um Aparelho</strong> e aponte a câmera para o código:
+                </p>
+
+                <div className="p-4 bg-white rounded-3xl shadow-xl border-2 border-emerald-500/30 inline-block">
+                  <img
+                    src={whatsappQrCode}
+                    alt="QR Code do WhatsApp"
+                    className="h-56 w-56 object-contain rounded-xl"
+                  />
+                </div>
+
+                <div className="flex items-center justify-center gap-2 text-xs font-black text-amber-500 dark:text-amber-400">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Aguardando leitura do QR Code...</span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleConnectWhatsapp}
+                  className="w-full py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 transition"
+                >
+                  Atualizar QR Code
+                </button>
+              </div>
+            ) : (
+              <div className="py-8 space-y-4">
+                <p className="text-xs text-slate-500">Clique abaixo para gerar um novo QR Code de conexão.</p>
+                <button
+                  type="button"
+                  onClick={handleConnectWhatsapp}
+                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-xs font-black text-white shadow-lg shadow-emerald-500/20"
+                >
+                  Gerar QR Code
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Modal de Cadastro/Edição de Profissional */}
       {showProfModal && (
@@ -637,7 +746,7 @@ export function Configuracoes() {
           {/* Categoria: Robô de WhatsApp */}
           {activeCategory === 'whatsapp' && (
             <div className={cardClass}>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-4">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold shadow-sm">
                     <MessageSquare className="h-5 w-5" />
@@ -655,26 +764,45 @@ export function Configuracoes() {
                 
                 <div>
                   {whatsappStatus.connected ? (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                       Conectado
                     </span>
-                  ) : whatsappStatus.state === 'connecting' ? (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      Aguardando Leitura
-                    </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700/80">
+                    <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-black bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700/80">
                       Desconectado
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800/80">
+              <div className="space-y-5 pt-2">
                 {whatsappStatus.connected ? (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
+                    {/* Painel de Informações de Conexão */}
+                    <div className="p-4 rounded-2xl bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/20 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Status da Sessão:</span>
+                        <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                          <Check className="h-3.5 w-3.5" /> Ativo & Operacional
+                        </span>
+                      </div>
+
+                      {whatsappStatus.number && (
+                        <div className="flex items-center justify-between border-t border-emerald-500/10 pt-2">
+                          <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Número Conectado:</span>
+                          <span className="text-xs font-bold text-slate-900 dark:text-white">{formatPhoneNumber(whatsappStatus.number)}</span>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between border-t border-emerald-500/10 pt-2">
+                        <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Tempo Online:</span>
+                        <span className="text-xs font-bold text-slate-900 dark:text-white">
+                          {getConnectedDuration(whatsappStatus.connected_since)}
+                        </span>
+                      </div>
+                    </div>
+
                     <button
                       type="button"
                       onClick={() => setShowBotBuilder(true)}
@@ -704,51 +832,31 @@ export function Configuracoes() {
                       <Sparkles className="h-4 w-4 text-amber-300 animate-pulse" />
                       Personalizar Robô do WhatsApp
                     </button>
-                    {whatsappQrCode ? (
-                      <div className="flex flex-col items-center justify-center p-6 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-800">
-                        <p className="text-xs font-bold text-slate-600 dark:text-slate-300 text-center mb-4 leading-relaxed">
-                          Abra o WhatsApp no seu celular, vá em <strong>Aparelhos Conectados</strong> e escaneie o código abaixo:
-                        </p>
-                        
-                        <div className="p-3 bg-white rounded-2xl shadow-md border border-slate-100 inline-block mb-4">
-                          <img 
-                            src={whatsappQrCode} 
-                            alt="QR Code de Conexão" 
-                            className="h-48 w-48 object-contain"
-                          />
-                        </div>
-                        
-                        <button
-                          type="button"
-                          onClick={fetchWhatsappStatus}
-                          className="text-xs font-black text-blue-600 hover:text-blue-500 flex items-center gap-1"
-                        >
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                          Atualizar Status Manualmente
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 text-center">
-                        <button
-                          type="button"
-                          disabled={loadingWhatsapp}
-                          onClick={handleConnectWhatsapp}
-                          className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-black text-xs text-white shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-                        >
-                          {loadingWhatsapp ? (
-                            <>
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              Gerando Código...
-                            </>
-                          ) : (
-                            <>
-                              <QrCode className="h-4 w-4" />
-                              Gerar QR Code de Conexão
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    )}
+
+                    <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800 text-center space-y-3">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                        Conecte o WhatsApp do seu estabelecimento para enviar mensagens automáticas de confirmação e lembretes para seus clientes.
+                      </p>
+
+                      <button
+                        type="button"
+                        disabled={loadingWhatsapp}
+                        onClick={handleConnectWhatsapp}
+                        className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-black text-xs text-white shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                      >
+                        {loadingWhatsapp ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Gerando Código...
+                          </>
+                        ) : (
+                          <>
+                            <QrCode className="h-4 w-4" />
+                            Gerar QR Code de Conexão
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
