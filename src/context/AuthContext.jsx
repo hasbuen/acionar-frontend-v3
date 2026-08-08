@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import { apiRequest } from '../services/api';
+import { registerWebPushSubscription } from '../services/pushNotifications';
 
 const AuthContext = createContext(null);
 
@@ -77,6 +78,12 @@ export function AuthProvider({ children }) {
     }
     loadSession();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      registerWebPushSubscription().catch(e => console.warn('[WEB PUSH SUBSCRIBE ERR]', e));
+    }
+  }, [user]);
 
   const login = async (slug, email, senha) => {
     const cleanSlug = (slug || '').trim().toLowerCase();
