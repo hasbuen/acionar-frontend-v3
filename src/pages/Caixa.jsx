@@ -410,7 +410,7 @@ export function Caixa() {
       </div>
 
       {/* 2. Filtros de Período */}
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+      <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar pb-2.5 select-none">
         {[
           { key: 'todos', label: 'Todos' },
           { key: 'hoje', label: 'Hoje' },
@@ -420,10 +420,13 @@ export function Caixa() {
           <button
             key={key}
             onClick={() => setActiveFilter(key)}
-            className={`rounded-2xl px-4 py-2.5 text-xs font-extrabold transition-all whitespace-nowrap shrink-0 ${activeFilter === key
-              ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
-              : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'
-              }`}
+            className={`
+              shrink-0 whitespace-nowrap rounded-2xl px-5 py-2.5 text-xs font-black transition-all duration-300 transform active:scale-95
+              ${activeFilter === key
+                ? 'bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 text-white shadow-[0_4px_15px_rgba(16,185,129,0.35)] scale-[1.03] dark:shadow-[0_4px_20px_rgba(16,185,129,0.25)]'
+                : 'border border-slate-200/80 bg-white/80 text-slate-600 hover:text-slate-900 hover:bg-white hover:border-slate-300 dark:border-slate-800/80 dark:bg-slate-900/80 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/90 shadow-sm backdrop-blur-sm'
+              }
+            `}
           >
             {label}
           </button>

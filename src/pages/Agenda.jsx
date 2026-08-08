@@ -941,7 +941,23 @@ export function Agenda() {
         )}
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar px-1">{filters.map(([key, label]) => <button key={key} onClick={() => setActiveFilter(key)} className={`whitespace-nowrap rounded-2xl border px-4 py-2 text-xs font-extrabold transition ${activeFilter === key ? 'border-blue-500 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20' : 'border-slate-200 bg-white/80 text-slate-500 hover:bg-white dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-400'}`}>{label}</button>)}</div>
+      <div className="flex gap-2.5 overflow-x-auto pb-3.5 no-scrollbar px-1 select-none">
+        {filters.map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setActiveFilter(key)}
+            className={`
+              flex-shrink-0 whitespace-nowrap rounded-2xl px-5 py-2.5 text-xs font-black transition-all duration-300 transform active:scale-95
+              ${activeFilter === key
+                ? 'bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 text-white border-transparent shadow-[0_4px_15px_rgba(37,99,235,0.35)] scale-[1.03] dark:shadow-[0_4px_20px_rgba(59,130,246,0.25)]'
+                : 'border border-slate-200/80 bg-white/80 text-slate-600 hover:text-slate-900 hover:bg-white hover:border-slate-300 dark:border-slate-800/80 dark:bg-slate-900/80 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/90 shadow-sm backdrop-blur-sm'
+              }
+            `}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
       {loading ? (
         <div className="py-16 text-center text-sm font-semibold text-slate-400">Carregando compromissos...</div>

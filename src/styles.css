@@ -455,8 +455,11 @@ html:not(.dark) .bg-slate-50\/20 {
 /* =====================================================
    DEFENSIVE LAYOUT RESETS — PREMIUM EXPERIENCE
    ===================================================== */
-input, select, textarea, button {
+input, select, textarea {
   min-width: 0 !important;
+  max-width: 100% !important;
+}
+button {
   max-width: 100% !important;
 }
 
