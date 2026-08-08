@@ -350,8 +350,16 @@ export function Configuracoes() {
   const inputClass = "w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-100 dark:focus:border-blue-500 placeholder:text-slate-400";
   const cardClass = "rounded-3xl border border-slate-200 bg-white/80 dark:border-slate-800/80 dark:bg-slate-900/60 p-6 shadow-xl space-y-4 backdrop-blur-xl transition-all duration-300";
 
+  const isProprietario = user?.cargo === 'proprietario';
+
+  useEffect(() => {
+    if (!isProprietario && ['whatsapp', 'perfil', 'equipe'].includes(activeCategory)) {
+      setActiveCategory(null);
+    }
+  }, [activeCategory, isProprietario]);
+
   const categoriesList = [
-    {
+    ...(isProprietario ? [{
       id: 'whatsapp',
       title: 'Robô do WhatsApp',
       badge: whatsappStatus.connected ? 'Conectado' : 'Desconectado',
@@ -360,23 +368,23 @@ export function Configuracoes() {
       iconBg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
       helpTitle: 'Robô de WhatsApp',
       helpDesc: 'Configure a conexão do WhatsApp do seu estabelecimento e personalize as mensagens automáticas de confirmação.'
-    },
+    }] : []),
     {
       id: 'horarios',
       title: 'Horários & Bloqueios',
       icon: Clock,
       iconBg: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
       helpTitle: 'Horários de Funcionamento',
-      helpDesc: 'Defina os dias e horários em que seu estabelecimento atende e configure bloqueios ou folgas especiais.'
+      helpDesc: 'Defina os dias e horários em que atende e configure bloqueios ou folgas na sua agenda.'
     },
-    {
+    ...(isProprietario ? [{
       id: 'perfil',
       title: 'Perfil & Agenda Pública',
       icon: Globe,
       iconBg: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
       helpTitle: 'Perfil & Agenda Pública',
       helpDesc: 'Configure o logotipo do seu negócio, nome da empresa, endereço físico e o link da agenda online para os clientes agendarem sozinhos.'
-    },
+    }] : []),
     {
       id: 'notificacoes',
       title: 'Notificações & Alertas',
@@ -387,21 +395,21 @@ export function Configuracoes() {
       helpTitle: 'Notificações de Agendamento',
       helpDesc: 'Ative o som de alarme em tempo real para ser avisado assim que um novo agendamento chegar.'
     },
-    {
+    ...(isProprietario ? [{
       id: 'equipe',
       title: 'Equipe & Auxiliares',
       icon: Users,
       iconBg: 'bg-pink-500/10 text-pink-600 dark:text-pink-400',
       helpTitle: 'Equipe de Atendimento',
       helpDesc: 'Cadastre, edite ou remova profissionais da equipe e gerencie permissões e atendimentos a domicílio.'
-    },
+    }] : []),
     {
       id: 'tema',
       title: 'Aparência & Tema',
       icon: Palette,
       iconBg: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
       helpTitle: 'Aparência da Plataforma',
-      helpDesc: 'Escolha entre modo claro ou escuro para personalizar o visual do sistema.'
+      helpDesc: 'Escolha entre modo claro ou escuro para personalizar o visual do seu sistema.'
     }
   ];
 
