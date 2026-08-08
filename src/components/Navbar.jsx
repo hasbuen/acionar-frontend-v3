@@ -170,7 +170,7 @@ export function Navbar({ activeTab, setActiveTab }) {
         <div className="px-4 sm:px-6 py-3 max-w-7xl mx-auto flex items-center justify-between">
 
           <div className="flex items-center gap-3">
-            <img src={dark ? "/logo-tema-escuro.png" : "/logo-tema-claro.png"} alt="Logo Acionar" className="h-10 w-10 object-contain rounded-xl shadow-lg shadow-blue-500/10" />
+            <img src={dark ? "/logo-tema-escuro.png?v=4" : "/logo-tema-claro.png?v=4"} alt="Logo Acionar" className="h-10 w-10 object-contain rounded-xl shadow-lg shadow-blue-500/10" />
             <div className="flex flex-col justify-center">
               <span className="text-sm font-bold tracking-tight text-slate-800 dark:text-slate-100 leading-tight">
                 { User && user?.nome ? user.nome.charAt(0).toUpperCase() + user.nome.slice(1) : 'Usuário' }
