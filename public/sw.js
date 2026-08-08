@@ -50,18 +50,54 @@ function normalizeNotificationPayload(raw = {}) {
     };
 }
 
+const APP_SHELL_ASSETS = [
+  '/',
+  '/index.html',
+  '/icon-192.png',
+  '/manifest.json'
+];
+
 self.addEventListener('install', (e) => {
-    self.skipWaiting();
+    e.waitUntil(
+      caches.open(CACHE_NAME).then((cache) => {
+        return cache.addAll(APP_SHELL_ASSETS).catch(() => {});
+      }).then(() => self.skipWaiting())
+    );
 });
 
 self.addEventListener('activate', (event) => {
-    event.waitUntil(self.clients.claim());
+    event.waitUntil(
+      caches.keys().then((keys) => {
+        return Promise.all(
+          keys.map((key) => {
+            if (key !== CACHE_NAME) {
+              return caches.delete(key);
+            }
+          })
+        );
+      }).then(() => self.clients.claim())
+    );
 });
 
+// Stale-While-Revalidate strategy for ultra-fast native loading
 self.addEventListener('fetch', (e) => {
-  if (e.request.method !== 'GET' || e.request.url.includes('/api/')) return;
+  if (e.request.method !== 'GET') return;
+  if (e.request.url.includes('/api/') || e.request.url.includes('/uploads/')) return;
+
   e.respondWith(
-    fetch(e.request).catch(() => caches.match(e.request))
+    caches.match(e.request).then((cachedResponse) => {
+      const fetchPromise = fetch(e.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(e.request, responseToCache);
+          });
+        }
+        return networkResponse;
+      }).catch(() => cachedResponse);
+
+      return cachedResponse || fetchPromise;
+    })
   );
 });
 

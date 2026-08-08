@@ -793,12 +793,26 @@ export function Agenda() {
   }
 
   async function updateAppointment(item, data, message) {
-    try { await apiRequest(`/agendamentos/${item.id}`, 'PUT', data); notify(message); setModal(null); await fetchAgenda(); }
-    catch (error) {
+    const previousAgendamentos = [...agendamentos];
+    const previousTodos = [...todosAgendamentos];
+
+    // Optimistic UI: atualização instantânea do estado em 0ms
+    setAgendamentos(prev => prev.map(a => a.id === item.id ? { ...a, ...data } : a));
+    setTodosAgendamentos(prev => prev.map(a => a.id === item.id ? { ...a, ...data } : a));
+    setModal(null);
+    if (message) notify(message);
+
+    try {
+      await apiRequest(`/agendamentos/${item.id}`, 'PUT', data);
+      await fetchAgenda(true);
+    } catch (error) {
+      // Reverter estado otimista em caso de falha da rede ou conflito
+      setAgendamentos(previousAgendamentos);
+      setTodosAgendamentos(previousTodos);
+
       if (error.message && error.message.includes('já foi aceito')) {
         showAlert({ type: 'warning', title: 'Conflito de agendamento', message: error.message });
-        setModal(null);
-        fetchAgenda();
+        fetchAgenda(true);
       } else {
         notify(error.message || 'Não foi possível atualizar o agendamento.');
       }
