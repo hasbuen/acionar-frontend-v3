@@ -1,6 +1,6 @@
 // Service Worker do painel Acionar: Web Push para Android e iOS instalado como PWA.
 
-const CACHE_NAME = 'acionar-v3-cache-v2';
+const CACHE_NAME = 'acionar-v3-cache-v3';
 const DEFAULT_URL = new URL('/', self.registration.scope).href;
 const DEFAULT_ICON = new URL('/icon-192.png', self.registration.scope).href;
 const DEFAULT_BADGE = new URL('/icon-192.png', self.registration.scope).href;
@@ -53,8 +53,8 @@ function normalizeNotificationPayload(raw = {}) {
 const APP_SHELL_ASSETS = [
   '/',
   '/index.html',
-  '/icon-192.png',
-  '/manifest.webmanifest'
+  '/icon-192.png?v=5',
+  '/manifest.webmanifest?v=5'
 ];
 
 self.addEventListener('install', (e) => {

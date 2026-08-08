@@ -44,6 +44,7 @@ function MainApp() {
   useEffect(() => {
     const hostname = window.location.hostname;
     const path = window.location.pathname;
+    document.title = 'Acionar';
 
     const evaluationMatch = path.match(/^\/avaliar\/([^/]+)\/([^/]+)\/?$/);
     if (evaluationMatch) {

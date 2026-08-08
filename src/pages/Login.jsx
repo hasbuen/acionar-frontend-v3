@@ -76,7 +76,12 @@ export function Login() {
 
       <header className="relative z-10 w-full max-w-6xl mx-auto flex items-center justify-between pt-safe-top">
         <div className="flex items-center gap-2">
-          <img src={isDark ? "/logo-tema-escuro.png?v=4" : "/logo-tema-claro.png?v=4"} alt="Logo Acionar" className="login-logo h-10 w-10 object-contain rounded-xl shadow-lg shadow-blue-500/10" />
+          <img
+            key={isDark ? 'brand-dark' : 'brand-light'}
+            src={isDark ? "/acionar-simbolo-fundo-escuro.png?v=5" : "/acionar-logo-transparente.png?v=5"}
+            alt="Logo Acionar"
+            className="login-logo h-10 w-10 object-contain shadow-lg shadow-blue-500/10"
+          />
           <div>
             <span className="block text-xl font-black tracking-tight text-slate-900 dark:text-white">Acionar</span>
             <span className="block text-[9px] font-extrabold uppercase tracking-[0.22em] text-blue-600 dark:text-blue-400">GESTÃO QUE ACOMPANHA VOCÊ</span>
