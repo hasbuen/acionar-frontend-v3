@@ -391,14 +391,14 @@ export function Servicos({ setActiveTab }) {
                             <span className="font-bold text-teal-400 mr-1">+ R$ {parseFloat(sub.preco_adicional || 0).toFixed(2)}</span>
                             <button
                               onClick={() => handleOpenSubservicoModal(s.id, sub)}
-                              className="text-slate-400 hover:text-blue-400 p-0.5"
+                              className="text-slate-400 hover:text-blue-400 p-2"
                               title="Editar adicional"
                             >
                               <Edit className="h-3 w-3" />
                             </button>
                             <button
                               onClick={() => handleDeleteSubservico(s.id, sub.id)}
-                              className="text-slate-400 hover:text-rose-400 p-0.5"
+                              className="text-slate-400 hover:text-rose-400 p-2"
                               title="Excluir adicional"
                             >
                               <Trash2 className="h-3 w-3" />
@@ -465,13 +465,13 @@ export function Servicos({ setActiveTab }) {
               <div className="flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800/60 pt-3">
                 <button
                   onClick={() => handleOpenServicoModal(s)}
-                  className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-blue-400 text-xs font-bold hover:text-blue-300"
+                  className="px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-blue-400 text-xs font-bold hover:text-blue-300"
                 >
                   <Edit className="h-3.5 w-3.5 inline mr-1" /> Editar
                 </button>
                 <button
                   onClick={() => handleDeleteServico(s.id)}
-                  className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-rose-400 text-xs font-bold hover:text-rose-300"
+                  className="px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-rose-400 text-xs font-bold hover:text-rose-300"
                 >
                   <Trash2 className="h-3.5 w-3.5 inline mr-1" /> Excluir
                 </button>
@@ -487,7 +487,7 @@ export function Servicos({ setActiveTab }) {
           className="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-md animate-fade-in"
           style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', margin: 0, transform: 'none' }}
         >
-          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+          <div className="w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
               <h3 className="text-lg font-black text-slate-900 dark:text-white">
                 {editingServico ? 'Editar Serviço' : 'Novo Serviço'}
@@ -574,7 +574,7 @@ export function Servicos({ setActiveTab }) {
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setShowModalServico(false)} className="px-4 py-2 text-xs font-bold text-slate-400">Cancelar</button>
+                <button type="button" onClick={() => setShowModalServico(false)} className="px-4 py-3 text-xs font-bold text-slate-400">Cancelar</button>
                 <button type="submit" className="px-6 py-3 rounded-2xl bg-blue-600 text-xs font-black text-white shadow-lg shadow-blue-500/25">
                   Salvar Serviço
                 </button>
@@ -589,7 +589,7 @@ export function Servicos({ setActiveTab }) {
           className="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-md animate-fade-in"
           style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', margin: 0, transform: 'none' }}
         >
-          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+          <div className="w-full max-w-lg max-h-[90dvh] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
               <div>
                 <h3 className="text-lg font-black text-slate-900 dark:text-white">Vincular material</h3>
@@ -633,7 +633,7 @@ export function Servicos({ setActiveTab }) {
                     value={materialForm.produto_id}
                     onChange={(e) => setMaterialForm({ ...materialForm, produto_id: e.target.value })}
                     required
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                   >
                     <option value="">Selecione um insumo</option>
                     {produtosDisponiveis.map((produto) => (
@@ -656,7 +656,7 @@ export function Servicos({ setActiveTab }) {
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setMaterialModal(null)} className="px-4 py-2 text-xs font-bold text-slate-400">Cancelar</button>
+                <button type="button" onClick={() => setMaterialModal(null)} className="px-4 py-3 text-xs font-bold text-slate-400">Cancelar</button>
                 <button type="submit" className="px-6 py-3 rounded-2xl bg-blue-600 text-xs font-black text-white shadow-lg shadow-blue-500/25">
                   Salvar material
                 </button>
@@ -672,7 +672,7 @@ export function Servicos({ setActiveTab }) {
           className="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-md animate-fade-in"
           style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', margin: 0, transform: 'none' }}
         >
-          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+          <div className="w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
               <h3 className="text-lg font-black text-slate-900 dark:text-white">
                 {editingSubservico ? 'Editar Subserviço / Adicional' : 'Novo Subserviço / Adicional'}
@@ -747,7 +747,7 @@ export function Servicos({ setActiveTab }) {
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setShowModalSubservico(false)} className="px-4 py-2 text-xs font-bold text-slate-400">Cancelar</button>
+                <button type="button" onClick={() => setShowModalSubservico(false)} className="px-4 py-3 text-xs font-bold text-slate-400">Cancelar</button>
                 <button type="submit" className="px-6 py-3 rounded-2xl bg-teal-600 text-xs font-black text-white shadow-lg shadow-teal-500/25">
                   {editingSubservico ? 'Salvar Adicional' : 'Adicionar Subserviço'}
                 </button>

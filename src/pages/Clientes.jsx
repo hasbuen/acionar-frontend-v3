@@ -155,7 +155,7 @@ export function Clientes() {
 
         <button
           onClick={() => handleOpenModal()}
-          className="btn-animated inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3 text-xs font-black text-white shadow-lg shadow-blue-500/25"
+          className="w-full sm:w-auto btn-animated inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3 text-xs font-black text-white shadow-lg shadow-blue-500/25"
         >
           <UserPlus className="h-4 w-4" /> Novo Cliente
         </button>
@@ -227,28 +227,28 @@ export function Clientes() {
                       setShowTransferModal(c);
                       setSelectedProfDestId('');
                     }}
-                    className="h-8 w-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-purple-400 hover:text-purple-300 flex items-center justify-center"
+                    className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-purple-400 hover:text-purple-300 flex items-center justify-center"
                     title="Transferir Cliente"
                   >
                     <UserCheck className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => handleViewHistory(c)}
-                    className="h-8 w-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center"
+                    className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center"
                     title="Histórico"
                   >
                     <History className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => handleOpenModal(c)}
-                    className="h-8 w-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-blue-400 hover:text-blue-300 flex items-center justify-center"
+                    className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-blue-400 hover:text-blue-300 flex items-center justify-center"
                     title="Editar"
                   >
                     <Edit className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => handleDeleteCliente(c.id)}
-                    className="h-8 w-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-rose-400 hover:text-rose-300 flex items-center justify-center"
+                    className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-rose-400 hover:text-rose-300 flex items-center justify-center"
                     title="Excluir"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -265,7 +265,7 @@ export function Clientes() {
       {/* Modal Novo / Editar Cliente */}
       {showModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/15 p-4 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+          <div className="w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
               <h3 className="text-lg font-black text-slate-900 dark:text-white">
                 {editingCliente ? 'Editar Cliente' : 'Novo Cliente'}
@@ -301,7 +301,8 @@ export function Clientes() {
               <div>
                 <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">WHATSAPP</label>
                 <input
-                  type="text"
+                  type="tel"
+                  inputMode="tel"
                   value={form.whatsapp}
                   onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
                   placeholder="(11) 98765-4321"
@@ -323,7 +324,7 @@ export function Clientes() {
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-xs font-bold text-slate-400">Cancelar</button>
+                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-3 text-xs font-bold text-slate-400">Cancelar</button>
                 <button type="submit" className="px-6 py-3 rounded-2xl bg-blue-600 text-xs font-black text-white shadow-lg shadow-blue-500/25">
                   Salvar Cliente
                 </button>
@@ -336,7 +337,7 @@ export function Clientes() {
       {/* Modal Histórico do Cliente */}
       {historyCliente && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/15 p-4 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+          <div className="w-full max-w-lg max-h-[90dvh] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
               <div>
                 <h3 className="text-lg font-black text-slate-900 dark:text-white">Histórico de Atendimentos</h3>
@@ -369,7 +370,7 @@ export function Clientes() {
       {/* Modal Transferir Cliente */}
       {showTransferModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/15 p-4 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+          <div className="w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
               <h3 className="text-lg font-black text-slate-900 dark:text-white">
                 Transferir Cliente
@@ -389,7 +390,7 @@ export function Clientes() {
                 <select
                   value={selectedProfDestId}
                   onChange={(e) => setSelectedProfDestId(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                   required
                 >
                   <option value="">Selecione...</option>
@@ -402,7 +403,7 @@ export function Clientes() {
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setShowTransferModal(null)} className="px-4 py-2 text-xs font-bold text-slate-400">Cancelar</button>
+                <button type="button" onClick={() => setShowTransferModal(null)} className="px-4 py-3 text-xs font-bold text-slate-400">Cancelar</button>
                 <button
                   type="button"
                   disabled={!selectedProfDestId}

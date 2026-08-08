@@ -3,6 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../services/api';
 import { Settings, Users, Bell, Globe, Palette, Copy, Check, Clock, MessageSquare, MapPin, ShieldAlert, Plus, Trash2, Upload, Image as ImageIcon, CreditCard } from 'lucide-react';
 import { ModalAlert, useModalAlert } from '../components/ModalAlert';
+import { PremiumToggle } from '../components/PremiumToggle';
+import { PremiumCheckbox } from '../components/PremiumCheckbox';
 
 export function Configuracoes() {
   const { tenant, setTenant, user } = useAuth();
@@ -542,15 +544,10 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Permita que seus clientes agendem horários sozinhos.</p>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={form.agenda_publica_ativa}
-                      onChange={(e) => setForm({ ...form, agenda_publica_ativa: e.target.checked })}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-500 dark:bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
+                  <PremiumToggle
+                    checked={form.agenda_publica_ativa}
+                    onChange={(e) => setForm({ ...form, agenda_publica_ativa: e.target.checked })}
+                  />
                 </div>
 
                 <div className="space-y-4 pt-2">
@@ -779,14 +776,14 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
                   <button
                     type="button"
                     onClick={() => setShowPixForm(false)}
-                    className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-black text-slate-700 dark:text-slate-200 transition"
+                    className="px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-black text-slate-700 dark:text-slate-200 transition"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={savingPayments}
-                    className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-black text-white transition"
+                    className="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-black text-white transition"
                   >
                     {savingPayments ? 'Salvando...' : 'Salvar Chave Pix'}
                   </button>
@@ -853,15 +850,14 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
 
                 <div key={idx} className="rounded-2xl border border-slate-100 bg-slate-50/50 p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs dark:border-slate-800 dark:bg-slate-950/40">
                   <div className="flex items-center gap-3 w-full sm:w-auto">
-                    <input
-                      type="checkbox"
+                    <PremiumToggle
+                      size="sm"
                       checked={h.ativo}
                       onChange={(e) => {
                         const next = [...horarios];
                         next[idx].ativo = e.target.checked;
                         setHorarios(next);
                       }}
-                      className="h-4.5 w-4.5 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-blue-600 focus:ring-blue-500"
                     />
                     <span className="font-extrabold text-slate-800 dark:text-white min-w-[100px]">{h.dia}</span>
                   </div>
@@ -876,7 +872,7 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
                           next[idx].inicio = e.target.value;
                           setHorarios(next);
                         }}
-                        className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-2.5 py-1.5 text-xs font-bold text-slate-800 dark:text-white"
+                        className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2.5 text-xs font-bold text-slate-800 dark:text-white outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:focus:border-blue-500"
                       />
                       <span className="text-slate-400 font-medium">até</span>
                       <input
@@ -887,7 +883,7 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
                           next[idx].fim = e.target.value;
                           setHorarios(next);
                         }}
-                        className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-2.5 py-1.5 text-xs font-bold text-slate-800 dark:text-white"
+                        className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2.5 text-xs font-bold text-slate-800 dark:text-white outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:focus:border-blue-500"
                       />
                     </div>
                   ) : (
@@ -976,17 +972,13 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
 
                 {/* Atende no local do cliente */}
                 <div className="flex items-start gap-3 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 bg-slate-50/30 dark:bg-slate-950/20 p-4">
-                  <input
-                    type="checkbox"
+                  <PremiumCheckbox
                     id="chkAtendeLocal"
                     checked={profForm.aceita_atendimento_externo}
                     onChange={(e) => setProfForm({ ...profForm, aceita_atendimento_externo: e.target.checked })}
-                    className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    label="Atende no local do cliente"
+                    description="Permite que este profissional receba solicitações para atendimento no endereço informado pelo cliente."
                   />
-                  <label htmlFor="chkAtendeLocal" className="text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer select-none">
-                    Atende no local do cliente
-                    <span className="block text-[10px] text-slate-400 font-normal mt-0.5">Permite que este profissional receba solicitações para atendimento no endereço informado pelo cliente.</span>
-                  </label>
                 </div>
 
                 <div className="flex gap-2 justify-end">
@@ -1038,7 +1030,7 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
                           <button
                             type="button"
                             onClick={() => handleEditProfissional(p)}
-                            className="p-2 rounded-xl text-blue-500 hover:bg-blue-500/10 transition"
+                            className="p-2.5 rounded-xl text-blue-500 hover:bg-blue-500/10 transition"
                           >
                             <svg className="h-4 w-4 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2.5">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
@@ -1047,7 +1039,7 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
                           <button
                             type="button"
                             onClick={() => handleDeleteProfissional(p.id)}
-                            className="p-2 rounded-xl text-rose-500 hover:bg-rose-500/10 transition"
+                            className="p-2.5 rounded-xl text-rose-500 hover:bg-rose-500/10 transition"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -1229,7 +1221,7 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
                       key={v}
                       type="button"
                       onClick={() => handleInsertVariable(v)}
-                      className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 text-xs font-black text-slate-600 dark:text-slate-300 hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600 transition-all select-none"
+                      className="px-3 py-2 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 text-xs font-black text-slate-600 dark:text-slate-300 hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600 transition-all select-none"
                     >
                       +{v}
                     </button>

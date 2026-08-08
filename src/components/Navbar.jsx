@@ -24,7 +24,10 @@ export function Navbar({ activeTab, setActiveTab }) {
   const { user, tenant, logout, socket } = useAuth();
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'));
-  const publicUrl = `/agendar/${tenant?.slug || ''}`;
+  const isProduction = typeof window !== 'undefined' && window.location.hostname.includes('acionar.online');
+  const publicUrl = isProduction && tenant?.slug
+    ? `https://${tenant.slug}.acionar.online`
+    : `/agendar/${tenant?.slug || ''}`;
   const { alertState, showAlert, closeAlert } = useModalAlert();
 
   const [notificacoes, setNotificacoes] = useState([]);

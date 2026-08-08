@@ -1,7 +1,13 @@
 * { 
-  -webkit-tap-highlight-color: transparent; 
+  -webkit-tap-highlight-color: transparent;
+  /* Elimina delay de 300ms em taps no iOS */
+  touch-action: manipulation;
+  box-sizing: border-box;
 }
 
+/* =====================================================
+   SCROLLBAR
+   ===================================================== */
 ::-webkit-scrollbar { 
   width: 0px; 
   background: transparent; 
@@ -15,13 +21,171 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-x;
 }
 
-input[type="date"], select {
+/* scroll horizontal (filtros, tabs) */
+.scroll-x-touch {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.scroll-x-touch::-webkit-scrollbar { display: none; }
+
+/* scroll vertical (listas em modais) */
+.scroll-y-touch {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* =====================================================
+   MODAIS — MOBILE SAFE
+   ===================================================== */
+
+/* Overlay padrão para todos os modais */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: flex-end; /* bottom-sheet no mobile */
+  justify-content: center;
+  background: rgba(2, 6, 23, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 0;
+}
+
+@media (min-width: 640px) {
+  .modal-overlay {
+    align-items: center;
+    padding: 1rem;
+  }
+}
+
+/* Conteúdo do modal - bottom sheet no mobile, centered no desktop */
+.modal-content {
+  width: 100%;
+  max-height: 92dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  border-radius: 1.5rem 1.5rem 0 0;
+  padding: 1.25rem 1rem;
+}
+
+@media (min-width: 640px) {
+  .modal-content {
+    max-width: 28rem;
+    max-height: 88dvh;
+    border-radius: 1.75rem;
+    padding: 1.5rem;
+  }
+}
+
+/* =====================================================
+   TOUCH TARGETS — MOBILE
+   ===================================================== */
+
+/* Garante área de toque mínima de 44px em todos os botões */
+button, [role="button"], a {
+  min-height: auto; /* não força, mas serve como documentação */
+}
+
+/* Botões de ícone quadrado com área garantida */
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+/* =====================================================
+   TYPOGRAPHY — MOBILE
+   ===================================================== */
+
+/* Previne zoom automático do iOS Safari em inputs com font < 16px */
+@media (max-width: 640px) {
+  input, select, textarea {
+    font-size: max(16px, 1em) !important;
+  }
+}
+
+
+input[type="date"], input[type="time"], input[type="datetime-local"], select {
   min-height: 48px;
   -webkit-appearance: none;
   appearance: none;
+  cursor: pointer;
+}
+
+/* =====================================================
+   DATE / TIME / DATETIME-LOCAL — Estilo Premium Global
+   ===================================================== */
+
+/* Remove o ícone padrão do picker de data/hora em WebKit (Chrome, Safari, Edge) */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 4px;
+  opacity: 0.7;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Dark mode: inverte o ícone do picker para ficar visível no fundo escuro */
+html.dark input[type="date"]::-webkit-calendar-picker-indicator,
+html.dark input[type="time"]::-webkit-calendar-picker-indicator,
+html.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(0.85);
+}
+
+/* Estilo global para date/time — modo claro */
+html:not(.dark) input[type="date"],
+html:not(.dark) input[type="time"],
+html:not(.dark) input[type="datetime-local"] {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Estilo global para date/time — modo escuro */
+html.dark input[type="date"],
+html.dark input[type="time"],
+html.dark input[type="datetime-local"] {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #1e293b !important;
+  color-scheme: dark;
+}
+
+/* Focus ring premium para date/time */
+input[type="date"]:focus,
+input[type="time"]:focus,
+input[type="datetime-local"]:focus {
+  outline: none !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+html.dark input[type="date"]:focus,
+html.dark input[type="time"]:focus,
+html.dark input[type="datetime-local"]:focus {
+  border-color: #60a5fa !important;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2) !important;
 }
 
 /* =====================================================
@@ -101,6 +265,7 @@ select, select option {
   overflow: hidden !important;
   padding: 10px 40px 10px 14px !important;
 }
+
 
 
 /* --- Sistema de Cores e Glows Neon --- */

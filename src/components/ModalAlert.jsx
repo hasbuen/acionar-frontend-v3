@@ -46,6 +46,16 @@ const TYPE_CONFIG = {
     defaultTitle: 'Atenção',
     glowClass: 'shadow-amber-500/5 dark:shadow-amber-500/10',
   },
+  success: {
+    icon: CheckCircle2,
+    iconBg: 'bg-emerald-500/10 dark:bg-emerald-500/15',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
+    borderColor: 'border-emerald-500/20 dark:border-emerald-500/30',
+    titleColor: 'text-emerald-600 dark:text-emerald-400',
+    btnClass: 'bg-gradient-to-r from-emerald-600 to-teal-600 shadow-emerald-500/20 dark:shadow-emerald-500/30',
+    defaultTitle: 'Sucesso',
+    glowClass: 'shadow-emerald-500/5 dark:shadow-emerald-500/10',
+  },
 };
 
 export function ModalAlert({
@@ -82,7 +92,7 @@ export function ModalAlert({
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/15 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm animate-fade-in"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-alert-title"
@@ -90,7 +100,7 @@ export function ModalAlert({
     >
       <div
         className={`
-          relative w-full max-w-sm rounded-[2rem] border bg-white dark:bg-slate-900 p-6 shadow-2xl
+          relative w-full max-w-sm max-h-[90dvh] overflow-y-auto rounded-[2rem] border bg-white dark:bg-slate-900 p-6 shadow-2xl
           ${config.borderColor} ${config.glowClass}
           animate-scale-in
         `}
@@ -98,7 +108,7 @@ export function ModalAlert({
         {/* Close button — top-right */}
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800 dark:hover:text-white"
+          className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800 dark:hover:text-white"
           aria-label="Fechar"
         >
           <X className="h-4 w-4" />
@@ -127,7 +137,7 @@ export function ModalAlert({
           {onConfirm && (
             <button
               onClick={onClose}
-              className="flex-1 rounded-2xl border border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white px-5 py-3 text-xs font-black transition-all"
+              className="flex-1 rounded-2xl border border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white px-5 py-3.5 min-h-[44px] text-xs font-black transition-all"
             >
               {cancelLabel}
             </button>
@@ -136,7 +146,7 @@ export function ModalAlert({
             ref={closeBtnRef}
             onClick={onConfirm ? onConfirm : onClose}
             className={`
-              flex-1 rounded-2xl px-5 py-3 text-xs font-black text-white shadow-lg
+              flex-1 rounded-2xl px-5 py-3.5 min-h-[44px] text-xs font-black text-white shadow-lg
               transition-all hover:opacity-95 hover:scale-[1.02] active:scale-95
               ${config.btnClass}
             `}

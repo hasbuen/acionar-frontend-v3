@@ -754,7 +754,7 @@ export function PublicSchedule({ slug: propSlug }) {
                       type="button"
                       onClick={() => setSelectedProfissional(null)}
                       style={!selectedProfissional ? { backgroundColor: 'rgba(var(--color-primary-rgb), 0.3)', borderColor: 'var(--color-primary)' } : {}}
-                      className={`px-3 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 transition-all border ${
+                      className={`px-3 py-2.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 transition-all border ${
                         !selectedProfissional
                           ? 'text-white shadow-sm'
                           : 'bg-white/5 border-white/10 text-white/60 hover:text-white'
@@ -771,7 +771,7 @@ export function PublicSchedule({ slug: propSlug }) {
                           type="button"
                           onClick={() => setSelectedProfissional(p)}
                           style={isSel ? { backgroundColor: 'var(--color-primary)', borderColor: 'var(--color-primary)' } : {}}
-                          className={`px-3 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-2 transition-all border ${
+                          className={`px-3 py-2.5 rounded-full text-xs font-extrabold flex items-center gap-2 transition-all border ${
                             isSel
                               ? 'text-white shadow-md'
                               : 'bg-white/5 border-white/10 text-white/70 hover:text-white'
@@ -953,7 +953,7 @@ export function PublicSchedule({ slug: propSlug }) {
                       </p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 max-h-56 overflow-y-auto p-2 border border-white/5 rounded-2xl bg-black/20 shadow-inner">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 max-h-72 overflow-y-auto sm:max-h-56 p-2 border border-white/5 rounded-2xl bg-black/20 shadow-inner">
                       {timeSlots.map((slot) => {
                         const isSelected = selectedTime === slot.time;
                         return slot.available ? (
@@ -1103,7 +1103,7 @@ export function PublicSchedule({ slug: propSlug }) {
                           }}
                           placeholder="00000-000"
                           maxLength={9}
-                          className="flex-1 rounded-xl bg-black/40 border border-white/10 px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-white/40 font-medium tracking-wide shadow-inner"
+                          className="flex-1 rounded-xl bg-black/40 border border-white/10 px-3.5 py-2.5 text-base text-white placeholder:text-white/30 focus:outline-none focus:border-white/40 font-medium tracking-wide shadow-inner"
                         />
                         <button
                           type="button"
@@ -1132,7 +1132,7 @@ export function PublicSchedule({ slug: propSlug }) {
                           value={formEndereco.rua}
                           onChange={(e) => setFormEndereco({ ...formEndereco, rua: e.target.value })}
                           placeholder="Ex: Av. Paulista"
-                          className="w-full rounded-xl bg-black/30 border border-white/10 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
+                          className="w-full rounded-xl bg-black/30 border border-white/10 px-3.5 py-2.5 text-base text-white focus:outline-none focus:border-emerald-500 font-medium"
                         />
                       </div>
                       <div>
@@ -1143,7 +1143,7 @@ export function PublicSchedule({ slug: propSlug }) {
                           value={formEndereco.numero}
                           onChange={(e) => setFormEndereco({ ...formEndereco, numero: e.target.value })}
                           placeholder="Ex: 1000"
-                          className="w-full rounded-xl bg-black/30 border border-white/10 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
+                          className="w-full rounded-xl bg-black/30 border border-white/10 px-3.5 py-2.5 text-base text-white focus:outline-none focus:border-emerald-500 font-medium"
                         />
                       </div>
                     </div>
@@ -1158,7 +1158,7 @@ export function PublicSchedule({ slug: propSlug }) {
                           value={formEndereco.bairro}
                           onChange={(e) => setFormEndereco({ ...formEndereco, bairro: e.target.value })}
                           placeholder="Ex: Bela Vista"
-                          className="w-full rounded-xl bg-black/30 border border-white/10 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
+                          className="w-full rounded-xl bg-black/30 border border-white/10 px-3.5 py-2.5 text-base text-white focus:outline-none focus:border-emerald-500 font-medium"
                         />
                       </div>
                       <div>
@@ -1168,7 +1168,7 @@ export function PublicSchedule({ slug: propSlug }) {
                           value={formEndereco.complemento}
                           onChange={(e) => setFormEndereco({ ...formEndereco, complemento: e.target.value })}
                           placeholder="Ex: Apto 42, Bloco B"
-                          className="w-full rounded-xl bg-black/30 border border-white/10 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
+                          className="w-full rounded-xl bg-black/30 border border-white/10 px-3.5 py-2.5 text-base text-white focus:outline-none focus:border-emerald-500 font-medium"
                         />
                       </div>
                     </div>
@@ -1194,7 +1194,7 @@ export function PublicSchedule({ slug: propSlug }) {
       </main>
 
       {/* FOOTER ACTIONS (WIZARD NAV) */}
-      <div className="w-full max-w-2xl mx-auto px-4 sm:px-6 py-4 border-t border-white/5 bg-black/10 backdrop-blur-md">
+      <div className="w-full max-w-2xl mx-auto px-4 sm:px-6 py-4 border-t border-white/5 bg-black/10 backdrop-blur-md sticky bottom-0 z-30 pb-safe-bottom">
         <div className="flex items-center justify-between gap-4">
           {currentStep > 1 ? (
              <button

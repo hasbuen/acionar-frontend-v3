@@ -150,7 +150,7 @@ function Modal({ title, subtitle, children, onClose, wide = false }) {
       className="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-md"
       style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', margin: 0, transform: 'none' }}
     >
-      <div ref={modalRef} className={`relative w-full ${wide ? 'max-w-xl' : 'max-w-md'} overflow-hidden rounded-[2.2rem] border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100 sm:p-8`}>
+      <div ref={modalRef} className={`relative w-full ${wide ? 'max-w-xl' : 'max-w-md'} overflow-hidden rounded-[2.2rem] border border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100 sm:p-6 max-h-[90dvh] overflow-y-auto`}>
         <button
           onClick={handleClose}
           className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors"
@@ -168,7 +168,7 @@ function Modal({ title, subtitle, children, onClose, wide = false }) {
 }
 
 function ActionButton({ kind, label, children, onClick }) {
-  return <button type="button" onClick={onClick} title={label} aria-label={label} className={`flex h-10 w-10 items-center justify-center rounded-xl border transition ${buttonStyles[kind]}`}>{children}</button>;
+  return <button type="button" onClick={onClick} title={label} aria-label={label} className={`flex h-11 w-11 items-center justify-center rounded-xl border transition ${buttonStyles[kind]}`}>{children}</button>;
 }
 
 function DetailsModal({ item, onClose, onUpdateStatus, onOpenMaintenance, onEditFull, onOpenMap }) {
@@ -274,7 +274,7 @@ function DetailsModal({ item, onClose, onUpdateStatus, onOpenMaintenance, onEdit
           Status do Agendamento
         </label>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
           <div className="relative flex-1">
             <select
               value={selectedStatus}
@@ -914,7 +914,7 @@ export function Agenda() {
 
             {/* CONTEÚDO (VALORES OU GRÁFICO) */}
             {statViewMode === 'valores' ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 w-full">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full">
                 <div className="stat-card rounded-2xl border border-slate-100 dark:border-slate-800/85 bg-white dark:bg-slate-950/40 p-4 shadow-sm flex flex-col justify-between">
                   <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400">Solicitados</span>
                   <span className="mt-1.5 text-2xl font-black text-slate-900 dark:text-white">{stats.solicitados}</span>
@@ -933,7 +933,7 @@ export function Agenda() {
                 </div>
               </div>
             ) : (
-              <div className="w-full h-[250px]">
+              <div className="w-full h-[200px] sm:h-[250px]">
                 <Chart options={chartOptions} series={chartSeries} type={statChartType} height="100%" />
               </div>
             )}
@@ -941,7 +941,7 @@ export function Agenda() {
         )}
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">{filters.map(([key, label]) => <button key={key} onClick={() => setActiveFilter(key)} className={`whitespace-nowrap rounded-2xl border px-4 py-2 text-xs font-extrabold transition ${activeFilter === key ? 'border-blue-500 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20' : 'border-slate-200 bg-white/80 text-slate-500 hover:bg-white dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-400'}`}>{label}</button>)}</div>
+      <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar px-1">{filters.map(([key, label]) => <button key={key} onClick={() => setActiveFilter(key)} className={`whitespace-nowrap rounded-2xl border px-4 py-2 text-xs font-extrabold transition ${activeFilter === key ? 'border-blue-500 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20' : 'border-slate-200 bg-white/80 text-slate-500 hover:bg-white dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-400'}`}>{label}</button>)}</div>
 
       {loading ? (
         <div className="py-16 text-center text-sm font-semibold text-slate-400">Carregando compromissos...</div>
@@ -984,7 +984,7 @@ export function Agenda() {
                           : (item.temp_cliente_nome || item.cliente_nome || 'Cliente')}
                       </span>
                       <span
-                        className={`rounded-full border px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider ${statusClasses[item.status] || statusClasses.agendado
+                        className={`rounded-full border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${statusClasses[item.status] || statusClasses.agendado
                           }`}
                       >
                         {statusLabels[item.status] || item.status}
@@ -992,7 +992,7 @@ export function Agenda() {
 
                       {item.profissional_nome && (
                         <span
-                          className="inline-flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-full text-white shadow-sm shrink-0"
+                          className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full text-white shadow-sm shrink-0"
                           style={{ backgroundColor: item.profissional_cor || '#8b5cf6' }}
                         >
                           <User className="h-2.5 w-2.5 shrink-0" /> {item.profissional_nome}
@@ -1001,7 +1001,7 @@ export function Agenda() {
 
                       {isAtendimentoExterno ? (
                         <div className="flex items-center gap-1.5 shrink-0">
-                          <span className="inline-flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-500/20">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-500/20">
                             <Home className="h-2.5 w-2.5" /> Domicílio
                           </span>
                           <button
@@ -1010,7 +1010,7 @@ export function Agenda() {
                               e.stopPropagation();
                               setModal({ type: 'address', item });
                             }}
-                            className="inline-flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-purple-600/10 text-purple-600 dark:text-purple-300 border border-purple-500/20 hover:bg-purple-600 hover:text-white transition shadow-sm"
+                            className="inline-flex items-center gap-1 text-[10px] font-extrabold px-3 py-1.5 rounded-full bg-purple-600/10 text-purple-600 dark:text-purple-300 border border-purple-500/20 hover:bg-purple-600 hover:text-white transition shadow-sm"
                             title="Editar Endereço Domiciliar"
                           >
                             <MapPin className="h-2.5 w-2.5" /> Endereço
@@ -1020,14 +1020,14 @@ export function Agenda() {
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-600 text-white hover:bg-emerald-500 transition shadow-sm"
+                            className="inline-flex items-center gap-1 text-[10px] font-extrabold px-3 py-1.5 rounded-full bg-emerald-600 text-white hover:bg-emerald-500 transition shadow-sm"
                             title="Abrir localização no Google Maps"
                           >
                             <MapPin className="h-2.5 w-2.5" /> Maps
                           </a>
                         </div>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-500 dark:text-slate-300 border border-slate-500/20 shrink-0">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-500 dark:text-slate-300 border border-slate-500/20 shrink-0">
                           No salão
                         </span>
                       )}
@@ -1162,7 +1162,7 @@ export function Agenda() {
       {modal?.type === 'maintenance' && (
         <Modal title="Manutenção Periódica" subtitle={`${modal.item.cliente_nome || 'Cliente'} — ${modal.item.servico_nome || 'Atendimento'}`} onClose={() => setModal(null)}>
           <form onSubmit={event => { event.preventDefault(); const data = new FormData(event.currentTarget); const date = `${data.get('date')}T${data.get('time')}`; apiRequest('/agendamentos', 'POST', { cliente_id: modal.item.cliente_id, profissional_id: modal.item.profissional_id, servico_id: modal.item.servico_id, data_hora: new Date(date).toISOString(), valor_total: modal.item.valor_total || 0, observacao: data.get('observacao'), status: 'agendado' }).then(() => { notify('Manutenção agendada.'); setModal(null); fetchAgenda(); }).catch(error => notify(error.message || 'Erro ao agendar manutenção.')); }} className="space-y-4">
-            <div className="grid grid-cols-5 gap-1.5 w-full">
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 w-full">
               {[15, 30, 45, 60, 90].map(days => (
                 <button type="button" key={days} onClick={event => { const date = new Date(modal.item.data_hora); date.setDate(date.getDate() + days); event.currentTarget.form.date.value = date.toISOString().slice(0, 10); }} className="btn-animated rounded-xl border border-slate-200 hover:border-purple-500 py-2.5 text-center text-xs font-black text-slate-700 dark:border-slate-800 dark:text-slate-300 dark:hover:border-purple-500">{days}d</button>
               ))}
@@ -1293,7 +1293,7 @@ export function Agenda() {
               </div>
             )}
             <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400">WhatsApp
-              <input value={form.cliente_whatsapp} onChange={event => setForm({ ...form, cliente_whatsapp: event.target.value })} className={`${inputClass} mt-1`} placeholder="(11) 99999-9999" />
+              <input value={form.cliente_whatsapp} onChange={event => setForm({ ...form, cliente_whatsapp: event.target.value })} className={`${inputClass} mt-1`} placeholder="(11) 99999-9999" type="tel" inputMode="tel" />
             </label>
             <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400">Serviço
               <select value={form.servico_id} onChange={event => setForm({ ...form, servico_id: event.target.value })} className={`${inputClass} mt-1`} required>

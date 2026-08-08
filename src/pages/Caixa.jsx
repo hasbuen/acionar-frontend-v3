@@ -780,7 +780,89 @@ export function Caixa() {
             Nenhum lançamento encontrado.
           </div>
         ) : (
-          <div className="w-full overflow-x-auto max-h-[55vh] sm:max-h-[520px] rounded-xl border border-slate-200 dark:border-slate-800 no-scrollbar">
+          <>
+          <div className="block md:hidden space-y-3">
+            {groupedMovimentacoes.map((item) => {
+              if (item.isGroup) {
+                const isExpanded = !!expandedGroups[item.key];
+                const isEntrada = item.tipo === 'entrada';
+                const firstDate = item.items[0]?.data_movimento;
+                return (
+                  <div key={item.key} className="bg-white dark:bg-slate-900 rounded-xl border border-indigo-200 dark:border-indigo-900/50 p-3 shadow-sm flex flex-col gap-2">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-bold text-slate-800 dark:text-slate-200 text-sm">{item.titulo}</div>
+                        <div className="text-xs text-slate-500">{firstDate ? new Date(firstDate).toLocaleDateString('pt-BR') : '-'}</div>
+                      </div>
+                      <div className={`font-black text-sm ${isEntrada ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                        {isEntrada ? '+' : '-'}&nbsp;R$&nbsp;{item.totalValor.toFixed(2).replace('.', ',')}
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center mt-1">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/10 text-blue-600 border border-blue-500/20">
+                        {item.qtdPagas}/{item.totalParcelas} Pagos
+                      </span>
+                      <button onClick={() => toggleGroupExpand(item.key)} className="text-[10px] font-black text-indigo-600 underline">
+                        {isExpanded ? 'Recolher' : 'Expandir'}
+                      </button>
+                    </div>
+                    {isExpanded && <div className="mt-2 space-y-2 border-t border-slate-100 dark:border-slate-800 pt-2">
+                      {item.items.map(subM => {
+                        const subIsPago = subM.status === 'pago';
+                        return (
+                          <div key={subM.id} className="flex justify-between items-center text-xs border-b border-slate-50 dark:border-slate-800/60 pb-2 last:border-0 last:pb-0">
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-slate-700 dark:text-slate-300">{subM.descricao}</span>
+                              <span className="text-[10px] text-slate-500">{new Date(subM.data_movimento).toLocaleDateString('pt-BR')}</span>
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="font-bold text-slate-800 dark:text-slate-200">R$ {parseFloat(subM.valor).toFixed(2).replace('.', ',')}</span>
+                              <div className="flex items-center gap-2">
+                                <span className={subIsPago ? 'text-emerald-500 font-bold text-[9px]' : 'text-amber-500 font-bold text-[9px]'}>{subIsPago ? 'Pago' : 'Pendente'}</span>
+                                {!subIsPago && <button onClick={() => handleOpenBaixa(subM)} className="text-[9px] font-black text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">Baixar</button>}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>}
+                  </div>
+                );
+              }
+              const m = item;
+              const isEntrada = m.tipo === 'entrada';
+              const isPago = m.status === 'pago';
+              return (
+                <div key={m.id} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3 shadow-sm flex flex-col gap-2">
+                  <div className="flex justify-between items-start">
+                    <div className="flex flex-col">
+                      <div className="font-bold text-slate-800 dark:text-slate-200 text-sm">{m.descricao}</div>
+                      <div className="text-xs text-slate-500">{new Date(m.data_movimento).toLocaleDateString('pt-BR')}</div>
+                    </div>
+                    <div className={`font-black text-sm ${isEntrada ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                        {isEntrada ? '+' : '-'}&nbsp;R$&nbsp;{parseFloat(m.valor).toFixed(2).replace('.', ',')}
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center mt-1">
+                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md font-black uppercase tracking-wider text-[9px] ${isPago ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                      {isPago ? '✓ Pago' : '⏳ Pendente'}
+                    </span>
+                    <div className="flex gap-2">
+                      {!isPago && (
+                        <button onClick={() => handleOpenBaixa(m)} className="px-2 py-1.5 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[10px] font-black uppercase border border-amber-500/20">
+                          Baixar
+                        </button>
+                      )}
+                      <button onClick={() => handleDeleteEntry(m.id)} className="p-1.5 rounded-lg text-red-400 bg-red-50 dark:bg-red-500/10">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="hidden md:block w-full overflow-x-auto max-h-[55vh] sm:max-h-[520px] rounded-xl border border-slate-200 dark:border-slate-800 no-scrollbar">
             <table className="w-full text-left border-collapse whitespace-nowrap">
               <thead className="bg-slate-50 dark:bg-slate-900/50 sticky top-0 z-10 border-b border-slate-200 dark:border-slate-800">
                 <tr>
@@ -879,7 +961,7 @@ export function Caixa() {
                                     <button
                                       onClick={() => handleOpenBaixa(subM)}
                                       title="Dar Baixa"
-                                      className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500 hover:text-white text-[9px] font-black uppercase tracking-wide transition-all border border-amber-500/20"
+                                      className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500 hover:text-white text-[9px] font-black uppercase tracking-wide transition-all border border-amber-500/20"
                                     >
                                       <BadgeCheck className="h-3 w-3 shrink-0" /> Baixar
                                     </button>
@@ -891,7 +973,7 @@ export function Caixa() {
                                   )}
                                   <button
                                     onClick={() => handleDeleteEntry(subM.id)}
-                                    className="p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition"
+                                    className="p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition"
                                     title="Excluir Parcela"
                                   >
                                     <Trash2 className="h-3.5 w-3.5" />
@@ -993,11 +1075,12 @@ export function Caixa() {
               </tbody>
             </table>
           </div>
+          </>
         )}
 
       {showBaixaModal && baixaTarget && createPortal(
         <div className="fixed inset-0 z-[999999] h-screen w-screen flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
-          <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-5 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+          <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 max-h-[90dvh] overflow-y-auto shadow-2xl space-y-5 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2">
                 <div className="h-8 w-8 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
@@ -1074,7 +1157,7 @@ export function Caixa() {
 
       {showModal && createPortal(
         <div className="fixed inset-0 z-[999999] h-screen w-screen flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
-          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100 animate-fade-in">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 max-h-[90dvh] overflow-y-auto shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100 animate-fade-in">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 block">NOVO LANÇAMENTO</span>
@@ -1086,7 +1169,7 @@ export function Caixa() {
             </div>
 
             {/* SELETOR DE ABAS / MODO DE LANÇAMENTO */}
-            <div className="grid grid-cols-4 gap-1 rounded-2xl bg-slate-100 dark:bg-slate-950 p-1 border border-slate-200 dark:border-slate-800">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 rounded-2xl bg-slate-100 dark:bg-slate-950 p-1 border border-slate-200 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => {
@@ -1158,13 +1241,13 @@ export function Caixa() {
               {/* ================= ABA 1: AVULSO ================= */}
               {activeTabModal === 'avulso' && (
                 <>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">TIPO</label>
                       <select
                         value={form.tipo}
                         onChange={(e) => setForm({ ...form, tipo: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       >
                         <option value="entrada">Entrada (+)</option>
                         <option value="saida">Saída (-)</option>
@@ -1175,7 +1258,7 @@ export function Caixa() {
                       <select
                         value={form.status}
                         onChange={(e) => setForm({ ...form, status: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       >
                         <option value="pago">Pago (Concluído)</option>
                         <option value="pendente">Pendente ({form.tipo === 'entrada' ? 'A Receber' : 'A Pagar'})</option>
@@ -1191,21 +1274,22 @@ export function Caixa() {
                       onChange={(e) => setForm({ ...form, descricao: e.target.value })}
                       placeholder="Ex: Recebimento avulso, Dica, Reparo técnico"
                       required
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">VALOR (R$)</label>
                       <input
                         type="number"
+                        inputMode="decimal"
                         step="0.01"
                         value={form.valor}
                         onChange={(e) => setForm({ ...form, valor: e.target.value })}
                         placeholder="0.00"
                         required
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       />
                     </div>
                     <div>
@@ -1213,7 +1297,7 @@ export function Caixa() {
                       <select
                         value={form.forma_pagamento}
                         onChange={(e) => setForm({ ...form, forma_pagamento: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       >
                         <option value="pix">PIX</option>
                         <option value="cartao_credito">Cartão de Crédito</option>
@@ -1260,7 +1344,7 @@ export function Caixa() {
                           });
                         }}
                         required
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       >
                         <option value="">-- Selecione o cliente --</option>
                         {clientes.map(c => (
@@ -1305,13 +1389,13 @@ export function Caixa() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">TIPO DE LANÇAMENTO</label>
                       <select
                         value={form.tipo}
                         onChange={(e) => setForm({ ...form, tipo: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       >
                         <option value="entrada">Entrada (+)</option>
                         <option value="saida">Saída (-)</option>
@@ -1322,7 +1406,7 @@ export function Caixa() {
                       <select
                         value={form.status}
                         onChange={(e) => setForm({ ...form, status: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       >
                         <option value="pago">Pago (Concluído)</option>
                         <option value="pendente">Pendente ({form.tipo === 'entrada' ? 'A Receber' : 'A Pagar'})</option>
@@ -1338,21 +1422,22 @@ export function Caixa() {
                       onChange={(e) => setForm({ ...form, descricao: e.target.value })}
                       placeholder="Ex: Pagamento direto de cliente"
                       required
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">VALOR (R$)</label>
                       <input
                         type="number"
+                        inputMode="decimal"
                         step="0.01"
                         value={form.valor}
                         onChange={(e) => setForm({ ...form, valor: e.target.value })}
                         placeholder="0.00"
                         required
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       />
                     </div>
                     <div>
@@ -1360,7 +1445,7 @@ export function Caixa() {
                       <select
                         value={form.forma_pagamento}
                         onChange={(e) => setForm({ ...form, forma_pagamento: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       >
                         <option value="pix">PIX</option>
                         <option value="cartao_credito">Cartão de Crédito</option>
@@ -1387,7 +1472,7 @@ export function Caixa() {
                           categoria: t === 'saida' ? 'compra_mercadoria' : 'venda_produto'
                         });
                       }}
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                     >
                       <option value="saida">Compra de Estoque (Saída de Caixa -)</option>
                       <option value="entrada">Venda de Produto (Entrada de Caixa +)</option>
@@ -1400,7 +1485,7 @@ export function Caixa() {
                       value={form.produto_id}
                       onChange={(e) => handleProductChange(e.target.value)}
                       required
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                     >
                       <option value="">-- Selecione um produto --</option>
                       {produtos.map(p => (
@@ -1409,29 +1494,31 @@ export function Caixa() {
                     </select>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">QUANTIDADE</label>
                       <input
                         type="number"
+                        inputMode="decimal"
                         min="1"
                         value={form.quantidade_produto}
                         onChange={(e) => handleQtyChange(e.target.value)}
                         required
                         placeholder="1"
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       />
                     </div>
                     <div>
                       <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">VALOR UNITÁRIO (R$)</label>
                       <input
                         type="number"
+                        inputMode="decimal"
                         step="0.01"
                         value={form.valor_unitario}
                         onChange={(e) => handleUnitPriceChange(e.target.value)}
                         required
                         placeholder="0.00"
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       />
                     </div>
                   </div>
@@ -1445,17 +1532,17 @@ export function Caixa() {
                       onChange={(e) => setForm({ ...form, valor: e.target.value })}
                       placeholder="0.00"
                       required
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">SITUAÇÃO</label>
                       <select
                         value={form.status}
                         onChange={(e) => setForm({ ...form, status: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       >
                         <option value="pago">Pago (Concluído)</option>
                         <option value="pendente">Pendente ({form.tipo === 'entrada' ? 'A Receber' : 'A Pagar'})</option>
@@ -1466,7 +1553,7 @@ export function Caixa() {
                       <select
                         value={form.forma_pagamento}
                         onChange={(e) => setForm({ ...form, forma_pagamento: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       >
                         <option value="pix">PIX</option>
                         <option value="cartao_credito">Cartão de Crédito</option>
@@ -1503,7 +1590,7 @@ export function Caixa() {
                           descricao: autoDesc
                         }));
                       }}
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                     >
                       <option value="luz">Conta de Luz / Energia</option>
                       <option value="agua">Conta de Água</option>
@@ -1514,13 +1601,13 @@ export function Caixa() {
                     </select>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">TIPO DE MOVIMENTAÇÃO</label>
                       <select
                         value={form.tipo}
                         onChange={(e) => setForm({ ...form, tipo: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       >
                         <option value="saida">Saída (- Pagamento)</option>
                         <option value="entrada">Entrada (+ Recebimento / Reembolso)</option>
@@ -1531,7 +1618,7 @@ export function Caixa() {
                       <select
                         value={form.status}
                         onChange={(e) => setForm({ ...form, status: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       >
                         <option value="pago">Pago (Concluído)</option>
                         <option value="pendente">Pendente ({form.tipo === 'saida' ? 'A Pagar' : 'A Receber'})</option>
@@ -1547,7 +1634,7 @@ export function Caixa() {
                       onChange={(e) => setForm({ ...form, descricao: e.target.value })}
                       placeholder="Ex: Conta de Luz referente a este mês"
                       required
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                     />
                   </div>
 
@@ -1558,7 +1645,7 @@ export function Caixa() {
                     <select
                       value={qtdMeses}
                       onChange={(e) => setQtdMeses(parseInt(e.target.value, 10))}
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                     >
                       <option value={1}>1 mês (Lançamento único)</option>
                       <option value={2}>2 meses (Próximos 2 meses)</option>
@@ -1573,7 +1660,7 @@ export function Caixa() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">VALOR MENSAL (R$)</label>
                       <input
@@ -1583,7 +1670,7 @@ export function Caixa() {
                         onChange={(e) => setForm({ ...form, valor: e.target.value })}
                         placeholder="0.00"
                         required
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       />
                     </div>
                     <div>
@@ -1591,7 +1678,7 @@ export function Caixa() {
                       <select
                         value={form.forma_pagamento}
                         onChange={(e) => setForm({ ...form, forma_pagamento: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       >
                         <option value="pix">PIX</option>
                         <option value="cartao_credito">Cartão de Crédito</option>

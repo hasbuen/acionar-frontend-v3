@@ -224,25 +224,25 @@ export function Estoque() {
         <div className="grid grid-cols-2 sm:flex gap-2">
           <button
             onClick={handleOpenInventario}
-            className="px-4 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1.5 transition hover:opacity-90"
+            className="px-4 py-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800 text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1.5 transition hover:opacity-90"
           >
             <ClipboardCheck className="h-4 w-4 text-purple-500" /> Inventário
           </button>
           <button
             onClick={() => { setSelectedProduto(null); setTransfForm({ profissional_id: '', quantidade: 1 }); setShowTransferencia(true); }}
-            className="px-4 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1.5 transition hover:opacity-90"
+            className="px-4 py-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800 text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1.5 transition hover:opacity-90"
           >
             <ArrowRightLeft className="h-4 w-4 text-sky-500" /> Enviar
           </button>
           <button
             onClick={() => openMovement('entrada')}
-            className="px-4 py-3 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-extrabold flex items-center justify-center gap-1.5 border border-emerald-500/20 transition hover:bg-emerald-500/20"
+            className="px-4 py-3.5 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-extrabold flex items-center justify-center gap-1.5 border border-emerald-500/20 transition hover:bg-emerald-500/20"
           >
             <ArrowDown className="h-4 w-4" /> Entrada
           </button>
           <button
             onClick={() => { setWizardStep(1); setForm({ nome: '', tipo: 'consumo', codigo: '', categoria: 'Geral', quantidade: 10, estoque_minimo: 3, custo_unitario: 15.0, imagem_url: '', localizacao: '', status_pagamento: 'pago' }); handleGerarSku(); setShowWizard(true); }}
-            className="px-4 py-3 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white text-xs font-black shadow-lg shadow-blue-500/25 flex items-center justify-center gap-1.5 transition hover:opacity-90"
+            className="px-4 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white text-xs font-black shadow-lg shadow-blue-500/25 flex items-center justify-center gap-1.5 transition hover:opacity-90"
           >
             <Plus className="h-4 w-4" /> Novo produto
           </button>
@@ -360,7 +360,7 @@ export function Estoque() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                <div className="grid grid-cols-3 gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-800/80">
                   <button
                     onClick={() => openMovement('entrada', p)}
                     className="p-2.5 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-300 border border-blue-500/20 hover:bg-blue-500/20 transition"
@@ -413,7 +413,7 @@ export function Estoque() {
       {/* MODAL 1: WIZARD NOVO PRODUTO */}
       {showWizard && createPortal(
         <div className="fixed inset-0 z-[999999] h-screen w-screen flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl space-y-5 text-slate-900 dark:text-slate-100">
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl space-y-5 text-slate-900 dark:text-slate-100 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400">WIZARD DE PRODUTO — PASSO {wizardStep}/3</span>
@@ -435,7 +435,7 @@ export function Estoque() {
                       onChange={(e) => setForm({ ...form, nome: e.target.value })}
                       placeholder="Ex: Cílios Volume Brasileiro"
                       required
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                     />
                   </div>
 
@@ -446,7 +446,7 @@ export function Estoque() {
                         type="text"
                         value={form.codigo}
                         onChange={(e) => setForm({ ...form, codigo: e.target.value })}
-                        className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                        className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       />
                       <button type="button" onClick={handleGerarSku} className="px-3 py-2 rounded-2xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300">
                         Gerar SKU
@@ -459,7 +459,7 @@ export function Estoque() {
                     <select
                       value={form.tipo}
                       onChange={(e) => setForm({ ...form, tipo: e.target.value })}
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                     >
                       <option value="consumo">Consumo Interno (Insumo)</option>
                       <option value="venda">Revenda para Cliente</option>
@@ -477,7 +477,7 @@ export function Estoque() {
                       value={form.quantidade}
                       onChange={(e) => setForm({ ...form, quantidade: e.target.value })}
                       required
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                     />
                   </div>
 
@@ -488,7 +488,7 @@ export function Estoque() {
                       value={form.estoque_minimo}
                       onChange={(e) => setForm({ ...form, estoque_minimo: e.target.value })}
                       required
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                     />
                   </div>
 
@@ -500,7 +500,7 @@ export function Estoque() {
                       value={form.custo_unitario}
                       onChange={(e) => setForm({ ...form, custo_unitario: e.target.value })}
                       required
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                     />
                   </div>
 
@@ -510,7 +510,7 @@ export function Estoque() {
                       <select
                         value={form.status_pagamento || 'pago'}
                         onChange={(e) => setForm({ ...form, status_pagamento: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       >
                         <option value="pago">Pago (Gerar despesa paga no caixa)</option>
                         <option value="a_pagar">A Pagar / Pendente (Gerar despesa pendente no caixa)</option>
@@ -529,7 +529,7 @@ export function Estoque() {
                       value={form.localizacao}
                       onChange={(e) => setForm({ ...form, localizacao: e.target.value })}
                       placeholder="Ex: Armário A, Prateleira 2"
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                     />
                   </div>
 
@@ -540,7 +540,7 @@ export function Estoque() {
                       value={form.imagem_url}
                       onChange={(e) => setForm({ ...form, imagem_url: e.target.value })}
                       placeholder="https://..."
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                     />
                     <label className="mt-3 block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400">
                       OU ENVIE UMA FOTO
@@ -598,7 +598,7 @@ export function Estoque() {
       {/* MODAL: TRANSFERÊNCIA */}
       {showTransferencia && createPortal(
         <div className="fixed inset-0 z-[999999] h-screen w-screen flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md space-y-4 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
+          <div className="w-full max-w-md space-y-4 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
               <div>
                 <span className="text-[10px] font-black uppercase text-sky-600 dark:text-sky-400">TRANSFERÊNCIA DE ESTOQUE</span>
@@ -614,7 +614,7 @@ export function Estoque() {
                 <select 
                   value={selectedProduto?.id || ''} 
                   onChange={e => setSelectedProduto(produtos.find(product => Number(product.id) === Number(e.target.value)) || null)} 
-                  className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" 
+                  className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500" 
                   required
                 >
                   <option value="">Selecione um produto</option>
@@ -635,7 +635,7 @@ export function Estoque() {
                 <select 
                   value={transfForm.profissional_id} 
                   onChange={e => setTransfForm({ ...transfForm, profissional_id: e.target.value })} 
-                  className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" 
+                  className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500" 
                   required
                 >
                   <option value="">Selecione o auxiliar</option>
@@ -653,7 +653,7 @@ export function Estoque() {
                   max={selectedProduto?.quantidade || undefined} 
                   value={transfForm.quantidade} 
                   onChange={e => setTransfForm({ ...transfForm, quantidade: e.target.value })} 
-                  className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" 
+                  className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500" 
                   required 
                 />
               </label>
@@ -670,7 +670,7 @@ export function Estoque() {
       {/* MODAL 2: MOVIMENTAÇÃO ENTRADA / SAÍDA */}
       {showMovimento && createPortal(
         <div className="fixed inset-0 z-[999999] h-screen w-screen flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
               <div>
                 <span className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400">REGISTRAR MOVIMENTAÇÃO</span>
@@ -688,7 +688,7 @@ export function Estoque() {
                   <select 
                     value="" 
                     onChange={e => setSelectedProduto(produtos.find(product => Number(product.id) === Number(e.target.value)) || null)} 
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" 
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500" 
                     required
                   >
                     <option value="">Selecione o produto para movimentar...</option>
@@ -725,7 +725,7 @@ export function Estoque() {
                   value={movForm.quantidade}
                   onChange={(e) => setMovForm({ ...movForm, quantidade: e.target.value })}
                   required
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                 />
               </div>
 
@@ -736,7 +736,7 @@ export function Estoque() {
                   value={movForm.motivo}
                   onChange={(e) => setMovForm({ ...movForm, motivo: e.target.value })}
                   placeholder="Ex: Compra de reposição..."
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                 />
               </div>
 
@@ -746,7 +746,7 @@ export function Estoque() {
                   <select
                     value={movForm.status_pagamento || 'pago'}
                     onChange={(e) => setMovForm({ ...movForm, status_pagamento: e.target.value })}
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                   >
                     <option value="pago">Pago (Gerar despesa paga no caixa)</option>
                     <option value="a_pagar">A Pagar / Pendente (Gerar despesa pendente no caixa)</option>
@@ -805,7 +805,7 @@ export function Estoque() {
       {/* MODAL 4: RAZÃO / HISTÓRICO */}
       {showRazao && selectedProduto && createPortal(
         <div className="fixed inset-0 z-[999999] h-screen w-screen flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
               <div>
                 <span className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400">EXTRATO DE MOVIMENTAÇÕES</span>
