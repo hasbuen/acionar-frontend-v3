@@ -20,9 +20,11 @@ import {
 
 const VARIABLE_TAGS = [
   { tag: '{cliente}', label: 'Cliente', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20' },
+  { tag: '{cliente_telefone}', label: 'Tel. Cliente', color: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20' },
   { tag: '{servico}', label: 'Serviço', color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20' },
   { tag: '{data}', label: 'Data', color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' },
   { tag: '{hora}', label: 'Horário', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
+  { tag: '{tipo_atendimento}', label: 'Tipo (Salão/Domicílio)', color: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20' },
   { tag: '{profissional}', label: 'Profissional', color: 'bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20' },
   { tag: '{endereco}', label: 'Endereço', color: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20' },
 ];
@@ -71,29 +73,43 @@ export function BotFlowBuilder({ onBack }) {
   }, [nodes]);
 
   const resetSimulator = () => {
+    const triggerNode = nodes.find(n => n.type === 'trigger');
     const msgNode = nodes.find(n => n.type === 'send_message');
-    if (msgNode && msgNode.config?.text) {
-      const formattedText = formatPreviewText(msgNode.config.text);
-      setSimMessages([
-        {
-          id: 1,
-          sender: 'bot',
-          text: formattedText,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }
-      ]);
-    } else {
-      setSimMessages([]);
+    
+    const messages = [];
+    if (triggerNode) {
+      const triggerText = triggerNode.config?.text || triggerNode.config?.alertMessage || '🚨 *Novo Agendamento Solicitado na Agenda Pública!*\n\n👤 *Cliente:* Ana Silva\n📱 *Contato:* (45) 99999-8888\n💈 *Serviço:* Corte & Escova\n📅 *Data:* 15/08/2026 às 14:30\n🏠 *Tipo:* Atendimento no Salão\n\n*Acesse o app Acionar para Aceitar ou Recusar.*';
+      messages.push({
+        id: 1,
+        sender: 'bot',
+        text: formatPreviewText(triggerText),
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
     }
+
+    if (msgNode && msgNode.config?.text) {
+      messages.push({
+        id: 2,
+        sender: 'bot',
+        text: formatPreviewText(msgNode.config.text),
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+    }
+
+    setSimMessages(messages);
   };
 
   const formatPreviewText = (text) => {
     if (!text) return '';
     return text
       .replace(/{cliente}/g, 'Ana Silva')
+      .replace(/{cliente_nome}/g, 'Ana Silva')
+      .replace(/{cliente_telefone}/g, '(45) 99999-8888')
       .replace(/{servico}/g, 'Corte & Escova')
       .replace(/{data}/g, '15/08/2026')
       .replace(/{hora}/g, '14:30')
+      .replace(/{horario}/g, '14:30')
+      .replace(/{tipo_atendimento}/g, 'Atendimento no Salão 💈')
       .replace(/{profissional}/g, 'Carla Ferreira')
       .replace(/{endereco}/g, 'Rua das Flores, 123');
   };
@@ -182,15 +198,19 @@ export function BotFlowBuilder({ onBack }) {
     const currentNode = nodes.find(n => n.id === activeNodeId);
     if (!currentNode) return;
 
-    if (currentNode.type === 'send_message') {
+    if (currentNode.type === 'trigger') {
+      const currentText = currentNode.config?.text || currentNode.config?.alertMessage || '';
+      updateNodeConfig(activeNodeId, 'text', (currentText + ' ' + tag).trim());
+      updateNodeConfig(activeNodeId, 'alertMessage', (currentText + ' ' + tag).trim());
+    } else if (currentNode.type === 'send_message') {
       const currentText = currentNode.config.text || '';
-      updateNodeConfig(activeNodeId, 'text', currentText + ' ' + tag);
+      updateNodeConfig(activeNodeId, 'text', (currentText + ' ' + tag).trim());
     } else if (currentNode.type === 'action') {
       const currentText = currentNode.config.responseText || '';
-      updateNodeConfig(activeNodeId, 'responseText', currentText + ' ' + tag);
+      updateNodeConfig(activeNodeId, 'responseText', (currentText + ' ' + tag).trim());
     } else if (currentNode.type === 'options') {
       const currentText = currentNode.config.fallbackText || '';
-      updateNodeConfig(activeNodeId, 'fallbackText', currentText + ' ' + tag);
+      updateNodeConfig(activeNodeId, 'fallbackText', (currentText + ' ' + tag).trim());
     }
   };
 
@@ -223,7 +243,7 @@ export function BotFlowBuilder({ onBack }) {
             <h1 className="text-base font-black text-white tracking-tight">Robô do WhatsApp</h1>
             <HelpBadge
               title="Robô do WhatsApp"
-              description="Nesta tela você personaliza as mensagens automáticas enviadas para o seu cliente quando você aceita um agendamento. Você pode alterar os textos, botões de opção e verificar o teste em tempo real no simulador ao lado."
+              description="Nesta tela você personaliza as mensagens automáticas enviadas para os profissionais quando um cliente faz agendamento e para os clientes quando a confirmação for aceita."
             />
           </div>
         </div>
@@ -328,14 +348,43 @@ export function BotFlowBuilder({ onBack }) {
                   {/* Edição do Passo Selecionado */}
                   {isSelected && (
                     <div className="mt-3 pt-3 border-t border-slate-800/80 space-y-3 animate-fade-in">
+                      {node.type === 'trigger' && (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="block text-[11px] font-black uppercase tracking-wider text-amber-400">
+                              Mensagem de Alerta no WhatsApp da Equipe
+                            </label>
+                            <span className="text-[10px] text-amber-300 font-bold px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
+                              Exclusivo da Equipe
+                            </span>
+                          </div>
+                          <textarea
+                            rows={5}
+                            value={node.config?.text || node.config?.alertMessage || ''}
+                            onChange={(e) => {
+                              updateNodeConfig(node.id, 'text', e.target.value);
+                              updateNodeConfig(node.id, 'alertMessage', e.target.value);
+                            }}
+                            className="w-full p-3 bg-slate-950 rounded-xl border border-amber-500/30 text-xs font-medium text-slate-200 focus:outline-none focus:border-amber-500 transition-all leading-relaxed"
+                            placeholder="🚨 *Novo Agendamento Solicitado!* Cliente: {cliente}, Serviço: {servico}, Data: {data} às {hora}..."
+                          />
+                          <p className="text-[10px] text-slate-400 leading-normal">
+                            Esta mensagem é enviada diretamente no WhatsApp dos profissionais quando um cliente solicita um agendamento na página pública.
+                          </p>
+                        </div>
+                      )}
+
                       {node.type === 'send_message' && (
                         <div>
+                          <label className="block text-[11px] font-black uppercase tracking-wider text-blue-400 mb-1">
+                            Mensagem Inicial para o Cliente (Confirmação do Aceite)
+                          </label>
                           <textarea
                             rows={4}
                             value={node.config?.text || ''}
                             onChange={(e) => updateNodeConfig(node.id, 'text', e.target.value)}
-                            className="w-full p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs font-medium text-slate-200 focus:outline-none focus:border-emerald-500 transition-all leading-relaxed"
-                            placeholder="Digite a mensagem do robô..."
+                            className="w-full p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs font-medium text-slate-200 focus:outline-none focus:border-blue-500 transition-all leading-relaxed"
+                            placeholder="Digite a mensagem enviada ao cliente quando você aceitar..."
                           />
                         </div>
                       )}
@@ -379,7 +428,7 @@ export function BotFlowBuilder({ onBack }) {
           <div className="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
             <div className="flex items-center gap-2">
               <Smartphone className="h-4 w-4 text-emerald-400" />
-              <span className="text-xs font-black text-slate-200">Simulador</span>
+              <span className="text-xs font-black text-slate-200">Simulador de WhatsApp</span>
             </div>
             <button
               onClick={resetSimulator}
@@ -396,7 +445,7 @@ export function BotFlowBuilder({ onBack }) {
                   R
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-white leading-tight">Seu Robô</h4>
+                  <h4 className="text-xs font-bold text-white leading-tight">Robô Acionar</h4>
                   <p className="text-[9px] text-emerald-400">online</p>
                 </div>
               </div>

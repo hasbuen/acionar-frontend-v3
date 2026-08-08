@@ -25,6 +25,22 @@ export function AuthProvider({ children }) {
         console.log('[SOCKET] Connected to real-time server');
       });
 
+      newSocket.on('notifications-changed', (data) => {
+        if ('Notification' in window && Notification.permission === 'granted') {
+          try {
+            new Notification('🚨 Novo Agendamento Solicitado!', {
+              body: 'Um cliente solicitou um agendamento na sua agenda pública. Acesse o aplicativo para Aceitar ou Recusar.',
+              icon: '/logo192.png',
+              badge: '/logo192.png',
+              tag: 'novo-agendamento-acionar',
+              renotify: true
+            });
+          } catch (e) {
+            console.error('Erro ao disparar notificação nativa:', e);
+          }
+        }
+      });
+
       newSocket.on('disconnect', (reason) => {
         console.log('[SOCKET] Disconnected from server:', reason);
       });
