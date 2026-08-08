@@ -60,6 +60,8 @@ export function Configuracoes() {
       setWhatsappStatus({ connected: data.connected, state: data.state });
       if (data.connected) {
         setWhatsappQrCode(null);
+      } else if (data.qrcode) {
+        setWhatsappQrCode(data.qrcode);
       }
       return data;
     } catch (e) {
