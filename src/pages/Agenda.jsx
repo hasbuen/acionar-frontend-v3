@@ -955,27 +955,19 @@ export function Agenda() {
         )}
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-3.5 no-scrollbar px-1 select-none">
+      {/* Filtros em Container Segmented Control estilo Apple/Linear */}
+      <div className="flex items-center gap-1.5 overflow-x-auto p-1.5 rounded-2xl bg-slate-200/60 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800/80 no-scrollbar select-none mb-3">
         {filters.map(([key, label]) => {
           const isActive = activeFilter === key;
-          const filterColors = {
-            todos: 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 border-slate-900 dark:border-slate-100',
-            hoje: 'bg-blue-600 text-white dark:bg-blue-500 dark:text-white border-blue-600 dark:border-blue-500',
-            solicitacoes: 'bg-amber-500 text-white dark:bg-amber-500 dark:text-white border-amber-500',
-            confirmados: 'bg-emerald-600 text-white dark:bg-emerald-500 dark:text-white border-emerald-600',
-            cancelados: 'bg-rose-600 text-white dark:bg-rose-500 dark:text-white border-rose-600',
-          };
-          const colorClass = filterColors[key] || 'bg-blue-600 text-white border-blue-600';
-
           return (
             <button
               key={key}
               onClick={() => setActiveFilter(key)}
               className={`
-                flex-shrink-0 whitespace-nowrap rounded-2xl px-4.5 py-2 text-xs font-black transition-all duration-200 border
+                flex-shrink-0 whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold transition-all duration-200
                 ${isActive
-                  ? `${colorClass} shadow-sm scale-[1.02]`
-                  : 'border-slate-200/80 bg-white/90 text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:border-slate-800/80 dark:bg-slate-900/80 dark:text-slate-400 dark:hover:text-white'
+                  ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white border border-slate-200/80 dark:border-slate-700/80 scale-[1.01]'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-800/50'
                 }
               `}
             >
