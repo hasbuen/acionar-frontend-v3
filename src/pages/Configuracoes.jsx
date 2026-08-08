@@ -22,9 +22,8 @@ export function Configuracoes() {
   const { alertState, showAlert, closeAlert } = useModalAlert();
   const [alarmEnabled, setAlarmEnabled] = useState(false);
   const [alarmMinutes, setAlarmMinutes] = useState(10);
-  const [statsOpen, setStatsOpen] = useState(false);
 
-  // Form de Configurações da Agenda Pública
+  // Form de Configurações da Agenda Pública & Perfil
   const [form, setForm] = useState({
     agenda_publica_ativa: tenant?.agenda_publica_ativa ?? true,
     visualizacao_padrao: tenant?.visualizacao_padrao || 'grade',
@@ -38,6 +37,8 @@ export function Configuracoes() {
     cor_texto_secundario: tenant?.cor_texto_secundario || '#64748b',
     foto_url: tenant?.foto_url || '',
   });
+
+  const [endereco, setEndereco] = useState('');
 
   // Equipe / Profissionais Auxiliares
   const [profissionais, setProfissionais] = useState([]);
@@ -126,20 +127,6 @@ export function Configuracoes() {
 
   const fileInputRef = useRef(null);
 
-  // Modelos de Mensagens Automáticas
-  const DEFAULT_CONFIRMACAO = `📍 *Endereço*: {endereco}\n\nPor gentileza, informe se concorda com este horário ou se prefere realizar alguma alteração.\n\n📌 *Lembrete importante*: Pedimos a gentileza de chegar com **15 minutos de antecedência**.\n\nAgradecemos a preferência e aguardamos você!😊`;
-  const DEFAULT_MANUTENCAO = `Olá, *{cliente}*! 👋\n\nPassando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está agendada para o dia *{data}* às *{hora}*.\n\n📍 *Endereço*: {endereco}`;
-
-  const [messages, setMessages] = useState({
-    endereco: 'Rua da amizade 515 bairro: 14 de novembro',
-    template_confirmacao: DEFAULT_CONFIRMACAO,
-    template_manutencao: DEFAULT_MANUTENCAO,
-  });
-  const [lastFocusedField, setLastFocusedField] = useState('confirmacao');
-
-  const textareaConfRef = useRef(null);
-  const textareaManutRef = useRef(null);
-
   // Horários de Funcionamento (Segunda a Domingo)
   const [horarios, setHorarios] = useState({
     segunda: { ativo: true, inicio: '08:00', fim: '18:00' },
@@ -174,7 +161,7 @@ export function Configuracoes() {
 
   useEffect(() => {
     fetchProfissionais();
-    fetchMessages();
+    fetchEndereco();
     fetchPaymentConfig();
     const saved = localStorage.getItem('alarm-enabled');
     if (saved === 'true') setAlarmEnabled(true);
@@ -210,79 +197,14 @@ export function Configuracoes() {
     }
   };
 
-  const handleSavePayments = async (e) => {
-    e.preventDefault();
-    setSavingPayments(true);
-    try {
-      await apiRequest('/config/payments', 'PUT', payments);
-      showAlert({ type: 'success', title: 'Sucesso', message: 'Chave Pix salva com sucesso.' });
-      setShowPixForm(false);
-    } catch (err) {
-      showAlert({ type: 'error', title: 'Erro', message: err.message || 'Erro ao salvar chave Pix.' });
-    } finally {
-      setSavingPayments(false);
-    }
-  };
-
-  const fetchMessages = async () => {
+  const fetchEndereco = async () => {
     try {
       const data = await apiRequest('/config/messages');
-      if (data && data.settings) setMessages(data.settings);
-    } catch (err) {
-      console.error('Erro ao carregar mensagens:', err);
-    }
-  };
-
-  const handleSaveMessages = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await apiRequest('/config/messages', 'PUT', messages);
-      showAlert({ type: 'success', title: 'Sucesso', message: 'Configurações de mensagens salvas.' });
-    } catch (err) {
-      showAlert({ type: 'error', title: 'Erro', message: err.message || 'Erro ao salvar mensagens.' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleInsertVariable = (variable) => {
-    if (lastFocusedField === 'confirmacao') {
-      const el = textareaConfRef.current;
-      if (el) {
-        const start = el.selectionStart || 0;
-        const end = el.selectionEnd || 0;
-        const text = messages.template_confirmacao || '';
-        const updated = text.substring(0, start) + variable + text.substring(end);
-        setMessages({ ...messages, template_confirmacao: updated });
-        setTimeout(() => {
-          el.focus();
-          el.setSelectionRange(start + variable.length, start + variable.length);
-        }, 50);
+      if (data && data.settings && data.settings.endereco) {
+        setEndereco(data.settings.endereco);
       }
-    } else {
-      const el = textareaManutRef.current;
-      if (el) {
-        const start = el.selectionStart || 0;
-        const end = el.selectionEnd || 0;
-        const text = messages.template_manutencao || '';
-        const updated = text.substring(0, start) + variable + text.substring(end);
-        setMessages({ ...messages, template_manutencao: updated });
-        setTimeout(() => {
-          el.focus();
-          el.setSelectionRange(start + variable.length, start + variable.length);
-        }, 50);
-      }
-    }
-  };
-
-  const fetchProfissionais = async () => {
-    try {
-      const data = await apiRequest('/profissionais');
-      if (Array.isArray(data)) setProfissionais(data);
-      else if (data && Array.isArray(data.profissionais)) setProfissionais(data.profissionais);
     } catch (err) {
-      console.error('Erro ao buscar auxiliares:', err);
+      console.error('Erro ao carregar endereço:', err);
     }
   };
 
@@ -295,11 +217,24 @@ export function Configuracoes() {
       if (updatedTenant && updatedTenant.tenant) {
         setTenant(updatedTenant.tenant);
       }
-      showAlert({ type: 'success', title: 'Sucesso', message: 'Configurações da agenda salvas com sucesso!' });
+      if (endereco) {
+        await apiRequest('/config/messages', 'PUT', { endereco });
+      }
+      showAlert({ type: 'success', title: 'Sucesso', message: 'Configurações do perfil salvas com sucesso!' });
     } catch (err) {
       showAlert({ type: 'error', title: 'Erro', message: err.message || 'Erro ao salvar configurações.' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchProfissionais = async () => {
+    try {
+      const data = await apiRequest('/profissionais');
+      if (Array.isArray(data)) setProfissionais(data);
+      else if (data && Array.isArray(data.profissionais)) setProfissionais(data.profissionais);
+    } catch (err) {
+      console.error('Erro ao buscar auxiliares:', err);
     }
   };
 
@@ -387,17 +322,6 @@ export function Configuracoes() {
     });
   };
 
-  const handleAddBloqueio = (e) => {
-    e.preventDefault();
-    if (!novoBloqueio.inicio || !novoBloqueio.fim) return;
-    setBloqueios([...bloqueios, { ...novoBloqueio, id: Date.now() }]);
-    setNovoBloqueio({ inicio: '', fim: '', motivo: '' });
-  };
-
-  const handleRemoveBloqueio = (id) => {
-    setBloqueios(bloqueios.filter(b => b.id !== id));
-  };
-
   const selectClass = "w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-100 dark:focus:border-blue-500";
   const inputClass = "w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-100 dark:focus:border-blue-500 placeholder:text-slate-400";
   const cardClass = "rounded-3xl border border-slate-200 bg-white/80 dark:border-slate-800/80 dark:bg-slate-900/60 p-6 shadow-xl space-y-4 backdrop-blur-xl transition-all duration-300";
@@ -427,7 +351,7 @@ export function Configuracoes() {
       icon: Globe,
       iconBg: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
       helpTitle: 'Perfil & Agenda Pública',
-      helpDesc: 'Configure o logotipo do seu negócio, nome da empresa e o link da agenda online para os clientes agendarem sozinhos.'
+      helpDesc: 'Configure o logotipo do seu negócio, nome da empresa, endereço físico e o link da agenda online para os clientes agendarem sozinhos.'
     },
     {
       id: 'notificacoes',
@@ -438,14 +362,6 @@ export function Configuracoes() {
       iconBg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
       helpTitle: 'Notificações de Agendamento',
       helpDesc: 'Ative o som de alarme em tempo real para ser avisado assim que um novo agendamento chegar.'
-    },
-    {
-      id: 'mensagens',
-      title: 'Modelos de Mensagens',
-      icon: MessageSquare,
-      iconBg: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
-      helpTitle: 'Modelos de Mensagens',
-      helpDesc: 'Cadastre o endereço físico que aparece nas mensagens e os modelos de manutenção periódica.'
     },
     {
       id: 'equipe',
@@ -691,6 +607,17 @@ export function Configuracoes() {
                   </div>
 
                   <div>
+                    <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400 mb-1.5">Endereço Físico do Estabelecimento</label>
+                    <input
+                      type="text"
+                      value={endereco}
+                      onChange={(e) => setEndereco(e.target.value)}
+                      className={inputClass}
+                      placeholder="Ex: Rua da Amizade 515, Cascavel - PR"
+                    />
+                  </div>
+
+                  <div>
                     <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400 mb-1.5">Link da Sua Agenda Pública</label>
                     <div className="flex items-center gap-2">
                       <input
@@ -827,55 +754,6 @@ export function Configuracoes() {
                 </button>
               </div>
             </div>
-          )}
-
-          {/* Categoria: Modelos de Mensagens */}
-          {activeCategory === 'mensagens' && (
-            <form onSubmit={handleSaveMessages} className={cardClass}>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="h-10 w-10 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold shadow-sm">
-                  <MessageSquare className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-slate-900 dark:text-white">Modelos de Mensagens</h3>
-                </div>
-              </div>
-
-              <div className="space-y-4 pt-2">
-                <div>
-                  <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400 mb-1.5">Endereço Físico</label>
-                  <input
-                    type="text"
-                    value={messages.endereco || ''}
-                    onChange={(e) => setMessages({ ...messages, endereco: e.target.value })}
-                    className={inputClass}
-                    placeholder="Rua da Amizade 515, Cascavel - PR"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400 mb-1.5">Mensagem de Confirmação</label>
-                  <textarea
-                    ref={textareaConfRef}
-                    rows="4"
-                    value={messages.template_confirmacao || ''}
-                    onFocus={() => setLastFocusedField('confirmacao')}
-                    onChange={(e) => setMessages({ ...messages, template_confirmacao: e.target.value })}
-                    className={`${inputClass} resize-none p-4 font-mono text-xs`}
-                    required
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full btn-animated py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 text-xs font-black text-white shadow-lg shadow-purple-500/20"
-                >
-                  {loading ? 'Salvando...' : 'Salvar Modelos de Mensagem'}
-                </button>
-              </div>
-            </form>
           )}
 
           {/* Categoria: Equipe & Auxiliares */}
