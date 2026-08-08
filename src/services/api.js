@@ -18,10 +18,19 @@ export async function apiRequest(endpoint, method = 'GET', data = null, headers 
   };
 
   const response = await fetch(`${API_BASE}${endpoint}`, config);
-  const result = await response.json();
+
+  const contentType = response.headers.get('content-type') || '';
+  let result = null;
+
+  if (contentType.includes('application/json')) {
+    result = await response.json().catch(() => null);
+  } else {
+    const text = await response.text().catch(() => '');
+    result = { message: response.statusText || 'Servidor indisponível temporariamente.' };
+  }
 
   if (!response.ok) {
-    throw new Error(result.message || result.error || 'Request failed.');
+    throw new Error(result?.message || result?.error || `Erro HTTP ${response.status}`);
   }
 
   return result;

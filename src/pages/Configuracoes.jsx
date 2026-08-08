@@ -63,25 +63,27 @@ export function Configuracoes() {
   const fetchWhatsappStatus = async () => {
     try {
       const data = await apiRequest('/whatsapp/status');
-      setWhatsappStatus({
-        connected: data.connected,
-        state: data.state,
-        number: data.number,
-        connected_since: data.connected_since
-      });
+      if (data) {
+        setWhatsappStatus({
+          connected: Boolean(data.connected),
+          state: data.state || 'close',
+          number: data.number || null,
+          connected_since: data.connected_since || null
+        });
 
-      if (data.connected) {
-        setWhatsappQrCode(null);
-        setShowQrModal(false); // Fecha o modal pop-up automaticamente quando conectado!
-        if (pollingInterval) {
-          clearInterval(pollingInterval);
-          setPollingInterval(null);
+        if (data.connected) {
+          setWhatsappQrCode(null);
+          setShowQrModal(false); // Fecha o modal pop-up automaticamente quando conectado!
+          if (pollingInterval) {
+            clearInterval(pollingInterval);
+            setPollingInterval(null);
+          }
+        } else if (data.qrcode) {
+          setWhatsappQrCode(data.qrcode);
         }
-      } else if (data.qrcode) {
-        setWhatsappQrCode(data.qrcode);
       }
     } catch (e) {
-      console.error('Erro ao verificar status WhatsApp:', e);
+      console.warn('[WHATSAPP STATUS WAIT]', e.message);
     }
   };
 
