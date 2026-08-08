@@ -507,28 +507,7 @@ html.dark[data-tenant-theme="true"] .app-shell {
     linear-gradient(135deg, var(--tenant-page-bg-dark), color-mix(in srgb, var(--tenant-background) 26%, #020617) 58%, var(--tenant-page-bg-dark));
   color: var(--tenant-text-primary);
 }
-
-html[data-tenant-theme="true"] [class~="text-slate-950"],
-html[data-tenant-theme="true"] [class~="text-slate-900"],
-html[data-tenant-theme="true"] [class~="text-slate-800"] {
-  color: var(--tenant-text-primary-light) !important;
-}
-
-html[data-tenant-theme="true"] [class~="text-slate-700"],
-html[data-tenant-theme="true"] [class~="text-slate-600"] {
-  color: var(--tenant-text-secondary-light) !important;
-}
-
-html.dark[data-tenant-theme="true"] [class~="dark:text-white"],
-html.dark[data-tenant-theme="true"] [class~="dark:text-slate-100"],
-html.dark[data-tenant-theme="true"] [class~="dark:text-slate-200"] {
-  color: var(--tenant-text-primary) !important;
-}
-
-html.dark[data-tenant-theme="true"] [class~="dark:text-slate-300"],
-html.dark[data-tenant-theme="true"] [class~="dark:text-slate-400"] {
-  color: var(--tenant-text-secondary) !important;
-}
+/* Respeitar tipografia limpa nativa do Tailwind (Shadcn UI Style) */
 
 html[data-tenant-theme="true"] [class~="text-blue-700"],
 html[data-tenant-theme="true"] [class~="text-blue-600"],
