@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../services/api';
 import { Scissors, Plus, Boxes, Edit, Trash2, Clock, DollarSign, X, ChevronRight, Check } from 'lucide-react';
 import { ModalAlert, useModalAlert } from '../components/ModalAlert';
+import { PremiumSelect } from '../components/PremiumSelect';
 
 export function Servicos({ setActiveTab }) {
   const [servicos, setServicos] = useState([]);
@@ -629,11 +630,10 @@ export function Servicos({ setActiveTab }) {
               <div className="grid grid-cols-1 sm:grid-cols-[1.6fr_0.8fr] gap-3">
                 <div>
                   <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">PRODUTO</label>
-                  <select
+                  <PremiumSelect
                     value={materialForm.produto_id}
                     onChange={(e) => setMaterialForm({ ...materialForm, produto_id: e.target.value })}
                     required
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                   >
                     <option value="">Selecione um insumo</option>
                     {produtosDisponiveis.map((produto) => (
@@ -641,7 +641,7 @@ export function Servicos({ setActiveTab }) {
                         {produto.nome} — {produto.quantidade} em estoque
                       </option>
                     ))}
-                  </select>
+                  </PremiumSelect>
                 </div>
                 <div>
                   <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">QTD.</label>

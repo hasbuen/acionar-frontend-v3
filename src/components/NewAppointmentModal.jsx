@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Calendar, Search, UserRound, X, Smartphone } from 'lucide-react';
+import { PremiumSelect } from './PremiumSelect';
 
 const inputClass = 'w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-100 dark:focus:border-blue-500';
 
@@ -14,8 +15,6 @@ export function NewAppointmentModal({ form, setForm, clients, services, onClose,
     if (!contactsSupported) {
       if (showAlert) {
         showAlert({ type: 'info', title: 'Recurso não suportado', message: 'Para buscar contatos direto da lista do seu telefone, abra este aplicativo no navegador do seu celular (Android Chrome ou iOS Safari)!' });
-      } else {
-        alert('Para buscar contatos direto da lista do seu telefone, abra este aplicativo no navegador do seu celular (Android Chrome ou iOS Safari)!');
       }
       return;
     }
@@ -116,12 +115,12 @@ export function NewAppointmentModal({ form, setForm, clients, services, onClose,
           
           <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
             Serviço
-            <select value={form.servico_id} onChange={event => setForm({ ...form, servico_id: event.target.value })} className={`${inputClass} mt-1.5`} required>
+            <PremiumSelect value={form.servico_id} onChange={event => setForm({ ...form, servico_id: event.target.value })} className="mt-1.5" required>
               <option value="">Selecione um serviço</option>
               {services.map(service => (
                 <option key={service.id} value={service.id}>{service.nome} — R$ {Number(service.preco || 0).toFixed(2)}</option>
               ))}
-            </select>
+            </PremiumSelect>
           </label>
           
           <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">

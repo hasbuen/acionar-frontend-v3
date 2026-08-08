@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { PremiumSelect } from '../components/PremiumSelect';
 import { createPortal } from 'react-dom';
 import { apiRequest } from '../services/api';
 import {
@@ -1244,25 +1245,25 @@ export function Caixa() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">TIPO</label>
-                      <select
+                      <PremiumSelect
                         value={form.tipo}
                         onChange={(e) => setForm({ ...form, tipo: e.target.value })}
                         className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       >
                         <option value="entrada">Entrada (+)</option>
                         <option value="saida">Saída (-)</option>
-                      </select>
+                      </PremiumSelect>
                     </div>
                     <div>
                       <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">SITUAÇÃO</label>
-                      <select
+                      <PremiumSelect
                         value={form.status}
                         onChange={(e) => setForm({ ...form, status: e.target.value })}
                         className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       >
                         <option value="pago">Pago (Concluído)</option>
                         <option value="pendente">Pendente ({form.tipo === 'entrada' ? 'A Receber' : 'A Pagar'})</option>
-                      </select>
+                      </PremiumSelect>
                     </div>
                   </div>
 
@@ -1294,7 +1295,7 @@ export function Caixa() {
                     </div>
                     <div>
                       <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">FORMA DE PAGAMENTO</label>
-                      <select
+                      <PremiumSelect
                         value={form.forma_pagamento}
                         onChange={(e) => setForm({ ...form, forma_pagamento: e.target.value })}
                         className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
@@ -1303,7 +1304,7 @@ export function Caixa() {
                         <option value="cartao_credito">Cartão de Crédito</option>
                         <option value="cartao_debito">Cartão de Débito</option>
                         <option value="dinheiro">Dinheiro</option>
-                      </select>
+                      </PremiumSelect>
                     </div>
                   </div>
                 </>
@@ -1332,7 +1333,7 @@ export function Caixa() {
                   {clienteModo === 'existente' ? (
                     <div>
                       <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">SELECIONE O CLIENTE</label>
-                      <select
+                      <PremiumSelect
                         value={form.cliente_id}
                         onChange={(e) => {
                           const cId = e.target.value;
@@ -1350,7 +1351,7 @@ export function Caixa() {
                         {clientes.map(c => (
                           <option key={c.id} value={c.id}>{c.nome} ({c.whatsapp || 'Sem whatsapp'})</option>
                         ))}
-                      </select>
+                      </PremiumSelect>
                     </div>
                   ) : (
                     <div className="space-y-3 p-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/5">
@@ -1392,25 +1393,25 @@ export function Caixa() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">TIPO DE LANÇAMENTO</label>
-                      <select
+                      <PremiumSelect
                         value={form.tipo}
                         onChange={(e) => setForm({ ...form, tipo: e.target.value })}
                         className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       >
                         <option value="entrada">Entrada (+)</option>
                         <option value="saida">Saída (-)</option>
-                      </select>
+                      </PremiumSelect>
                     </div>
                     <div>
                       <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">SITUAÇÃO</label>
-                      <select
+                      <PremiumSelect
                         value={form.status}
                         onChange={(e) => setForm({ ...form, status: e.target.value })}
                         className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       >
                         <option value="pago">Pago (Concluído)</option>
                         <option value="pendente">Pendente ({form.tipo === 'entrada' ? 'A Receber' : 'A Pagar'})</option>
-                      </select>
+                      </PremiumSelect>
                     </div>
                   </div>
 
@@ -1442,7 +1443,7 @@ export function Caixa() {
                     </div>
                     <div>
                       <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">FORMA DE PAGAMENTO</label>
-                      <select
+                      <PremiumSelect
                         value={form.forma_pagamento}
                         onChange={(e) => setForm({ ...form, forma_pagamento: e.target.value })}
                         className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
@@ -1451,7 +1452,7 @@ export function Caixa() {
                         <option value="cartao_credito">Cartão de Crédito</option>
                         <option value="cartao_debito">Cartão de Débito</option>
                         <option value="dinheiro">Dinheiro</option>
-                      </select>
+                      </PremiumSelect>
                     </div>
                   </div>
                 </>
@@ -1462,7 +1463,7 @@ export function Caixa() {
                 <>
                   <div>
                     <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">OPERAÇÃO DE PRODUTO</label>
-                    <select
+                    <PremiumSelect
                       value={form.tipo}
                       onChange={(e) => {
                         const t = e.target.value;
@@ -1476,12 +1477,12 @@ export function Caixa() {
                     >
                       <option value="saida">Compra de Estoque (Saída de Caixa -)</option>
                       <option value="entrada">Venda de Produto (Entrada de Caixa +)</option>
-                    </select>
+                    </PremiumSelect>
                   </div>
 
                   <div>
                     <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">SELECIONE O PRODUTO</label>
-                    <select
+                    <PremiumSelect
                       value={form.produto_id}
                       onChange={(e) => handleProductChange(e.target.value)}
                       required
@@ -1491,7 +1492,7 @@ export function Caixa() {
                       {produtos.map(p => (
                         <option key={p.id} value={p.id}>{p.nome} (Estoque: {p.quantidade} un)</option>
                       ))}
-                    </select>
+                    </PremiumSelect>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1539,18 +1540,18 @@ export function Caixa() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">SITUAÇÃO</label>
-                      <select
+                      <PremiumSelect
                         value={form.status}
                         onChange={(e) => setForm({ ...form, status: e.target.value })}
                         className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       >
                         <option value="pago">Pago (Concluído)</option>
                         <option value="pendente">Pendente ({form.tipo === 'entrada' ? 'A Receber' : 'A Pagar'})</option>
-                      </select>
+                      </PremiumSelect>
                     </div>
                     <div>
                       <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">FORMA DE PAGAMENTO</label>
-                      <select
+                      <PremiumSelect
                         value={form.forma_pagamento}
                         onChange={(e) => setForm({ ...form, forma_pagamento: e.target.value })}
                         className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
@@ -1559,7 +1560,7 @@ export function Caixa() {
                         <option value="cartao_credito">Cartão de Crédito</option>
                         <option value="cartao_debito">Cartão de Débito</option>
                         <option value="dinheiro">Dinheiro</option>
-                      </select>
+                      </PremiumSelect>
                     </div>
                   </div>
                 </>
@@ -1570,7 +1571,7 @@ export function Caixa() {
                 <>
                   <div>
                     <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">TIPO DE CONTA / DESPESA</label>
-                    <select
+                    <PremiumSelect
                       value={contaSubTipo}
                       onChange={(e) => {
                         const val = e.target.value;
@@ -1598,31 +1599,31 @@ export function Caixa() {
                       <option value="internet">Internet / Telefonia</option>
                       <option value="emprestimo">Empréstimo (Realizado / Recebido)</option>
                       <option value="outros_gastos">Outras Despesas Operacionais</option>
-                    </select>
+                    </PremiumSelect>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">TIPO DE MOVIMENTAÇÃO</label>
-                      <select
+                      <PremiumSelect
                         value={form.tipo}
                         onChange={(e) => setForm({ ...form, tipo: e.target.value })}
                         className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       >
                         <option value="saida">Saída (- Pagamento)</option>
                         <option value="entrada">Entrada (+ Recebimento / Reembolso)</option>
-                      </select>
+                      </PremiumSelect>
                     </div>
                     <div>
                       <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">SITUAÇÃO</label>
-                      <select
+                      <PremiumSelect
                         value={form.status}
                         onChange={(e) => setForm({ ...form, status: e.target.value })}
                         className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       >
                         <option value="pago">Pago (Concluído)</option>
                         <option value="pendente">Pendente ({form.tipo === 'saida' ? 'A Pagar' : 'A Receber'})</option>
-                      </select>
+                      </PremiumSelect>
                     </div>
                   </div>
 
@@ -1642,7 +1643,7 @@ export function Caixa() {
                     <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1.5">
                       <Repeat className="h-3.5 w-3.5 text-blue-500" /> LANÇAR RECORRÊNCIA (QUANTOS MESES)
                     </label>
-                    <select
+                    <PremiumSelect
                       value={qtdMeses}
                       onChange={(e) => setQtdMeses(parseInt(e.target.value, 10))}
                       className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
@@ -1652,7 +1653,7 @@ export function Caixa() {
                       <option value={3}>3 meses (Próximos 3 meses)</option>
                       <option value={6}>6 meses (Semestral - 6 meses)</option>
                       <option value={12}>12 meses (Anual - 12 meses)</option>
-                    </select>
+                    </PremiumSelect>
                     {qtdMeses > 1 && (
                       <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
                         * O sistema gerará <strong>{qtdMeses} lançamentos mensais</strong> e os agrupará em um acordeão expansível na tabela.
@@ -1675,7 +1676,7 @@ export function Caixa() {
                     </div>
                     <div>
                       <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">FORMA DE PAGAMENTO</label>
-                      <select
+                      <PremiumSelect
                         value={form.forma_pagamento}
                         onChange={(e) => setForm({ ...form, forma_pagamento: e.target.value })}
                         className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
@@ -1684,7 +1685,7 @@ export function Caixa() {
                         <option value="cartao_credito">Cartão de Crédito</option>
                         <option value="cartao_debito">Cartão de Débito</option>
                         <option value="dinheiro">Dinheiro</option>
-                      </select>
+                      </PremiumSelect>
                     </div>
                   </div>
                 </>

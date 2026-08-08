@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { PremiumSelect } from '../components/PremiumSelect';
 import { createPortal } from 'react-dom';
 import { apiRequest } from '../services/api';
 import {
@@ -683,18 +684,18 @@ export function Caixa() {
           <form onSubmit={handleCreateEntry} className="space-y-4">
             <div>
               <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">TIPO DE LANÇAMENTO</label>
-              <select value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
+              <PremiumSelect value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
                 <option value="entrada">Entrada (+)</option>
                 <option value="saida">Saída (-)</option>
-              </select>
+              </PremiumSelect>
             </div>
 
             <div>
               <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">STATUS</label>
-              <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
+              <PremiumSelect value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
                 <option value="pago">Pago / Recebido</option>
                 <option value="pendente">Pendente / A Receber</option>
-              </select>
+              </PremiumSelect>
             </div>
 
             <div>
@@ -709,12 +710,12 @@ export function Caixa() {
 
             <div>
               <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">FORMA DE PAGAMENTO</label>
-              <select value={form.forma_pagamento} onChange={(e) => setForm({ ...form, forma_pagamento: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
+              <PremiumSelect value={form.forma_pagamento} onChange={(e) => setForm({ ...form, forma_pagamento: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
                 <option value="pix">PIX</option>
                 <option value="cartao_credito">Cartão de Crédito</option>
                 <option value="cartao_debito">Cartão de Débito</option>
                 <option value="dinheiro">Dinheiro</option>
-              </select>
+              </PremiumSelect>
             </div>
 
             <div className="flex justify-end gap-3 pt-2">

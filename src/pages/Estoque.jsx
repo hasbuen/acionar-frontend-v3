@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { apiRequest } from '../services/api';
 import { Plus, Package, ArrowDown, ArrowUp, ArrowRightLeft, ClipboardCheck, History, AlertTriangle, Search, X, Check, DollarSign, Trash2, Minus, Send, ArrowUpDown } from 'lucide-react';
 import { ModalAlert, useModalAlert } from '../components/ModalAlert';
+import { PremiumSelect } from '../components/PremiumSelect';
 
 export function Estoque() {
   const [produtos, setProdutos] = useState([]);
@@ -456,14 +457,13 @@ export function Estoque() {
 
                   <div>
                     <label className="block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 mb-1">TIPO</label>
-                    <select
+                    <PremiumSelect
                       value={form.tipo}
                       onChange={(e) => setForm({ ...form, tipo: e.target.value })}
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                     >
                       <option value="consumo">Consumo Interno (Insumo)</option>
                       <option value="venda">Revenda para Cliente</option>
-                    </select>
+                    </PremiumSelect>
                   </div>
                 </div>
               )}
@@ -507,14 +507,13 @@ export function Estoque() {
                   {parseFloat(form.custo_unitario || 0) > 0 && parseInt(form.quantidade || 0, 10) > 0 && (
                     <div>
                       <label className="block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 mb-1">SITUAÇÃO DO PAGAMENTO</label>
-                      <select
+                      <PremiumSelect
                         value={form.status_pagamento || 'pago'}
                         onChange={(e) => setForm({ ...form, status_pagamento: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                       >
                         <option value="pago">Pago (Gerar despesa paga no caixa)</option>
                         <option value="a_pagar">A Pagar / Pendente (Gerar despesa pendente no caixa)</option>
-                      </select>
+                      </PremiumSelect>
                     </div>
                   )}
                 </div>
@@ -611,17 +610,17 @@ export function Estoque() {
             <form onSubmit={handleTransfer} className="space-y-4">
               <label className="block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400">
                 PRODUTO
-                <select 
+                <PremiumSelect 
                   value={selectedProduto?.id || ''} 
                   onChange={e => setSelectedProduto(produtos.find(product => Number(product.id) === Number(e.target.value)) || null)} 
-                  className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500" 
+                  className="mt-1" 
                   required
                 >
                   <option value="">Selecione um produto</option>
                   {produtos.filter(product => Number(product.quantidade) > 0).map(product => (
                     <option key={product.id} value={product.id}>{product.nome} — saldo: {product.quantidade} un</option>
                   ))}
-                </select>
+                </PremiumSelect>
               </label>
 
               {selectedProduto && (
@@ -632,17 +631,17 @@ export function Estoque() {
 
               <label className="block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400">
                 AUXILIAR DESTINO
-                <select 
+                <PremiumSelect 
                   value={transfForm.profissional_id} 
                   onChange={e => setTransfForm({ ...transfForm, profissional_id: e.target.value })} 
-                  className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500" 
+                  className="mt-1" 
                   required
                 >
                   <option value="">Selecione o auxiliar</option>
                   {profissionais.filter(professional => Number(professional.id) !== Number(selectedProduto?.profissional_id)).map(professional => (
                     <option key={professional.id} value={professional.id}>{professional.nome}</option>
                   ))}
-                </select>
+                </PremiumSelect>
               </label>
 
               <label className="block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400">
@@ -685,15 +684,14 @@ export function Estoque() {
               {!selectedProduto && (
                 <div>
                   <label className="mb-1 block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400">PRODUTO</label>
-                  <select 
+                  <PremiumSelect 
                     value="" 
                     onChange={e => setSelectedProduto(produtos.find(product => Number(product.id) === Number(e.target.value)) || null)} 
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500" 
                     required
                   >
                     <option value="">Selecione o produto para movimentar...</option>
                     {produtos.map(product => <option key={product.id} value={product.id}>{product.nome} — saldo: {product.quantidade} un</option>)}
-                  </select>
+                  </PremiumSelect>
                 </div>
               )}
 
@@ -743,14 +741,13 @@ export function Estoque() {
               {movForm.tipo === 'entrada' && selectedProduto && parseFloat(selectedProduto.custo_unitario || 0) > 0 && (
                 <div>
                   <label className="block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 mb-1">SITUAÇÃO DO PAGAMENTO</label>
-                  <select
+                  <PremiumSelect
                     value={movForm.status_pagamento || 'pago'}
                     onChange={(e) => setMovForm({ ...movForm, status_pagamento: e.target.value })}
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                   >
                     <option value="pago">Pago (Gerar despesa paga no caixa)</option>
                     <option value="a_pagar">A Pagar / Pendente (Gerar despesa pendente no caixa)</option>
-                  </select>
+                  </PremiumSelect>
                 </div>
               )}
 

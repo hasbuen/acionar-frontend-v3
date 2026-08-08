@@ -3,6 +3,7 @@ import Chart from 'react-apexcharts';
 import { apiRequest } from '../services/api';
 import { gsap } from 'gsap';
 import { PaymentModal } from '../components/PaymentModal';
+import { PremiumSelect } from '../components/PremiumSelect';
 import { useAuth } from '../context/AuthContext';
 import { NewAppointmentModal } from '../components/NewAppointmentModal';
 import { ModalAlert, useModalAlert } from '../components/ModalAlert';
@@ -276,18 +277,17 @@ function DetailsModal({ item, onClose, onUpdateStatus, onOpenMaintenance, onEdit
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
           <div className="relative flex-1">
-            <select
+            <PremiumSelect
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className={`w-full appearance-none rounded-2xl border px-4 py-3.5 pr-10 text-xs font-extrabold outline-none transition-all cursor-pointer shadow-sm bg-white dark:bg-slate-900 ${currentOption.badgeClass}`}
+              className={`font-extrabold ${currentOption.badgeClass}`}
             >
               {statusOptions.map(opt => (
-                <option key={opt.value} value={opt.value} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold py-2">
+                <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
               ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 opacity-70" />
+            </PremiumSelect>
           </div>
 
           <button
@@ -1269,9 +1269,9 @@ export function Agenda() {
               <input name="valor_total" type="number" step="0.01" defaultValue={modal.item.valor_total || 0} className={`${inputClass} mt-1`} />
             </label>
             <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400">Status
-              <select name="status" defaultValue={modal.item.status} className={`${inputClass} mt-1`}>
+              <PremiumSelect name="status" defaultValue={modal.item.status} className="mt-1">
                 {Object.entries(statusLabels).filter(([key]) => !['aguardando_confirmacao', 'solicitado', 'confirmado', 'atendido', 'recusado'].includes(key)).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
-              </select>
+              </PremiumSelect>
             </label>
             <textarea name="observacao" rows="3" defaultValue={modal.item.observacao || ''} className={inputClass} placeholder="Observações" />
             <button className="btn-animated w-full rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 py-3.5 text-xs font-black text-white shadow-lg shadow-blue-500/20 hover:from-blue-700 hover:to-indigo-700">Salvar alterações</button>
@@ -1296,10 +1296,10 @@ export function Agenda() {
               <input value={form.cliente_whatsapp} onChange={event => setForm({ ...form, cliente_whatsapp: event.target.value })} className={`${inputClass} mt-1`} placeholder="(11) 99999-9999" type="tel" inputMode="tel" />
             </label>
             <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400">Serviço
-              <select value={form.servico_id} onChange={event => setForm({ ...form, servico_id: event.target.value })} className={`${inputClass} mt-1`} required>
+              <PremiumSelect value={form.servico_id} onChange={event => setForm({ ...form, servico_id: event.target.value })} className="mt-1" required>
                 <option value="">Selecione um serviço</option>
                 {servicos.map(service => <option key={service.id} value={service.id}>{service.nome} — R$ {Number(service.preco || 0).toFixed(2)}</option>)}
-              </select>
+              </PremiumSelect>
             </label>
             <label className="block text-xs font-black uppercase text-slate-500 dark:text-slate-400">Data e horário
               <input value={form.data_hora} onChange={event => setForm({ ...form, data_hora: event.target.value })} type="datetime-local" className={`${inputClass} mt-1`} required />

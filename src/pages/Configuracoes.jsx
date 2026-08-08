@@ -5,6 +5,7 @@ import { Settings, Users, Bell, Globe, Palette, Copy, Check, Clock, MessageSquar
 import { ModalAlert, useModalAlert } from '../components/ModalAlert';
 import { PremiumToggle } from '../components/PremiumToggle';
 import { PremiumCheckbox } from '../components/PremiumCheckbox';
+import { PremiumSelect } from '../components/PremiumSelect';
 
 export function Configuracoes() {
   const { tenant, setTenant, user } = useAuth();
@@ -748,17 +749,16 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Tipo da chave Pix</label>
-                    <select
+                    <PremiumSelect
                       value={payments.pix_key_type}
                       onChange={e => setPayments({ ...payments, pix_key_type: e.target.value })}
-                      className={selectClass}
                     >
                       <option value="cpf">CPF</option>
                       <option value="cnpj">CNPJ</option>
                       <option value="email">E-mail</option>
                       <option value="telefone">Celular/Telefone</option>
                       <option value="aleatoria">Chave aleatória (EVP)</option>
-                    </select>
+                    </PremiumSelect>
                   </div>
                   <div>
                     <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Chave Pix</label>
@@ -809,8 +809,7 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
             </div>
 
             <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
-              <select
-                className={selectClass}
+              <PremiumSelect
                 value={alarmMinutes}
                 onChange={(e) => setAlarmMinutes(Number(e.target.value))}
               >
@@ -820,7 +819,7 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
                 <option value="20">20 Minutos antes</option>
                 <option value="30">30 Minutos antes</option>
                 <option value="60">1 Hora antes</option>
-              </select>
+              </PremiumSelect>
               <button
                 onClick={() => {
                   localStorage.setItem('alarm-minutes', String(alarmMinutes));

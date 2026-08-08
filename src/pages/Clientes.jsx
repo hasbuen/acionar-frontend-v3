@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../services/api';
 import { Users, UserPlus, Search, Phone, History, Edit, Trash2, X, Calendar, MessageSquare, UserCheck } from 'lucide-react';
 import { ModalAlert, useModalAlert } from '../components/ModalAlert';
+import { PremiumSelect } from '../components/PremiumSelect';
 
 export function Clientes() {
   const [clientes, setClientes] = useState([]);
@@ -387,10 +388,9 @@ export function Clientes() {
             <div className="space-y-4">
               <div>
                 <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">PROFISSIONAL DE DESTINO</label>
-                <select
+                 <PremiumSelect
                   value={selectedProfDestId}
                   onChange={(e) => setSelectedProfDestId(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
                   required
                 >
                   <option value="">Selecione...</option>
@@ -399,7 +399,7 @@ export function Clientes() {
                       {p.nome} ({p.cargo === 'proprietario' ? 'Proprietário' : 'Auxiliar'})
                     </option>
                   ))}
-                </select>
+                </PremiumSelect>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-2">
