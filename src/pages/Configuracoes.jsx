@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../services/api';
-import { Settings, Users, Bell, Globe, Palette, Copy, Check, Clock, MessageSquare, MapPin, ShieldAlert, Plus, Trash2, Upload, Image as ImageIcon, CreditCard } from 'lucide-react';
+import { Settings, Users, Bell, Globe, Palette, Copy, Check, Clock, MessageSquare, MapPin, ShieldAlert, Plus, Trash2, Upload, Image as ImageIcon, CreditCard, Loader2, Power, QrCode } from 'lucide-react';
 import { ModalAlert, useModalAlert } from '../components/ModalAlert';
 import { PremiumToggle } from '../components/PremiumToggle';
 import { PremiumCheckbox } from '../components/PremiumCheckbox';
@@ -47,6 +47,80 @@ export function Configuracoes() {
     aceita_atendimento_externo: false
   });
   const [logoError, setLogoError] = useState(false);
+
+  // WhatsApp Integration states
+  const [whatsappStatus, setWhatsappStatus] = useState({ connected: false, state: 'close' });
+  const [whatsappQrCode, setWhatsappQrCode] = useState(null);
+  const [loadingWhatsapp, setLoadingWhatsapp] = useState(false);
+  const [pollingInterval, setPollingInterval] = useState(null);
+
+  const fetchWhatsappStatus = async () => {
+    try {
+      const data = await apiRequest('GET', '/api/whatsapp/status');
+      setWhatsappStatus({ connected: data.connected, state: data.state });
+      if (data.connected) {
+        setWhatsappQrCode(null);
+      }
+      return data;
+    } catch (e) {
+      console.error('Erro ao buscar status do WhatsApp:', e);
+      return { connected: false, state: 'close' };
+    }
+  };
+
+  const handleConnectWhatsapp = async () => {
+    setLoadingWhatsapp(true);
+    try {
+      const data = await apiRequest('GET', '/api/whatsapp/connect');
+      if (data.qrcode) {
+        setWhatsappQrCode(data.qrcode);
+        setWhatsappStatus({ connected: false, state: 'connecting' });
+        
+        if (pollingInterval) clearInterval(pollingInterval);
+        const interval = setInterval(async () => {
+          const status = await fetchWhatsappStatus();
+          if (status.connected) {
+            clearInterval(interval);
+            setPollingInterval(null);
+            showAlert('Sucesso', 'Seu WhatsApp foi pareado com sucesso!', 'success');
+          }
+        }, 5000);
+        setPollingInterval(interval);
+      } else if (data.connected) {
+        setWhatsappStatus({ connected: true, state: data.state });
+        showAlert('Conectado', 'WhatsApp já está conectado.', 'success');
+      }
+    } catch (e) {
+      showAlert('Erro', `Erro ao gerar conexão: ${e.message}`, 'error');
+    } finally {
+      setLoadingWhatsapp(false);
+    }
+  };
+
+  const handleDisconnectWhatsapp = async () => {
+    setLoadingWhatsapp(true);
+    try {
+      await apiRequest('POST', '/api/whatsapp/disconnect');
+      setWhatsappStatus({ connected: false, state: 'close' });
+      setWhatsappQrCode(null);
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+        setPollingInterval(null);
+      }
+      showAlert('Desconectado', 'WhatsApp desconectado com sucesso.', 'success');
+    } catch (e) {
+      showAlert('Erro', `Erro ao desconectar: ${e.message}`, 'error');
+    } finally {
+      setLoadingWhatsapp(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchWhatsappStatus();
+    return () => {
+      if (pollingInterval) clearInterval(pollingInterval);
+    };
+  }, [pollingInterval]);
 
   useEffect(() => {
     const saved = localStorage.getItem('alarm-enabled');
@@ -1136,6 +1210,114 @@ Passando para lembrar que sua *MANUTENÇÃO PERIÓDICA* de *{servico}* está age
                 <Bell className="h-4 w-4" />
                 {alarmEnabled ? 'Alarme Ativado 🔔' : 'Alarme Desativado 🔕'}
               </button>
+            </div>
+          </div>
+
+          {/* Card: WhatsApp Integration Connection Panel */}
+          <div className={cardClass}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold shadow-sm">
+                  <MessageSquare className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 dark:text-white">Chatbot & Integração WhatsApp</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Conecte seu celular para habilitar confirmações automáticas por WhatsApp</p>
+                </div>
+              </div>
+              
+              <div>
+                {whatsappStatus.connected ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Conectado
+                  </span>
+                ) : whatsappStatus.state === 'connecting' ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Aguardando Leitura
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700/80">
+                    Desconectado
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800/80">
+              {whatsappStatus.connected ? (
+                <div className="space-y-3">
+                  <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 flex items-start gap-3">
+                    <Check className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                      Sua conta de WhatsApp está <strong>ativa e sincronizada</strong>! Os clientes receberão mensagens automáticas para confirmar seus agendamentos ao agendar pelo portal público.
+                    </p>
+                  </div>
+                  
+                  <button
+                    type="button"
+                    disabled={loadingWhatsapp}
+                    onClick={handleDisconnectWhatsapp}
+                    className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 font-black text-xs text-white shadow-lg shadow-rose-500/10 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                  >
+                    <Power className="h-4 w-4" />
+                    Desconectar WhatsApp
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {whatsappQrCode ? (
+                    <div className="flex flex-col items-center justify-center p-6 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-800">
+                      <p className="text-xs font-bold text-slate-600 dark:text-slate-300 text-center mb-4 leading-relaxed">
+                        Abra o WhatsApp no seu celular, vá em <strong>Aparelhos Conectados</strong> e escaneie o código abaixo:
+                      </p>
+                      
+                      <div className="p-3 bg-white rounded-2xl shadow-md border border-slate-100 inline-block mb-4">
+                        <img 
+                          src={whatsappQrCode} 
+                          alt="QR Code de Conexão" 
+                          className="h-48 w-48 object-contain"
+                        />
+                      </div>
+                      
+                      <button
+                        type="button"
+                        onClick={fetchWhatsappStatus}
+                        className="text-xs font-black text-blue-600 hover:text-blue-500 flex items-center gap-1"
+                      >
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Atualizar Status Manualmente
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 text-center">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-4">
+                        O chatbot interativo permite confirmar ou cancelar agendamentos automaticamente via WhatsApp sem pagar taxas ou plataformas adicionais.
+                      </p>
+                      
+                      <button
+                        type="button"
+                        disabled={loadingWhatsapp}
+                        onClick={handleConnectWhatsapp}
+                        className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-black text-xs text-white shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                      >
+                        {loadingWhatsapp ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin animate-infinite" />
+                            Gerando Código...
+                          </>
+                        ) : (
+                          <>
+                            <QrCode className="h-4 w-4" />
+                            Gerar QR Code de Conexão
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
