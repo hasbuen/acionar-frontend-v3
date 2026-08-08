@@ -9,6 +9,7 @@ import {
   Star
 } from 'lucide-react';
 import { ModalAlert, useModalAlert } from './ModalAlert';
+import { HelpCenterModal } from './HelpCenterModal';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { apiRequest } from '../services/api';
@@ -288,20 +289,12 @@ export function Navbar({ activeTab, setActiveTab }) {
 
       <ModalAlert {...alertState} onClose={closeAlert} />
 
-      {/* Help Modal */}
-      {showHelpModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Central de Ajuda</h2>
-              <button onClick={() => setShowHelpModal(false)} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <p className="text-sm text-slate-600 dark:text-slate-400">Aqui estão as instruções de uso do sistema.</p>
-          </div>
-        </div>
-      )}
+      {/* Help Center & Audit Modal */}
+      <HelpCenterModal
+        isOpen={showHelpModal}
+        onClose={() => setShowHelpModal(false)}
+        showAlert={showAlert}
+      />
 
       {/* Mobile Bottom Bar */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 border-t border-slate-200/80 dark:border-blue-500/30 backdrop-blur-2xl pb-safe-bottom dark:bg-slate-950/95 shadow-[0_-8px_30px_rgb(0,0,0,0.06)] dark:shadow-[0_-8px_30px_rgba(59,130,246,0.2)] transition-colors duration-300">
