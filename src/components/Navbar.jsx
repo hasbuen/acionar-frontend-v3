@@ -174,17 +174,17 @@ export function Navbar({ activeTab, setActiveTab }) {
             </div>
           </div>
 
-          <nav className="hidden md:flex items-center gap-1 rounded-2xl bg-slate-100/70 p-1.5 dark:bg-slate-900/70 border border-slate-200/50 dark:border-slate-800/50">
+          <nav className="hidden md:flex items-center gap-1.5 rounded-2xl bg-slate-100/80 p-1.5 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800/80 shadow-inner">
             {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => handleTabChange(id)}
-                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-all duration-300 ease-out ${activeTab === id
-                    ? 'bg-white text-blue-600 shadow-md dark:bg-slate-800 dark:text-blue-400 scale-[1.03] shadow-blue-500/10 dark:shadow-blue-500/20'
-                    : 'text-slate-600 hover:bg-slate-200/50 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800/50 dark:hover:text-slate-200 hover:scale-[1.01]'
+                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-black transition-all duration-300 ease-out ${activeTab === id
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 dark:shadow-[0_0_20px_rgba(59,130,246,0.55)] scale-[1.03] border border-blue-400/30'
+                    : 'text-slate-600 hover:bg-slate-200/60 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-slate-100 hover:scale-[1.01]'
                   }`}
               >
-                <Icon id={`nav-icon-desktop-${id}`} className={`h-4 w-4 transition-all ${activeTab === id ? 'stroke-[2.5px]' : 'stroke-2'}`} />
+                <Icon id={`nav-icon-desktop-${id}`} className={`h-4 w-4 transition-all ${activeTab === id ? 'stroke-[2.5px] text-white' : 'stroke-2'}`} />
                 {label}
               </button>
             ))}
@@ -304,26 +304,29 @@ export function Navbar({ activeTab, setActiveTab }) {
       )}
 
       {/* Mobile Bottom Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 border-t border-slate-200/80 dark:border-blue-500/20 backdrop-blur-2xl pb-safe-bottom dark:bg-slate-950/95 shadow-[0_-8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_-8px_30px_rgba(59,130,246,0.12)] transition-colors duration-300">
-        <div className="flex h-16 items-center gap-1 overflow-x-auto px-2 no-scrollbar">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 border-t border-slate-200/80 dark:border-blue-500/30 backdrop-blur-2xl pb-safe-bottom dark:bg-slate-950/95 shadow-[0_-8px_30px_rgb(0,0,0,0.06)] dark:shadow-[0_-8px_30px_rgba(59,130,246,0.2)] transition-colors duration-300">
+        <div className="flex h-16 items-center gap-0.5 px-1 justify-between w-full overflow-x-auto no-scrollbar scroll-x-touch">
           {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
             const isActive = activeTab === id;
             return (
               <button
                 key={id}
                 onClick={() => handleTabChange(id)}
-                className="flex min-w-[4.5rem] flex-1 flex-col items-center justify-center gap-1 py-1 transition-all group"
+                className="flex flex-1 min-w-0 flex-col items-center justify-center gap-0.5 py-1 px-0.5 transition-all group relative"
               >
-                <div id={`nav-icon-mobile-${id}`} className={`flex h-8 w-14 items-center justify-center rounded-full transition-all duration-300 ${isActive
-                    ? 'bg-blue-100/90 text-blue-600 shadow-[0_0_12px_rgba(37,99,235,0.2)] dark:bg-blue-900/50 dark:text-blue-400 dark:shadow-[0_0_18px_rgba(59,130,246,0.45)] scale-105'
+                <div id={`nav-icon-mobile-${id}`} className={`flex h-7.5 w-12 items-center justify-center rounded-2xl transition-all duration-300 ${isActive
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_0_16px_rgba(37,99,235,0.55)] dark:shadow-[0_0_20px_rgba(59,130,246,0.65)] scale-105 border border-blue-400/40'
                     : 'text-slate-500 group-hover:bg-slate-100 dark:text-slate-400 dark:group-hover:bg-slate-800/40'
                   }`}>
-                  <Icon className={`h-5 w-5 ${isActive ? 'stroke-[2.5px] scale-110' : 'stroke-2'}`} />
+                  <Icon className={`h-4.5 w-4.5 ${isActive ? 'stroke-[2.5px] scale-110 text-white' : 'stroke-2'}`} />
                 </div>
-                <span className={`text-[10px] tracking-wide transition-all font-black ${isActive ? 'text-blue-600 dark:text-blue-400 scale-105' : 'text-slate-500 dark:text-slate-400'
+                <span className={`text-[9.5px] sm:text-[10px] tracking-tight truncate max-w-full transition-all font-black ${isActive ? 'text-blue-600 dark:text-blue-400 scale-105 drop-shadow-sm' : 'text-slate-500 dark:text-slate-400'
                   }`}>
                   {label}
                 </span>
+                {isActive && (
+                  <span className="absolute -bottom-0.5 h-1 w-4 rounded-full bg-blue-600 dark:bg-blue-400 shadow-[0_0_8px_rgba(59,130,246,0.9)]" />
+                )}
               </button>
             );
           })}

@@ -233,16 +233,16 @@ export function MapModal({ open, onClose, endereco, clienteNome, googleMapsUrl }
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-md"
+      className="fixed inset-0 z-[999999] flex items-end sm:items-center justify-center bg-slate-950/50 p-0 sm:p-4 backdrop-blur-md"
       style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', margin: 0, transform: 'none' }}
       onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
     >
       <div
         ref={modalRef}
-        className={`relative overflow-hidden rounded-[2.2rem] border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900 flex flex-col transition-all duration-300 ${
+        className={`relative overflow-hidden rounded-t-[2.2rem] sm:rounded-[2.2rem] border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900 flex flex-col transition-all duration-300 pb-safe-bottom ${
           expanded
             ? 'w-screen h-screen max-w-none rounded-none'
-            : 'w-full max-w-2xl'
+            : 'w-full max-w-2xl max-h-[88dvh]'
         }`}
         style={expanded ? { borderRadius: 0 } : {}}
       >

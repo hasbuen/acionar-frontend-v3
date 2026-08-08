@@ -46,8 +46,8 @@ export function NewAppointmentModal({ form, setForm, clients, services, onClose,
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/15 p-4 backdrop-blur-sm">
-      <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-[2.2rem] border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100 sm:p-8">
+    <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-slate-950/40 p-0 sm:p-4 backdrop-blur-md">
+      <div className="max-h-[88dvh] w-full max-w-lg overflow-y-auto scroll-y-touch pb-safe-bottom rounded-t-[2.2rem] sm:rounded-[2.2rem] border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100 sm:p-8">
         <div className="mb-5 flex items-start justify-between border-b border-slate-100 dark:border-slate-800/80 pb-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-600/20 text-blue-600 dark:text-blue-300">

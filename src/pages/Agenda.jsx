@@ -148,10 +148,10 @@ function Modal({ title, subtitle, children, onClose, wide = false }) {
   return (
     <div 
       ref={overlayRef} 
-      className="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-md"
+      className="fixed inset-0 z-[999999] flex items-end sm:items-center justify-center bg-slate-950/40 p-0 sm:p-4 backdrop-blur-md"
       style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', margin: 0, transform: 'none' }}
     >
-      <div ref={modalRef} className={`relative w-full ${wide ? 'max-w-xl' : 'max-w-md'} overflow-hidden rounded-[2.2rem] border border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100 sm:p-6 max-h-[90dvh] overflow-y-auto`}>
+      <div ref={modalRef} className={`relative w-full ${wide ? 'max-w-xl' : 'max-w-md'} overflow-hidden rounded-t-[2.2rem] sm:rounded-[2.2rem] border border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100 sm:p-6 max-h-[88dvh] overflow-y-auto scroll-y-touch pb-safe-bottom`}>
         <button
           onClick={handleClose}
           className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors"

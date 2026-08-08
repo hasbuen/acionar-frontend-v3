@@ -214,33 +214,35 @@ export function BotFlowBuilder({ onBack }) {
     }
   };
 
+  const [mobileTab, setMobileTab] = useState('editor'); // 'editor' | 'simulator'
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex flex-col items-center justify-center p-4">
         <Loader2 className="h-8 w-8 text-emerald-500 animate-spin mb-3" />
-        <p className="text-xs font-bold text-slate-400">Carregando Robô do WhatsApp...</p>
+        <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Carregando Robô do WhatsApp...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen w-full bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-300">
       <ModalAlert open={alertState.open} onClose={closeAlert} {...alertState} />
 
       {/* Header Topbar Ultra Limpo & Responsivo */}
-      <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-3.5 bg-slate-900/90 border-b border-slate-800 backdrop-blur-md">
+      <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-3.5 bg-white/90 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 backdrop-blur-md">
         <div className="flex items-center gap-3">
           {onBack && (
             <button
               onClick={onBack}
-              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all"
+              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-all"
               title="Voltar"
             >
               <ArrowLeft className="h-4 w-4" />
             </button>
           )}
           <div className="flex items-center gap-2">
-            <h1 className="text-base font-black text-white tracking-tight">Robô do WhatsApp</h1>
+            <h1 className="text-base font-black text-slate-900 dark:text-white tracking-tight">Robô do WhatsApp</h1>
             <HelpBadge
               title="Robô do WhatsApp"
               description="Nesta tela você personaliza as mensagens automáticas enviadas para os profissionais quando um cliente faz agendamento e para os clientes quando a confirmação for aceita."
@@ -251,7 +253,7 @@ export function BotFlowBuilder({ onBack }) {
         <div className="flex items-center gap-2">
           <button
             onClick={fetchFlow}
-            className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all flex items-center gap-1.5"
+            className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all flex items-center gap-1.5"
             title="Resetar para as mensagens originais"
           >
             <RotateCcw className="h-3.5 w-3.5" />
@@ -268,17 +270,43 @@ export function BotFlowBuilder({ onBack }) {
         </div>
       </header>
 
+      {/* Alternador de Modo Mobile (Telas menores que lg) */}
+      <div className="lg:hidden flex border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 p-1.5 gap-2">
+        <button
+          onClick={() => setMobileTab('editor')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition-all ${
+            mobileTab === 'editor'
+              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+              : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <MessageSquare className="h-4 w-4" />
+          <span>Editor de Mensagens</span>
+        </button>
+        <button
+          onClick={() => setMobileTab('simulator')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition-all ${
+            mobileTab === 'simulator'
+              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+              : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <Smartphone className="h-4 w-4" />
+          <span>Simulador WhatsApp</span>
+        </button>
+      </div>
+
       {/* Layout de Edição */}
       <div className="flex-1 flex overflow-hidden">
         {/* Painel Esquerdo: Sequência de Mensagens */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
+        <div className={`flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 scroll-y-touch ${mobileTab === 'editor' ? 'block' : 'hidden lg:block'}`}>
           
           {/* Tags de Variáveis Dinâmicas */}
-          <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800">
+          <div className="p-3.5 rounded-2xl bg-white/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-1.5">
-                <Tag className="h-3.5 w-3.5 text-emerald-400" />
-                <span className="text-xs font-black uppercase text-slate-300">Variáveis de Texto</span>
+                <Tag className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
+                <span className="text-xs font-black uppercase text-slate-700 dark:text-slate-300">Variáveis de Texto</span>
               </div>
               <HelpBadge
                 title="Variáveis Dinâmicas"
@@ -312,8 +340,8 @@ export function BotFlowBuilder({ onBack }) {
                   className={`
                     relative z-10 p-4 rounded-2xl border transition-all cursor-pointer shadow-md
                     ${isSelected 
-                      ? 'bg-slate-900 border-emerald-500/80 ring-2 ring-emerald-500/20' 
-                      : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700 hover:bg-slate-900/80'}
+                      ? 'bg-white dark:bg-slate-900 border-emerald-500/80 ring-2 ring-emerald-500/20' 
+                      : 'bg-white/80 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900/80'}
                   `}
                 >
                   {/* Cabeçalho do Passo */}
@@ -334,27 +362,27 @@ export function BotFlowBuilder({ onBack }) {
 
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 border border-slate-700">
+                          <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                             Passo {index + 1}
                           </span>
-                          <h3 className="text-xs font-black text-white">{node.title}</h3>
+                          <h3 className="text-xs font-black text-slate-900 dark:text-white">{node.title}</h3>
                         </div>
                       </div>
                     </div>
 
-                    <ChevronRight className={`h-4 w-4 transition-transform ${isSelected ? 'rotate-90 text-emerald-400' : 'text-slate-600'}`} />
+                    <ChevronRight className={`h-4 w-4 transition-transform ${isSelected ? 'rotate-90 text-emerald-500 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-600'}`} />
                   </div>
 
                   {/* Edição do Passo Selecionado */}
                   {isSelected && (
-                    <div className="mt-3 pt-3 border-t border-slate-800/80 space-y-3 animate-fade-in">
+                    <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-3 animate-fade-in">
                       {node.type === 'trigger' && (
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <label className="block text-[11px] font-black uppercase tracking-wider text-amber-400">
+                            <label className="block text-[11px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">
                               Mensagem de Alerta no WhatsApp da Equipe
                             </label>
-                            <span className="text-[10px] text-amber-300 font-bold px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
+                            <span className="text-[10px] text-amber-600 dark:text-amber-300 font-bold px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
                               Exclusivo da Equipe
                             </span>
                           </div>
@@ -365,10 +393,10 @@ export function BotFlowBuilder({ onBack }) {
                               updateNodeConfig(node.id, 'text', e.target.value);
                               updateNodeConfig(node.id, 'alertMessage', e.target.value);
                             }}
-                            className="w-full p-3 bg-slate-950 rounded-xl border border-amber-500/30 text-xs font-medium text-slate-200 focus:outline-none focus:border-amber-500 transition-all leading-relaxed"
+                            className="w-full p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-amber-500/30 text-xs font-medium text-slate-900 dark:text-slate-200 focus:outline-none focus:border-amber-500 transition-all leading-relaxed"
                             placeholder="🚨 *Novo Agendamento Solicitado!* Cliente: {cliente}, Serviço: {servico}, Data: {data} às {hora}..."
                           />
-                          <p className="text-[10px] text-slate-400 leading-normal">
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-normal">
                             Esta mensagem é enviada diretamente no WhatsApp dos profissionais quando um cliente solicita um agendamento na página pública.
                           </p>
                         </div>
@@ -376,14 +404,14 @@ export function BotFlowBuilder({ onBack }) {
 
                       {node.type === 'send_message' && (
                         <div>
-                          <label className="block text-[11px] font-black uppercase tracking-wider text-blue-400 mb-1">
+                          <label className="block text-[11px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-1">
                             Mensagem Inicial para o Cliente (Confirmação do Aceite)
                           </label>
                           <textarea
                             rows={4}
                             value={node.config?.text || ''}
                             onChange={(e) => updateNodeConfig(node.id, 'text', e.target.value)}
-                            className="w-full p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs font-medium text-slate-200 focus:outline-none focus:border-blue-500 transition-all leading-relaxed"
+                            className="w-full p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-900 dark:text-slate-200 focus:outline-none focus:border-blue-500 transition-all leading-relaxed"
                             placeholder="Digite a mensagem enviada ao cliente quando você aceitar..."
                           />
                         </div>
@@ -391,14 +419,14 @@ export function BotFlowBuilder({ onBack }) {
 
                       {node.type === 'options' && (
                         <div>
-                          <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">
+                          <label className="block text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 mb-1">
                             Resposta para opção inválida
                           </label>
                           <input
                             type="text"
                             value={node.config?.fallbackText || ''}
                             onChange={(e) => updateNodeConfig(node.id, 'fallbackText', e.target.value)}
-                            className="w-full p-2.5 bg-slate-950 rounded-xl border border-slate-800 text-xs font-medium text-slate-200 focus:outline-none focus:border-purple-500 transition-all"
+                            className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-900 dark:text-slate-200 focus:outline-none focus:border-purple-500 transition-all"
                             placeholder="Ex: Não entendi. Digite 1 ou 2."
                           />
                         </div>
@@ -410,7 +438,7 @@ export function BotFlowBuilder({ onBack }) {
                             rows={3}
                             value={node.config?.responseText || ''}
                             onChange={(e) => updateNodeConfig(node.id, 'responseText', e.target.value)}
-                            className="w-full p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs font-medium text-slate-200 focus:outline-none focus:border-emerald-500 transition-all leading-relaxed"
+                            className="w-full p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-900 dark:text-slate-200 focus:outline-none focus:border-emerald-500 transition-all leading-relaxed"
                             placeholder="Digite a resposta após o clique..."
                           />
                         </div>
@@ -423,23 +451,23 @@ export function BotFlowBuilder({ onBack }) {
           </div>
         </div>
 
-        {/* Painel Direito: Simulador de WhatsApp */}
-        <div className="w-[360px] bg-slate-900/90 border-l border-slate-800 flex flex-col hidden lg:flex">
-          <div className="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+        {/* Painel Direito / Aba Mobile: Simulador de WhatsApp */}
+        <div className={`w-full lg:w-[360px] bg-white/90 dark:bg-slate-900/90 border-l border-slate-200 dark:border-slate-800 flex flex-col ${mobileTab === 'simulator' ? 'flex' : 'hidden lg:flex'}`}>
+          <div className="p-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/60 dark:bg-slate-950/60">
             <div className="flex items-center gap-2">
-              <Smartphone className="h-4 w-4 text-emerald-400" />
-              <span className="text-xs font-black text-slate-200">Simulador de WhatsApp</span>
+              <Smartphone className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
+              <span className="text-xs font-black text-slate-800 dark:text-slate-200">Simulador de WhatsApp</span>
             </div>
             <button
               onClick={resetSimulator}
-              className="text-[11px] font-bold text-slate-400 hover:text-emerald-400 transition-colors flex items-center gap-1"
+              className="text-[11px] font-bold text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors flex items-center gap-1"
             >
               <RotateCcw className="h-3 w-3" /> Reiniciar
             </button>
           </div>
 
-          <div className="flex-1 p-3 overflow-hidden flex flex-col justify-center items-center bg-slate-950/40">
-            <div className="w-full h-full max-h-[560px] bg-[#0b141a] rounded-[2rem] border-4 border-slate-800 shadow-2xl flex flex-col overflow-hidden relative">
+          <div className="flex-1 p-3 overflow-hidden flex flex-col justify-center items-center bg-slate-100/50 dark:bg-slate-950/40">
+            <div className="w-full h-full max-h-[560px] bg-[#0b141a] rounded-[2rem] border-4 border-slate-300 dark:border-slate-800 shadow-2xl flex flex-col overflow-hidden relative">
               <div className="px-4 py-2.5 bg-[#202c33] flex items-center gap-2.5 border-b border-slate-800/60">
                 <div className="h-7 w-7 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-white text-[11px]">
                   R
@@ -450,7 +478,7 @@ export function BotFlowBuilder({ onBack }) {
                 </div>
               </div>
 
-              <div className="flex-1 p-3 overflow-y-auto space-y-2.5 bg-[#0b141a]">
+              <div className="flex-1 p-3 overflow-y-auto space-y-2.5 bg-[#0b141a] scroll-y-touch">
                 {simMessages.map((m) => (
                   <div
                     key={m.id}

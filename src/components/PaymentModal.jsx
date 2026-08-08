@@ -23,8 +23,8 @@ export function PaymentModal({ item, payments, draft, setDraft, onClose, onSubmi
   const finalValue = Math.max(0, Number(draft.gross || 0) - Number(draft.discount || 0));
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center overflow-y-auto bg-slate-950/40 p-0 sm:p-4 backdrop-blur-sm">
-      <div className="my-0 w-full max-w-lg max-h-[95vh] flex flex-col overflow-hidden rounded-t-[2rem] border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100 sm:my-auto sm:rounded-[2.2rem]">
+    <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-slate-950/40 p-0 sm:p-4 backdrop-blur-md">
+      <div className="my-0 w-full max-w-lg max-h-[88dvh] flex flex-col overflow-hidden rounded-t-[2.2rem] sm:rounded-[2.2rem] border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100 sm:my-auto pb-safe-bottom">
         
         {/* HEADER FIXO */}
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 px-5 sm:px-7 py-4 shrink-0">
@@ -43,7 +43,7 @@ export function PaymentModal({ item, payments, draft, setDraft, onClose, onSubmi
         </div>
 
         {/* ÁREA DE SCROLL DA FORM */}
-        <div className="overflow-y-auto px-5 sm:px-7 py-4 sm:py-5 space-y-5">
+        <div className="overflow-y-auto scroll-y-touch px-5 sm:px-7 py-4 sm:py-5 space-y-5">
           <div className="flex items-center justify-between rounded-2xl border border-slate-200/60 bg-slate-50 dark:border-slate-800/60 dark:bg-slate-950/50 p-3.5">
             <div>
               <span className="block text-xs font-black text-slate-900 dark:text-white">{item.cliente_nome || 'Cliente'}</span>

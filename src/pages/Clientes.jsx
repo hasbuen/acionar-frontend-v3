@@ -258,15 +258,14 @@ export function Clientes() {
               </div>
             </div>
 
-
           ))}
         </div>
       )}
 
       {/* Modal Novo / Editar Cliente */}
       {showModal && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/15 p-4 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+        <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-slate-950/40 p-0 sm:p-4 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-md max-h-[88dvh] overflow-y-auto scroll-y-touch pb-safe-bottom rounded-t-[2.2rem] sm:rounded-3xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
               <h3 className="text-lg font-black text-slate-900 dark:text-white">
                 {editingCliente ? 'Editar Cliente' : 'Novo Cliente'}
@@ -281,7 +280,7 @@ export function Clientes() {
                 <button 
                   type="button"
                   onClick={handleImportContact}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-blue-500/40 bg-blue-500/5 hover:bg-blue-500/10 text-blue-400 py-3 text-xs font-bold transition"
+                  className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-blue-500/40 bg-blue-500/5 hover:bg-blue-500/10 text-blue-500 dark:text-blue-400 py-3 text-xs font-bold transition"
                 >
                   <UserPlus className="h-4 w-4" />
                   Importar da Lista Telefônica
@@ -311,8 +310,6 @@ export function Clientes() {
                 />
               </div>
 
-
-
               <div>
                 <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">OBSERVAÇÕES / PREFERÊNCIAS</label>
                 <textarea
@@ -320,7 +317,7 @@ export function Clientes() {
                   value={form.observacoes}
                   onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
                   placeholder="Preferências, alergias, formato..."
-                  className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-blue-500 resize-none"
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-900 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 resize-none"
                 />
               </div>
 
@@ -337,12 +334,12 @@ export function Clientes() {
 
       {/* Modal Histórico do Cliente */}
       {historyCliente && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/15 p-4 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-lg max-h-[90dvh] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+        <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-slate-950/40 p-0 sm:p-4 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-lg max-h-[88dvh] overflow-y-auto scroll-y-touch pb-safe-bottom rounded-t-[2.2rem] sm:rounded-3xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
               <div>
                 <h3 className="text-lg font-black text-slate-900 dark:text-white">Histórico de Atendimentos</h3>
-                <p className="text-xs text-blue-400 font-bold">{historyCliente.nome}</p>
+                <p className="text-xs text-blue-500 dark:text-blue-400 font-bold">{historyCliente.nome}</p>
               </div>
               <button onClick={() => setHistoryCliente(null)} className="text-slate-400 hover:text-slate-900 dark:text-white">
                 <X className="h-5 w-5" />
@@ -352,14 +349,14 @@ export function Clientes() {
             {historyAgendamentos.length === 0 ? (
               <p className="text-center py-6 text-xs text-slate-400">Nenhum atendimento registrado para este cliente.</p>
             ) : (
-              <div className="space-y-2 max-h-60 overflow-y-auto no-scrollbar">
+              <div className="space-y-2 max-h-60 overflow-y-auto scroll-y-touch">
                 {historyAgendamentos.map((h) => (
-                  <div key={h.id} className="rounded-2xl border border-slate-800 bg-slate-950 p-3 text-xs flex justify-between items-center">
+                  <div key={h.id} className="rounded-2xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950 p-3 text-xs flex justify-between items-center">
                     <div>
-                      <span className="font-bold text-white block">{h.servico_nome || 'Atendimento'}</span>
-                      <span className="text-[10px] text-slate-400">{new Date(h.data_hora).toLocaleString()}</span>
+                      <span className="font-bold text-slate-900 dark:text-white block">{h.servico_nome || 'Atendimento'}</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400">{new Date(h.data_hora).toLocaleString()}</span>
                     </div>
-                    <span className="font-black text-emerald-400">R$ {parseFloat(h.valor_total || 0).toFixed(2)}</span>
+                    <span className="font-black text-emerald-600 dark:text-emerald-400">R$ {parseFloat(h.valor_total || 0).toFixed(2)}</span>
                   </div>
                 ))}
               </div>
@@ -370,8 +367,8 @@ export function Clientes() {
 
       {/* Modal Transferir Cliente */}
       {showTransferModal && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/15 p-4 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+        <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-slate-950/40 p-0 sm:p-4 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-md max-h-[88dvh] overflow-y-auto scroll-y-touch pb-safe-bottom rounded-t-[2.2rem] sm:rounded-3xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
               <h3 className="text-lg font-black text-slate-900 dark:text-white">
                 Transferir Cliente
