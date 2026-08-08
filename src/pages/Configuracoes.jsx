@@ -56,7 +56,7 @@ export function Configuracoes() {
 
   const fetchWhatsappStatus = async () => {
     try {
-      const data = await apiRequest('/api/whatsapp/status');
+      const data = await apiRequest('/whatsapp/status');
       setWhatsappStatus({ connected: data.connected, state: data.state });
       if (data.connected) {
         setWhatsappQrCode(null);
@@ -71,7 +71,7 @@ export function Configuracoes() {
   const handleConnectWhatsapp = async () => {
     setLoadingWhatsapp(true);
     try {
-      const data = await apiRequest('/api/whatsapp/connect');
+      const data = await apiRequest('/whatsapp/connect');
       if (data.qrcode) {
         setWhatsappQrCode(data.qrcode);
         setWhatsappStatus({ connected: false, state: 'connecting' });
@@ -100,7 +100,7 @@ export function Configuracoes() {
   const handleDisconnectWhatsapp = async () => {
     setLoadingWhatsapp(true);
     try {
-      await apiRequest('/api/whatsapp/disconnect', 'POST');
+      await apiRequest('/whatsapp/disconnect', 'POST');
       setWhatsappStatus({ connected: false, state: 'close' });
       setWhatsappQrCode(null);
       if (pollingInterval) {
