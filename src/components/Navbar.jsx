@@ -276,14 +276,6 @@ export function Navbar({ activeTab, setActiveTab }) {
                 )}
               </div>
 
-              <button
-                aria-label="Alternar Tema"
-                onClick={toggleTheme}
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-600 dark:text-slate-300 transition-all hover:bg-slate-100 hover:text-amber-500 dark:hover:bg-slate-800 dark:hover:text-amber-400 active:scale-95"
-              >
-                {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </button>
-
               <div className="h-5 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
 
               <button
